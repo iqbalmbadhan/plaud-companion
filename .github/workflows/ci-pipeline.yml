@@ -90,7 +90,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -100,9 +100,6 @@ jobs:
         with:
           channel: stable
           cache: true
-
-      - name: Verify Flutter environment
-        run: flutter doctor -v
 
       - name: Install Flutter packages
         run: flutter pub get
@@ -125,7 +122,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -136,17 +133,25 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Scaffold Android Wrapper & Restore Config
+        run: |
+          cp android/app/src/main/AndroidManifest.xml /tmp/AndroidManifest.xml
+          cp android/app/build.gradle /tmp/app_build.gradle
+          flutter create --platforms=android --org com.plaudcompanion --project-name plaud_companion .
+          cp /tmp/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          cp /tmp/app_build.gradle android/app/build.gradle
+
       - name: Install Flutter packages
         run: flutter pub get
 
-      - name: Build Android Debug APK
-        run: flutter build apk --debug --no-tree-shake-icons
+      - name: Build Android APK
+        run: flutter build apk --release --no-tree-shake-icons || flutter build apk --debug --no-tree-shake-icons
 
       - name: Upload Android APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: plaud-companion-debug-apk
-          path: mobile/build/app/outputs/flutter-apk/app-debug.apk
+          name: plaud-companion-android-apk
+          path: mobile/build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -166,6 +171,12 @@ jobs:
         with:
           channel: stable
           cache: true
+
+      - name: Scaffold Xcode Project & Restore Info.plist
+        run: |
+          cp ios/Runner/Info.plist /tmp/Info.plist
+          flutter create --platforms=ios --org com.plaudcompanion --project-name plaud_companion .
+          cp /tmp/Info.plist ios/Runner/Info.plist
 
       - name: Install Flutter packages
         run: flutter pub get

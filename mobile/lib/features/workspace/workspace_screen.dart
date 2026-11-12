@@ -112,7 +112,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                       padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: AppColors.paleEmerald,
-                        borderRadius: BorderRadius.circular(AppBorderRadius.sm),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
                       child: const Icon(
                         Icons.bluetooth_connected,
