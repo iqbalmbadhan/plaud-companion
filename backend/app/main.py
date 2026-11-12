@@ -11,6 +11,7 @@ from app.api.v1.transcripts import router as transcripts_router
 from app.api.v1.imports import router as imports_router
 from app.api.v1.projects import router as projects_router
 from app.api.v1.ai import router as ai_router
+from app.api.v1.exports import router as exports_router
 from app.api.v1.health import router as health_router
 
 app = FastAPI(
@@ -70,6 +71,7 @@ app.include_router(transcripts_router, prefix=api_prefix)
 app.include_router(imports_router, prefix=api_prefix)
 app.include_router(projects_router, prefix=api_prefix)
 app.include_router(ai_router, prefix=api_prefix)
+app.include_router(exports_router, prefix=api_prefix)
 app.include_router(health_router, prefix=api_prefix)
 
 @app.get("/")

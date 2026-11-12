@@ -7,7 +7,7 @@ Record decisions here with date, status, context, options, decision and conseque
 - Product name: PLAUD Companion.
 - Platforms: Android and iOS, plus web administration.
 - User scope: personal and team workspaces.
-- AI providers: OpenAI and Google Gemini.
+- AI providers: OpenAI, OpenRouter, Anthropic and Google Gemini.
 - Core workflow: transcript import, organization, AI analysis, bulk DOCX generation and ZIP download.
 - Initial PLAUD path: user-authorized manual file import.
 - Proposed stack: Flutter, FastAPI, PostgreSQL/pgvector, Redis workers, private object storage, Next.js admin.
