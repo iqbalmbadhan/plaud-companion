@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PLAUD Companion — 100% Mobile App Demo (Flutter UI)</title>
+  <style>
+    :root {
+      --deep-navy: #101B33;
+      --navy-surface: #172541;
+      --emerald: #18A879;
+      --pale-emerald: #E8F7F1;
+      --bg: #F6F8FB;
+      --surface: #FFFFFF;
+      --border: #E5EAF0;
+      --text: #172033;
+      --muted: #667085;
+      --warning: #D97706;
+      --warning-bg: #FEF3C7;
+      --info: #2563EB;
+      --info-bg: #DBEAFE;
+      --error: #DC2626;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #172541 0%, #0B1222 100%);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 12px;
+    }
+
+    .stage-header {
+      width: min(410px, 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #CBD5E1;
+      font-size: 12px;
+      margin-bottom: 10px;
+      padding: 0 4px;
+    }
+    .stage-header a {
+      color: #6EE7B7;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    /* Realistic Phone Shell */
+    .phone {
+      width: min(390px, 100%);
+      height: min(820px, calc(100vh - 64px));
+      background: var(--bg);
+      border-radius: 40px;
+      border: 8px solid #1E293B;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Status Bar + AppBar */
+    .status-bar {
+      background: var(--deep-navy);
+      color: #FFFFFF;
+      padding: 10px 20px 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .notch {
+      width: 96px;
+      height: 18px;
+      background: #090F1D;
+      border-radius: 999px;
+    }
+
+    .appbar {
+      background: var(--deep-navy);
+      color: #FFFFFF;
+      padding: 10px 16px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .appbar-title { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+    .appbar-sub { font-size: 11px; color: #A9B8CA; }
+    .appbar-btn {
+      background: var(--navy-surface);
+      color: #FFFFFF;
+      border: 1px solid #2D4063;
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Scrollable Mobile Body */
+    .body-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 14px 20px;
+    }
+
+    .demo-pill-banner {
+      background: var(--pale-emerald);
+      border: 1px solid rgba(24, 168, 121, 0.35);
+      color: #0F6B4D;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 11.5px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h2.m-title { font-size: 20px; margin: 4px 0 2px; letter-spacing: -0.3px; }
+    p.m-sub { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; }
+
+    .m-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 8px rgba(16, 27, 51, 0.04);
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stat-ico {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--pale-emerald); color: var(--emerald);
+      display: grid; place-items: center; font-size: 18px; font-weight: 800;
+    }
+    .stat-num { font-size: 22px; font-weight: 800; }
+
+    .badge {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--pale-emerald);
+      color: #127B58;
+      white-space: nowrap;
+    }
+    .badge.info { background: var(--info-bg); color: var(--info); }
+    .badge.warn { background: var(--warning-bg); color: var(--warning); }
+
+    .m-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .m-btn-primary { background: var(--emerald); color: #FFFFFF; }
+    .m-btn-navy { background: var(--deep-navy); color: #FFFFFF; }
+    .m-btn-outline { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+    .m-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 1px solid var(--border);
+    }
+    .m-row:first-child { border-top: 0; padding-top: 0; }
+    .m-row:last-child { padding-bottom: 0; }
+    .m-row b { display: block; font-size: 13.5px; }
+    .m-row small { color: var(--muted); font-size: 11.5px; }
+
+    /* Filter Chips & Inputs */
+    .search-input {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font: inherit;
+      font-size: 13.5px;
+      margin-bottom: 10px;
+      outline: none;
+    }
+    .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 6px; }
+    .chip {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .chip.active { background: var(--deep-navy); color: #FFFFFF; border-color: var(--deep-navy); }
+
+    /* Chat */
+    .chat-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+    .bubble {
+      max-width: 86%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .bubble.user { align-self: flex-end; background: var(--pale-emerald); color: var(--text); }
+    .bubble.ai { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); }
+    .cite {
+      display: inline-block; margin-top: 5px; font-size: 10.5px; font-weight: 700;
+      color: var(--emerald); background: var(--pale-emerald); padding: 2px 7px; border-radius: 999px;
+    }
+    .chat-bar {
+      display: flex; gap: 8px; background: var(--surface);
+      padding: 8px 12px; border-top: 1px solid var(--border);
+    }
+    .chat-bar input {
+      flex: 1; border: 1px solid var(--border); border-radius: 10px;
+      padding: 9px 11px; font: inherit; font-size: 13px; outline: none;
+    }
+    .chat-bar button {
+      background: var(--emerald); color: #FFFFFF; border: 0;
+      border-radius: 10px; padding: 0 14px; font-weight: 700; cursor: pointer;
+    }
+
+    /* Subtabs in Exports */
+    .m-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .m-tab {
+      border: 0; background: none; padding: 11px 8px;
+      font-size: 12.5px; font-weight: 700; color: var(--muted);
+      border-bottom: 2px solid transparent; cursor: pointer;
+    }
+    .m-tab.active { color: var(--emerald); border-bottom-color: var(--emerald); }
+
+    /* Bottom Navigation Bar (5 Tabs) */
+    .bottom-nav {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 6px 4px 10px;
+    }
+    .bnav-btn {
+      border: 0; background: none;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      color: var(--muted); font-size: 10.5px; font-weight: 700;
+      padding: 4px 2px; cursor: pointer;
+    }
+    .bnav-btn .ico {
+      font-size: 16px;
+      padding: 3px 12px;
+      border-radius: 999px;
+    }
+    .bnav-btn.active { color: var(--emerald); }
+    .bnav-btn.active .ico { background: var(--pale-emerald); }
+
+    /* Screens & Overlays */
+    .screen { display: none; flex-direction: column; flex: 1; min-height: 0; }
+    .screen.active { display: flex; }
+
+    /* Onboarding Screen */
+    .auth-screen {
+      flex: 1;
+      background: linear-gradient(170deg, #101B33 0%, #172541 100%);
+      color: #FFFFFF;
+      padding: 28px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+    .auth-logo {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: var(--emerald); color: #FFFFFF;
+      display: grid; place-items: center; font-size: 30px; font-weight: 800;
+      margin: 0 auto 16px;
+    }
+
+    /* Bottom Sheet Modal */
+    .sheet-back {
+      position: absolute; inset: 0; background: rgba(16, 27, 51, 0.55);
+      display: none; align-items: flex-end; z-index: 30;
+    }
+    .sheet-back.show { display: flex; }
+    .sheet {
+      width: 100%; background: var(--surface);
+      border-radius: 20px 20px 0 0; padding: 18px 16px 24px;
+      max-height: 82%; overflow-y: auto;
+    }
+    .sheet-handle {
+      width: 40px; height: 4px; border-radius: 99px;
+      background: #CBD5E1; margin: 0 auto 14px;
+    }
+
+    .m-toast {
+      position: absolute; bottom: 76px; left: 14px; right: 14px;
+      background: var(--deep-navy); color: #FFFFFF;
+      padding: 10px 14px; border-radius: 12px;
+      font-size: 12px; font-weight: 600;
+      display: none; z-index: 40;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .m-toast.show { display: block; }
+
+    @media (max-width: 460px) {
+      body { padding: 0; background: var(--bg); }
+      .stage-header { display: none; }
+      .phone {
+        width: 100vw; height: 100vh;
+        border: 0; border-radius: 0; box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage-header">
+    <span>📱 PLAUD Companion — 100% Mobile App Demo</span>
+    <a href="index.html">Switch to Desktop / Web View →</a>
+  </div>
+
+  <div class="phone">
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="notch"></div>
+      <span>5G · 92%</span>
+    </div>
+
+    <!-- AUTH / ONBOARDING SCREEN -->
+    <div id="authView" class="auth-screen">
+      <div class="auth-logo">P</div>
+      <h1 style="margin:0 0 8px; font-size:24px;">PLAUD Companion</h1>
+      <p style="margin:0 0 24px; color:#A9B8CA; font-size:13.5px;">
+        Import PLAUD transcripts, connect AI in 1 click, and export DOCX + PDF bundles anywhere.
+      </p>
+      <div class="m-card" style="background:#172541; border-color:#2C4166; text-align:left; color:#FFFFFF; margin-bottom:18px;">
+        <div style="font-size:12px; font-weight:700; color:#6EE7B7; margin-bottom:4px;">BUILT-IN DEMO WORKSPACE</div>
+        <div style="font-size:12.5px; color:#CBD5E1;">
+          Includes 128 sample transcripts, 1-Click AI Connectors, PLAUD SDK v1.0 BLE sync, and DOCX/PDF export preview.
+        </div>
+      </div>
+      <button class="m-btn m-btn-primary" onclick="enterApp()">Sign into Demo Workspace →</button>
+    </div>
+
+    <!-- MAIN 5-TAB SHELL -->
+    <div id="appShell" style="display:none; flex-direction:column; flex:1; min-height:0;">
+      <header class="appbar">
+        <div>
+          <div class="appbar-title" id="appTitle">Dashboard</div>
+          <div class="appbar-sub" id="appSub">Product &amp; Engineering · Owner</div>
+        </div>
+        <button class="appbar-btn" onclick="openProviderSheet()">✧ AI Connectors</button>
+      </header>
+
+      <!-- TAB 1: DASHBOARD -->
+      <section id="tab-dashboard" class="screen active">
+        <div class="body-scroll">
+          <div class="demo-pill-banner">
+            <span>DEMO MODE · Offline Flutter UI Preview</span>
+            <span class="badge">v1.0</span>
+          </div>
+          <h2 class="m-title" id="dashTitle">Product &amp; Engineering Overview</h2>
+          <p class="m-sub">Role: Owner · 4 member(s)</p>
+
+          <div class="m-card stat-row">
+            <div>
+              <div class="m-sub" style="margin:0;">Total Transcripts</div>
+              <div class="stat-num" id="dashTxCount">128</div>
+              <small style="color:var(--muted);">TXT, DOCX, PDF, SRT</small>
+            </div>
+            <div class="stat-ico">▤</div>
+          </div>
+          <div class="m-card stat-row">
+            <div>
+              <div class="m-sub" style="margin:0;">Recording Time</div>
+              <div class="stat-num">46.8h</div>
+              <small style="color:var(--muted);">Across all projects</small>
+            </div>
+            <div class="stat-ico">◷</div>
+          </div>
+          <div class="m-card stat-row">
+            <div>
+              <div class="m-sub" style="margin:0;">AI Summaries</div>
+              <div class="stat-num">94</div>
+              <small style="color:var(--muted);">OpenRouter · Claude · Gemini</small>
+            </div>
+            <div class="stat-ico">✧</div>
+          </div>
+
+          <div class="m-card">
+            <div style="font-weight:700; margin-bottom:10px;">Recent Transcripts</div>
+            <div class="m-row" onclick="openTranscriptSheet('Weekly Business Meeting')">
+              <div><b>Weekly Business Meeting</b><small>42 min · 3 speakers</small></div>
+              <span class="badge">AI Ready</span>
+            </div>
+            <div class="m-row" onclick="openTranscriptSheet('Product Planning Session')">
+              <div><b>Product Planning Session</b><small>58 min · 4 speakers</small></div>
+              <span class="badge">AI Ready</span>
+            </div>
+            <div class="m-row" onclick="openTranscriptSheet('Client Discovery Call')">
+              <div><b>Client Discovery Call</b><small>31 min · PDF import</small></div>
+              <span class="badge info">Imported</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: TRANSCRIPTS -->
+      <section id="tab-transcripts" class="screen">
+        <div class="body-scroll">
+          <input id="mSearch" class="search-input" placeholder="Search transcripts..." oninput="filterMobileTx()" />
+          <div class="chips">
+            <button class="chip active" onclick="setFmt('', this)">All</button>
+            <button class="chip" onclick="setFmt('DOCX', this)">DOCX</button>
+            <button class="chip" onclick="setFmt('PDF', this)">PDF</button>
+            <button class="chip" onclick="setFmt('SRT', this)">SRT</button>
+            <button class="chip" onclick="setFmt('TXT', this)">TXT</button>
+          </div>
+          <div id="mTxList">
+            <div class="m-card" data-title="Weekly Business Meeting" data-fmt="DOCX" onclick="openTranscriptSheet('Weekly Business Meeting')">
+              <div class="m-row" style="border:0; padding:0;">
+                <div><b>Weekly Business Meeting</b><small>DOCX · 42 min · 3 speakers</small></div>
+                <span class="badge">AI Ready</span>
+              </div>
+            </div>
+            <div class="m-card" data-title="Product Planning Session" data-fmt="SRT" onclick="openTranscriptSheet('Product Planning Session')">
+              <div class="m-row" style="border:0; padding:0;">
+                <div><b>Product Planning Session</b><small>SRT · 58 min · 4 speakers</small></div>
+                <span class="badge">AI Ready</span>
+              </div>
+            </div>
+            <div class="m-card" data-title="Client Discovery Call" data-fmt="PDF" onclick="openTranscriptSheet('Client Discovery Call')">
+              <div class="m-row" style="border:0; padding:0;">
+                <div><b>Client Discovery Call</b><small>PDF · 31 min · 2 speakers</small></div>
+                <span class="badge info">Imported</span>
+              </div>
+            </div>
+            <div class="m-card" data-title="Architecture Review Notes" data-fmt="TXT" onclick="openTranscriptSheet('Architecture Review Notes')">
+              <div class="m-row" style="border:0; padding:0;">
+                <div><b>Architecture Review Notes</b><small>TXT · 24 min · 2 speakers</small></div>
+                <span class="badge">AI Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: AI ASSISTANT -->
+      <section id="tab-ai" class="screen">
+        <div class="body-scroll">
+          <div class="m-card" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <b style="font-size:13px;" id="mActiveAi">OpenRouter (1-Click OAuth)</b>
+              <small style="display:block; color:var(--muted); font-size:11px;">Server-side key vault · Grounded citations</small>
+            </div>
+            <button class="appbar-btn" style="background:var(--pale-emerald); color:#127B58; border-color:transparent;" onclick="openProviderSheet()">Switch</button>
+          </div>
+
+          <div class="chat-list" id="mChatList">
+            <div class="bubble ai">
+              Hi! Tap <b>Switch</b> anytime to connect OpenRouter, Anthropic Claude, Google Gemini, or OpenAI in 1 click.
+              <div><span class="cite">tr-101 · 00:02:15</span></div>
+            </div>
+            <div class="bubble user">Summarize key decisions from our latest meeting.</div>
+            <div class="bubble ai">
+              1) Ship DOCX + PDF ZIP exports.<br>
+              2) Enable 1-Click AI Connectors for non-technical users.<br>
+              3) Sync PLAUD NotePin recordings via SDK v1.0.
+              <div><span class="cite">tr-101 · 00:02:32</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-bar">
+          <input id="mChatInput" placeholder="Ask about your transcripts..." />
+          <button onclick="sendMobileChat()">Send</button>
+        </div>
+      </section>
+
+      <!-- TAB 4: EXPORTS -->
+      <section id="tab-exports" class="screen">
+        <div class="m-tabs">
+          <button class="m-tab active" onclick="switchMobileExportTab('cfg', this)">Bulk Export Config</button>
+          <button class="m-tab" onclick="switchMobileExportTab('hist', this)">Export Queue &amp; History</button>
+        </div>
+        <div class="body-scroll">
+          <div id="mExportCfg">
+            <div class="m-card">
+              <div style="font-weight:700; margin-bottom:8px;">Select Transcripts (2)</div>
+              <label class="m-row"><span><input type="checkbox" checked /> <b>Weekly Business Meeting</b></span><span class="badge">DOCX/PDF</span></label>
+              <label class="m-row"><span><input type="checkbox" checked /> <b>Product Planning Session</b></span><span class="badge">DOCX/PDF</span></label>
+              <label class="m-row"><span><input type="checkbox" /> <b>Client Discovery Call</b></span><span class="badge info">PDF</span></label>
+            </div>
+            <div class="m-card">
+              <div style="font-weight:700; margin-bottom:8px;">Export Format</div>
+              <select id="mExportFmt" class="search-input" style="margin-bottom:8px;">
+                <option value="DOCX + PDF (ZIP)">DOCX + PDF (ZIP Archive)</option>
+                <option value="PDF Only">PDF Only</option>
+                <option value="DOCX Only">Word (.docx) Only</option>
+              </select>
+              <label class="m-row"><span>Include AI Summary</span><input type="checkbox" checked /></label>
+              <label class="m-row"><span>Package as ZIP Archive</span><input type="checkbox" checked /></label>
+            </div>
+            <button class="m-btn m-btn-primary" onclick="triggerMobileExport()">⇩ Generate Bulk Export</button>
+          </div>
+
+          <div id="mExportHist" style="display:none;">
+            <div class="m-card">
+              <div class="m-row" style="border:0; padding:0;">
+                <div><b>weekly-meetings-bundle.zip</b><small>DOCX + PDF · Signed URL ready</small></div>
+                <span class="badge">Ready</span>
+              </div>
+            </div>
+            <div class="m-card">
+              <div class="m-row" style="border:0; padding:0;">
+                <div><b>client-discovery-call.pdf</b><small>Formatted PDF · 31 min</small></div>
+                <span class="badge">Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: WORKSPACE -->
+      <section id="tab-workspace" class="screen">
+        <div class="body-scroll">
+          <div class="m-card">
+            <div style="font-weight:700; margin-bottom:8px;">Active Workspace</div>
+            <label class="m-row"><input type="radio" name="mws" checked onchange="setMobileWs('Product & Engineering', 128)" /> <div><b>Product &amp; Engineering</b><small>Owner · 128 transcripts</small></div></label>
+            <label class="m-row"><input type="radio" name="mws" onchange="setMobileWs('Personal Workspace', 42)" /> <div><b>Personal Workspace</b><small>Owner · 42 transcripts</small></div></label>
+          </div>
+
+          <div class="m-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <b style="font-size:15px;">PLAUD Hardware &amp; SDK</b>
+              <span class="badge">SDK v1.0</span>
+            </div>
+            <div style="font-size:12.5px; color:var(--muted); margin-bottom:10px;" id="mBleText">
+              PLAUD NotePin · Battery 86% · 2 pending recordings on device
+            </div>
+            <button class="m-btn m-btn-primary" id="mSyncBtn" onclick="syncMobilePlaud()">↻ Sync Now</button>
+          </div>
+
+          <div class="m-card">
+            <div style="font-weight:700; margin-bottom:8px;">Members &amp; Roles</div>
+            <div class="m-row"><div><b>Jordan Demo</b><small>jordan@plaudcompanion.app</small></div><span class="badge">Owner</span></div>
+            <div class="m-row"><div><b>Amina Patel</b><small>amina@plaudcompanion.app</small></div><span class="badge info">Admin</span></div>
+            <div class="m-row"><div><b>Sam Reviewer</b><small>sam@plaudcompanion.app</small></div><span class="badge warn">Reviewer</span></div>
+          </div>
+
+          <button class="m-btn m-btn-outline" style="color:var(--error);" onclick="signOutApp()">Sign Out</button>
+        </div>
+      </section>
+
+      <!-- 5-TAB BOTTOM NAVIGATION -->
+      <nav class="bottom-nav" aria-label="Mobile Bottom Navigation">
+        <button class="bnav-btn active" onclick="switchTab('dashboard', 'Dashboard', this)"><span class="ico">⌂</span><span>Dashboard</span></button>
+        <button class="bnav-btn" onclick="switchTab('transcripts', 'Transcripts', this)"><span class="ico">▤</span><span>Transcripts</span></button>
+        <button class="bnav-btn" onclick="switchTab('ai', 'AI Assistant', this)"><span class="ico">✧</span><span>AI</span></button>
+        <button class="bnav-btn" onclick="switchTab('exports', 'Exports', this)"><span class="ico">⇩</span><span>Exports</span></button>
+        <button class="bnav-btn" onclick="switchTab('workspace', 'Workspace', this)"><span class="ico">⚙</span><span>Workspace</span></button>
+      </nav>
+    </div>
+
+    <!-- BOTTOM SHEET -->
+    <div id="sheetBack" class="sheet-back" onclick="if(event.target===this) closeSheet()">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div id="sheetContent"></div>
+      </div>
+    </div>
+
+    <div id="mToast" class="m-toast"></div>
+  </div>
+
+  <script>
+    let activeFmt = '';
+    let activeWsName = 'Product & Engineering';
+
+    function enterApp() {
+      document.getElementById('authView').style.display = 'none';
+      document.getElementById('appShell').style.display = 'flex';
+    }
+
+    function signOutApp() {
+      document.getElementById('appShell').style.display = 'none';
+      document.getElementById('authView').style.display = 'flex';
+    }
+
+    function switchTab(id, title, btn) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('tab-' + id).classList.add('active');
+      document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('appTitle').textContent = title;
+    }
+
+    function setFmt(fmt, el) {
+      activeFmt = fmt;
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      filterMobileTx();
+    }
+
+    function filterMobileTx() {
+      const q = document.getElementById('mSearch').value.toLowerCase();
+      document.querySelectorAll('#mTxList .m-card').forEach(card => {
+        const okQ = card.dataset.title.toLowerCase().includes(q);
+        const okF = !activeFmt || card.dataset.fmt === activeFmt;
+        card.style.display = (okQ && okF) ? 'block' : 'none';
+      });
+    }
+
+    function openProviderSheet() {
+      document.getElementById('sheetContent').innerHTML = `
+        <h3 style="margin:0 0 4px;">1-Click AI Connectors</h3>
+        <p class="m-sub">Connect without copying API keys — credentials stay on FastAPI.</p>
+        <div class="m-card">
+          <div class="m-row"><div><b>OpenRouter (OAuth PKCE)</b><small>Claude, GPT &amp; Gemini</small></div><button class="appbar-btn" style="background:var(--emerald);border:0;" onclick="pickAi('OpenRouter (1-Click OAuth)')">Connect</button></div>
+          <div class="m-row"><div><b>Anthropic Claude</b><small>Claude 3.7 Sonnet</small></div><button class="appbar-btn" onclick="pickAi('Anthropic Claude')">Connect</button></div>
+          <div class="m-row"><div><b>Google Gemini</b><small>Gemini 2.5 Flash</small></div><button class="appbar-btn" onclick="pickAi('Google Gemini')">Connect</button></div>
+          <div class="m-row"><div><b>OpenAI</b><small>Server Key Vault</small></div><button class="appbar-btn" onclick="pickAi('OpenAI')">Connect</button></div>
+        </div>
+        <button class="m-btn m-btn-navy" onclick="closeSheet()">Done</button>
+      `;
+      document.getElementById('sheetBack').classList.add('show');
+    }
+
+    function pickAi(label) {
+      document.getElementById('mActiveAi').textContent = label;
+      closeSheet();
+      showToast('Connected ' + label + ' via backend vault.');
+    }
+
+    function openTranscriptSheet(title) {
+      document.getElementById('sheetContent').innerHTML = `
+        <h3 style="margin:0 0 4px;">${title}</h3>
+        <p class="m-sub">Speaker-diarized transcript · AI Summary ready</p>
+        <div class="m-card" style="background:var(--bg);">
+          <div style="font-size:11px; font-weight:800; color:var(--emerald);">SPEAKER 1 · 00:02:15</div>
+          <div style="font-size:13px; margin-top:4px;">We need to ship the mobile UX update and DOCX/PDF bulk ZIP exports before the end of the month.</div>
+        </div>
+        <button class="m-btn m-btn-primary" style="margin-bottom:8px;" onclick="closeSheet(); showToast('Opened AI chat for ' + '${title}')">✧ Ask AI About This Transcript</button>
+        <button class="m-btn m-btn-outline" onclick="closeSheet()">Close</button>
+      `;
+      document.getElementById('sheetBack').classList.add('show');
+    }
+
+    function closeSheet() {
+      document.getElementById('sheetBack').classList.remove('show');
+    }
+
+    function sendMobileChat() {
+      const inp = document.getElementById('mChatInput');
+      const txt = inp.value.trim();
+      if (!txt) return;
+      const list = document.getElementById('mChatList');
+      const u = document.createElement('div');
+      u.className = 'bubble user';
+      u.textContent = txt;
+      const a = document.createElement('div');
+      a.className = 'bubble ai';
+      a.innerHTML = 'Grounded reply via <b>' + document.getElementById('mActiveAi').textContent + '</b>.<br><span class="cite">tr-102 · 00:04:10</span>';
+      list.appendChild(u);
+      list.appendChild(a);
+      inp.value = '';
+    }
+
+    function switchMobileExportTab(tab, el) {
+      document.querySelectorAll('.m-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('mExportCfg').style.display = tab === 'cfg' ? 'block' : 'none';
+      document.getElementById('mExportHist').style.display = tab === 'hist' ? 'block' : 'none';
+    }
+
+    function triggerMobileExport() {
+      const fmt = document.getElementById('mExportFmt').value;
+      showToast('Queued ' + fmt + ' export job.');
+    }
+
+    function setMobileWs(name, count) {
+      activeWsName = name;
+      document.getElementById('appSub').textContent = name + ' · Owner';
+      document.getElementById('dashTitle').textContent = name + ' Overview';
+      document.getElementById('dashTxCount').textContent = count;
+      showToast('Switched to ' + name);
+    }
+
+    function syncMobilePlaud() {
+      const btn = document.getElementById('mSyncBtn');
+      btn.textContent = 'Syncing...';
+      setTimeout(() => {
+        btn.textContent = 'Synced ✓';
+        document.getElementById('mBleText').textContent = 'PLAUD NotePin · Battery 86% · 0 pending recordings';
+        showToast('PLAUD SDK v1.0 synced 2 recordings.');
+      }, 650);
+    }
+
+    let tTimer;
+    function showToast(msg) {
+      const el = document.getElementById('mToast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(tTimer);
+      tTimer = setTimeout(() => el.classList.remove('show'), 2800);
+    }
+  </script>
+</body>
+</html>

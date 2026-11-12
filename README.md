@@ -35,7 +35,9 @@
   <img src="Docs/assets/ui-showcase.svg" alt="PLAUD Companion Mobile and Web UI Showcase" width="100%" />
 </p>
 
-> **Try the Interactive HTML Demo:** Open [`Idea/index.html`](Idea/index.html) in any browser to explore the current UI look & feel, 5-tab navigation, 1-Click AI Connectors, DOCX/PDF/ZIP export builder, and PLAUD Hardware & SDK panel.
+> **Try the Interactive HTML Demos:**
+> - [`Idea/index.html`](Idea/index.html) — Responsive Web & Workspace UI Demo
+> - [`Idea/mobile-demo.html`](Idea/mobile-demo.html) — **100% Mobile App HTML Demo** (phone frame, onboarding, 5-tab bottom navigation, bottom sheets)
 
 ---
 
