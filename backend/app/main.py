@@ -8,6 +8,8 @@ from app.core.config import settings
 from app.api.v1.auth import router as auth_router
 from app.api.v1.workspaces import router as workspaces_router
 from app.api.v1.transcripts import router as transcripts_router
+from app.api.v1.imports import router as imports_router
+from app.api.v1.projects import router as projects_router
 from app.api.v1.health import router as health_router
 
 app = FastAPI(
@@ -64,6 +66,8 @@ api_prefix = settings.API_V1_PREFIX
 app.include_router(auth_router, prefix=api_prefix)
 app.include_router(workspaces_router, prefix=api_prefix)
 app.include_router(transcripts_router, prefix=api_prefix)
+app.include_router(imports_router, prefix=api_prefix)
+app.include_router(projects_router, prefix=api_prefix)
 app.include_router(health_router, prefix=api_prefix)
 
 @app.get("/")
