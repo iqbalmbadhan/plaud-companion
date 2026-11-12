@@ -1,4 +1,4 @@
-name: PLAUD Companion CI/CD Pipeline
+name: PLAUD Companion Multi-Platform CI/CD Pipeline
 
 on:
   push:
@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   backend-tests:
-    name: Backend API & Authorization Tests (FastAPI)
+    name: Backend API & Service Tests (FastAPI)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,7 +40,7 @@ jobs:
           pytest -v --cov=app --cov-report=term-missing tests/
 
   web-admin:
-    name: Web Admin (Next.js 14)
+    name: Web Admin Build (Next.js 14)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -72,8 +72,15 @@ jobs:
           NEXT_PUBLIC_API_BASE_URL: "http://localhost:8000/api/v1"
           NEXT_PUBLIC_DEMO_MODE: "true"
 
+      - name: Upload Web Production Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plaud-companion-web-build
+          path: web/.next
+          retention-days: 14
+
   mobile-tests:
-    name: Mobile Tests & Lints (Flutter)
+    name: Mobile Tests & Analysis (Flutter)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -107,7 +114,7 @@ jobs:
         run: flutter test --coverage
 
   mobile-build-android:
-    name: Mobile Build (Android APK)
+    name: Build Android APK
     needs: [mobile-tests, backend-tests]
     runs-on: ubuntu-latest
     defaults:
@@ -135,10 +142,41 @@ jobs:
       - name: Build Android Debug APK
         run: flutter build apk --debug --no-tree-shake-icons
 
-      - name: Upload Android APK Build Artifact
+      - name: Upload Android APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: plaud-companion-debug-apk
           path: mobile/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
+          retention-days: 14
+
+  mobile-build-ios:
+    name: Build iOS Runner
+    needs: [mobile-tests, backend-tests]
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter packages
+        run: flutter pub get
+
+      - name: Build iOS App (No Codesign for CI)
+        run: flutter build ios --no-codesign --debug
+
+      - name: Upload iOS App Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plaud-companion-ios-build
+          path: mobile/build/ios/iphoneos/Runner.app
+          if-no-files-found: warn
           retention-days: 14

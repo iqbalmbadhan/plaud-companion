@@ -4,6 +4,11 @@ from pydantic import BaseModel, Field
 
 class ExportCreateRequest(BaseModel):
     transcript_ids: List[str] = Field(min_length=1, description="List of transcript IDs to export")
+    format: str = Field(
+        default="both",
+        pattern="^(docx|pdf|both)$",
+        description="Target document format: 'docx', 'pdf', or 'both'",
+    )
     template: str = Field(
         default="clean_transcript",
         pattern="^(clean_transcript|meeting_minutes|executive_summary|transcript_with_actions)$",
@@ -20,6 +25,7 @@ class ExportItemResponse(BaseModel):
     transcript_title: str
     status: str
     output_filename: Optional[str] = None
+    format: Optional[str] = "docx"
     error_code: Optional[str] = None
 
 class ExportJobResponse(BaseModel):
@@ -27,6 +33,7 @@ class ExportJobResponse(BaseModel):
     workspace_id: str
     status: str
     template: str
+    format: str = "both"
     total_items: int
     completed_items: int
     failed_items: int

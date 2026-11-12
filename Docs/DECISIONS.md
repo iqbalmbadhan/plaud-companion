@@ -112,3 +112,15 @@ Questions:
 - **Decision:** Option 2. Implement the unified `ConnectorRegistry` exposing `easy_connect_url` and instant verification.
 - **Consequences:** Non-technical users can click "Connect" and immediately start generating summaries and action items without technical friction.
 - **Owner:** AI Platform Team
+
+
+### DEC-003 — 1-Click AI Connectors for Non-Technical Users (OpenRouter, Anthropic, Gemini, OpenAI)
+- **Date:** 2026-11-13
+- **Status:** Accepted
+- **Context:** Non-technical users find configuring environment variables, API secret keys, and raw JSON configurations intimidating. They need a simple, intuitive way to connect AI models where clicking a provider name redirects them directly to login or connect.
+- **Options:**
+  1. Require users to edit `.env` or input raw API keys manually into settings.
+  2. Implement an `AIConnector` registry with 1-click OpenRouter OAuth/connect integration (unlocking Claude 3.5 Sonnet, GPT-4o, and Gemini in one click), direct Anthropic, Google Gemini, and OpenAI adapters with 1-click test connections and high-fidelity local fallback.
+- **Decision:** Option 2. Implement the unified `ConnectorRegistry` exposing `easy_connect_url` and instant verification.
+- **Consequences:** Non-technical users can click "Connect" and immediately start generating summaries and action items without technical friction.
+- **Owner:** AI Platform Team

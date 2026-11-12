@@ -1,0 +1,19 @@
+[Unit]
+Description=PLAUD Companion FastAPI Backend Service
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=plaud-companion
+Group=plaud-companion
+WorkingDirectory=/home/plaud-companion/htdocs/backend
+Environment="PATH=/home/plaud-companion/htdocs/backend/.venv/bin:/usr/local/bin:/usr/bin"
+EnvironmentFile=/home/plaud-companion/htdocs/backend/.env
+ExecStart=/home/plaud-companion/htdocs/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 2 --forwarded-allow-ips="*"
+
+Restart=always
+RestartSec=5s
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

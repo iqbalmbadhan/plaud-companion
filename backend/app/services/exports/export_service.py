@@ -17,6 +17,7 @@ from app.models.entities import (
 )
 from app.schemas.export import ExportCreateRequest, ExportJobResponse, ExportItemResponse
 from app.services.exports.docx_generator import generate_docx
+from app.services.exports.pdf_generator import generate_pdf
 from app.services.exports.zip_packager import create_export_zip
 from app.services.storage import get_storage
 from app.services.workspace_service import WorkspaceService
@@ -74,6 +75,7 @@ class ExportService:
                 "title": request.title,
                 "organization_name": request.organization_name,
                 "include_metadata": request.include_metadata,
+                "format": request.format,
             },
             total_items=len(transcripts),
             completed_items=0,
@@ -87,6 +89,9 @@ class ExportService:
         item_responses: List[ExportItemResponse] = []
         manifest_items = []
 
+        export_docx = request.format in ("docx", "both")
+        export_pdf = request.format in ("pdf", "both")
+
         for t in transcripts:
             seg_dicts = [
                 {
@@ -98,51 +103,95 @@ class ExportService:
             ]
 
             doc_title = request.title or t.title
-            docx_bytes = generate_docx(
-                title=doc_title,
-                content_text=t.content_text,
-                segments=seg_dicts,
-                organization_name=request.organization_name,
-                template=request.template,
-            )
+            base_slug = _slugify(t.title)
 
-            filename = f"{_slugify(t.title)}.docx"
-            docs_to_pack.append((filename, docx_bytes))
-
-            item_id = str(uuid.uuid4())
-            item = ExportJobItem(
-                id=item_id,
-                export_job_id=job.id,
-                transcript_id=t.id,
-                status="completed",
-                output_storage_key=f"exports/{job.id}/{filename}",
-            )
-            self.db.add(item)
-
-            item_responses.append(
-                ExportItemResponse(
-                    id=item_id,
-                    transcript_id=t.id,
-                    transcript_title=t.title,
-                    status="completed",
-                    output_filename=filename,
+            # Generate DOCX if requested
+            if export_docx:
+                docx_bytes = generate_docx(
+                    title=doc_title,
+                    content_text=t.content_text,
+                    segments=seg_dicts,
+                    organization_name=request.organization_name,
+                    template=request.template,
                 )
-            )
+                docx_name = f"{base_slug}.docx"
+                docs_to_pack.append((docx_name, docx_bytes))
 
-            manifest_items.append({
-                "filename": filename,
-                "transcript_id": t.id,
-                "transcript_title": t.title,
-                "status": "completed",
-            })
+                item_id = str(uuid.uuid4())
+                item = ExportJobItem(
+                    id=item_id,
+                    export_job_id=job.id,
+                    transcript_id=t.id,
+                    status="completed",
+                    output_storage_key=f"exports/{job.id}/{docx_name}",
+                )
+                self.db.add(item)
+                item_responses.append(
+                    ExportItemResponse(
+                        id=item_id,
+                        transcript_id=t.id,
+                        transcript_title=t.title,
+                        status="completed",
+                        output_filename=docx_name,
+                        format="docx",
+                    )
+                )
+                manifest_items.append({
+                    "filename": docx_name,
+                    "transcript_id": t.id,
+                    "transcript_title": t.title,
+                    "format": "docx",
+                    "status": "completed",
+                })
+
+            # Generate PDF if requested
+            if export_pdf:
+                pdf_bytes = generate_pdf(
+                    title=doc_title,
+                    content_text=t.content_text,
+                    segments=seg_dicts,
+                    organization_name=request.organization_name,
+                    template=request.template,
+                )
+                pdf_name = f"{base_slug}.pdf"
+                docs_to_pack.append((pdf_name, pdf_bytes))
+
+                item_id = str(uuid.uuid4())
+                item_p = ExportJobItem(
+                    id=item_id,
+                    export_job_id=job.id,
+                    transcript_id=t.id,
+                    status="completed",
+                    output_storage_key=f"exports/{job.id}/{pdf_name}",
+                )
+                self.db.add(item_p)
+                item_responses.append(
+                    ExportItemResponse(
+                        id=item_id,
+                        transcript_id=t.id,
+                        transcript_title=t.title,
+                        status="completed",
+                        output_filename=pdf_name,
+                        format="pdf",
+                    )
+                )
+                manifest_items.append({
+                    "filename": pdf_name,
+                    "transcript_id": t.id,
+                    "transcript_title": t.title,
+                    "format": "pdf",
+                    "status": "completed",
+                })
 
         # Assemble and package ZIP
         manifest_data = {
             "export_id": job.id,
             "workspace_id": workspace_id,
             "template": request.template,
+            "format": request.format,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "total_items": len(transcripts),
+            "files_count": len(docs_to_pack),
             "items": manifest_items,
         }
         zip_bytes = create_export_zip(docs_to_pack, manifest_data)
@@ -162,7 +211,11 @@ class ExportService:
             action="export.completed",
             resource_type="export_job",
             resource_id=job.id,
-            event_metadata={"total_items": len(transcripts), "template": request.template},
+            event_metadata={
+                "total_items": len(transcripts),
+                "format": request.format,
+                "template": request.template,
+            },
         )
         self.db.add(audit)
         await self.db.commit()
@@ -174,6 +227,7 @@ class ExportService:
             workspace_id=job.workspace_id,
             status=job.status.value,
             template=job.template,
+            format=request.format,
             total_items=job.total_items,
             completed_items=job.completed_items,
             failed_items=job.failed_items,
@@ -205,6 +259,7 @@ class ExportService:
                     transcript_id=it.transcript_id,
                     transcript_title="Transcript Document",
                     status=it.status,
+                    format="pdf" if it.output_storage_key and it.output_storage_key.endswith(".pdf") else "docx",
                 )
             )
 
@@ -217,6 +272,7 @@ class ExportService:
             workspace_id=job.workspace_id,
             status=job.status.value,
             template=job.template,
+            format=job.settings.get("format", "both") if job.settings else "both",
             total_items=job.total_items,
             completed_items=job.completed_items,
             failed_items=job.failed_items,
