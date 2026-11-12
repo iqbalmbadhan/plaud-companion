@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" width="100%" height="auto" role="img" aria-label="PLAUD Companion Mobile and Web UI Showcase">
+  <rect width="1200" height="460" rx="18" fill="#F6F8FB" stroke="#E5EAF0" stroke-width="2"/>
+
+  <text x="44" y="42" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="20" font-weight="800" fill="#172033">Current UI Look &amp; Feel — Mobile (Flutter) &amp; Web Admin (Next.js 14)</text>
+  <text x="44" y="64" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#667085">Design System: Deep Navy #101B33 · Emerald Accent #18A879 · Pale Emerald #E8F7F1 · Soft Surface #F6F8FB</text>
+
+  <!-- Phone Frame 1: Dashboard -->
+  <g transform="translate(44, 88)">
+    <rect width="230" height="340" rx="24" fill="#101B33" stroke="#243757" stroke-width="3"/>
+    <rect x="10" y="12" width="210" height="316" rx="16" fill="#F6F8FB"/>
+    <!-- AppBar -->
+    <rect x="10" y="12" width="210" height="40" rx="16" fill="#101B33"/>
+    <rect x="10" y="34" width="210" height="18" fill="#101B33"/>
+    <text x="24" y="37" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">PLAUD Companion</text>
+    <!-- Demo Pill -->
+    <rect x="20" y="62" width="190" height="24" rx="6" fill="#E8F7F1"/>
+    <text x="30" y="78" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#18A879">DEMO WORKSPACE · AI READY</text>
+    <!-- Stat Cards -->
+    <rect x="20" y="96" width="90" height="58" rx="10" fill="#FFFFFF" stroke="#E5EAF0"/>
+    <text x="30" y="114" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9" fill="#667085">Transcripts</text>
+    <text x="30" y="138" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="18" font-weight="800" fill="#172033">128</text>
+    <rect x="120" y="96" width="90" height="58" rx="10" fill="#FFFFFF" stroke="#E5EAF0"/>
+    <text x="130" y="114" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9" fill="#667085">AI Summaries</text>
+    <text x="130" y="138" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="18" font-weight="800" fill="#18A879">94</text>
+    <!-- Recent items -->
+    <rect x="20" y="166" width="190" height="48" rx="10" fill="#FFFFFF" stroke="#E5EAF0"/>
+    <text x="30" y="186" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#172033">Weekly Business Meeting</text>
+    <text x="30" y="202" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9.5" fill="#667085">42 min · DOCX / PDF / AI Ready</text>
+    <rect x="20" y="222" width="190" height="48" rx="10" fill="#FFFFFF" stroke="#E5EAF0"/>
+    <text x="30" y="242" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#172033">Product Planning Session</text>
+    <text x="30" y="258" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9.5" fill="#667085">58 min · 4 speakers · SRT</text>
+    <!-- Bottom Bar -->
+    <rect x="10" y="292" width="210" height="36" rx="12" fill="#FFFFFF" stroke="#E5EAF0"/>
+    <text x="115" y="314" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9" font-weight="700" fill="#18A879">Dashboard · Docs · AI · Exports · Workspace</text>
+  </g>
+
+  <!-- Phone Frame 2: 1-Click AI Connectors -->
+  <g transform="translate(302, 88)">
+    <rect width="230" height="340" rx="24" fill="#101B33" stroke="#243757" stroke-width="3"/>
+    <rect x="10" y="12" width="210" height="316" rx="16" fill="#F6F8FB"/>
+    <rect x="10" y="12" width="210" height="40" rx="16" fill="#101B33"/>
+    <rect x="10" y="34" width="210" height="18" fill="#101B33"/>
+    <text x="24" y="37" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#FFFFFF">1-Click AI Connectors</text>
+
+    <rect x="20" y="64" width="190" height="48" rx="10" fill="#FFFFFF" stroke="#18A879"/>
+    <text x="32" y="84" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#172033">OpenRouter</text>
+    <text x="32" y="100" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9.5" fill="#18A879">Connected via OAuth PKCE</text>
+
+    <rect x="20" y="120" width="190" height="48" rx="10" fill="#FFFFFF" stroke="#E5EAF0"/>
+    <text x="32" y="140" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#172033">Anthropic Claude</text>
+    <text x="32" y="156" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9.5" fill="#667085">1-Click Connect · Claude 3.7</text>
+
+    <rect x="20" y="176" width="190" height="48" rx="10" fill="#FFFFFF" stroke="#E5EAF0"/>
+    <text x="32" y="196" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#172033">Google Gemini</text>
+    <text x="32" y="212" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9.5" fill="#667085">1-Click Connect · Gemini 2.5</text>
+
+    <rect x="20" y="232" width="190" height="48" rx="10" fill="#FFFFFF" stroke="#E5EAF0"/>
+    <text x="32" y="252" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" font-weight="700" fill="#172033">OpenAI</text>
+    <text x="32" y="268" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9.5" fill="#667085">Server-Managed Key Vault</text>
+
+    <rect x="20" y="292" width="190" height="26" rx="8" fill="#18A879"/>
+    <text x="115" y="309" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="10.5" font-weight="700" fill="#FFFFFF">Ask Grounded AI with Citations</text>
+  </g>
+
+  <!-- Web Admin Frame -->
+  <g transform="translate(566, 88)">
+    <rect width="590" height="340" rx="16" fill="#FFFFFF" stroke="#E5EAF0" stroke-width="2"/>
+    <!-- Sidebar -->
+    <rect x="0" y="0" width="150" height="340" rx="16" fill="#101B33"/>
+    <rect x="134" y="0" width="16" height="340" fill="#101B33"/>
+    <circle cx="26" cy="30" r="7" fill="#18A879"/>
+    <text x="40" y="34" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="800" fill="#FFFFFF">PLAUD Admin</text>
+
+    <rect x="14" y="60" width="122" height="30" rx="8" fill="#172541"/>
+    <text x="26" y="79" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF">Overview &amp; Usage</text>
+    <text x="26" y="112" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" fill="#A9B8CA">AI Providers</text>
+    <text x="26" y="142" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" fill="#A9B8CA">Background Jobs</text>
+    <text x="26" y="172" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" fill="#A9B8CA">Retention &amp; Security</text>
+
+    <!-- Main Admin Area -->
+    <text x="174" y="36" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="16" font-weight="800" fill="#172033">Workspace Administration</text>
+    <rect x="424" y="18" width="146" height="24" rx="12" fill="#E8F7F1"/>
+    <text x="497" y="34" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="10" font-weight="700" fill="#18A879">Product &amp; Engineering</text>
+
+    <!-- 3 Metric Cards -->
+    <rect x="174" y="58" width="124" height="72" rx="10" fill="#F6F8FB" stroke="#E5EAF0"/>
+    <text x="186" y="78" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="10" fill="#667085">Active Workspaces</text>
+    <text x="186" y="108" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="800" fill="#172033">18</text>
+
+    <rect x="308" y="58" width="124" height="72" rx="10" fill="#F6F8FB" stroke="#E5EAF0"/>
+    <text x="320" y="78" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="10" fill="#667085">Exports (DOCX/PDF)</text>
+    <text x="320" y="108" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="800" fill="#18A879">312</text>
+
+    <rect x="442" y="58" width="128" height="72" rx="10" fill="#F6F8FB" stroke="#E5EAF0"/>
+    <text x="454" y="78" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="10" fill="#667085">CI/CD Pipeline</text>
+    <text x="454" y="108" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="800" fill="#172033">5 / 5 ✓</text>
+
+    <!-- Jobs Table -->
+    <rect x="174" y="146" width="396" height="170" rx="10" fill="#FFFFFF" stroke="#E5EAF0"/>
+    <text x="190" y="170" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" font-weight="700" fill="#172033">Recent Background Jobs &amp; Bulk Exports</text>
+    <line x1="174" y1="184" x2="570" y2="184" stroke="#E5EAF0"/>
+    <text x="190" y="208" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="600" fill="#172033">job-export-zip</text>
+    <text x="310" y="208" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" fill="#667085">DOCX + PDF Bundle</text>
+    <rect x="480" y="195" width="72" height="20" rx="10" fill="#E8F7F1"/>
+    <text x="516" y="209" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#18A879">COMPLETED</text>
+
+    <line x1="174" y1="226" x2="570" y2="226" stroke="#E5EAF0"/>
+    <text x="190" y="250" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="600" fill="#172033">job-embed-pgvec</text>
+    <text x="310" y="250" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" fill="#667085">pgvector Indexing</text>
+    <rect x="480" y="237" width="72" height="20" rx="10" fill="#E8F7F1"/>
+    <text x="516" y="251" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#18A879">COMPLETED</text>
+
+    <line x1="174" y1="268" x2="570" y2="268" stroke="#E5EAF0"/>
+    <text x="190" y="292" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="600" fill="#172033">job-plaud-sync</text>
+    <text x="310" y="292" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" fill="#667085">PLAUD SDK v1.0</text>
+    <rect x="480" y="279" width="72" height="20" rx="10" fill="#DBEAFE"/>
+    <text x="516" y="293" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#2563EB">READY</text>
+  </g>
+</svg>

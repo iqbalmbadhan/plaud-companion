@@ -1,1 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PLAUD Companion — Current UI Interactive Demo</title>
+  <style>
+    :root {
+      --deep-navy: #101B33;
+      --navy-surface: #172541;
+      --emerald: #18A879;
+      --pale-emerald: #E8F7F1;
+      --bg: #F6F8FB;
+      --surface: #FFFFFF;
+      --border: #E5EAF0;
+      --text: #172033;
+      --muted: #667085;
+      --warning: #D97706;
+      --warning-bg: #FEF3C7;
+      --info: #2563EB;
+      --info-bg: #DBEAFE;
+      --shadow: 0 8px 24px rgba(16, 27, 51, 0.06);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
 
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; border: 0; background: none; }
+
+    .app { min-height: 100vh; display: grid; grid-template-columns: 256px 1fr; }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--deep-navy);
+      color: #FFFFFF;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px; }
+    .brand-mark {
+      width: 38px; height: 38px; border-radius: 12px;
+      background: var(--emerald); color: #FFFFFF;
+      display: grid; place-items: center; font-weight: 800; font-size: 18px;
+    }
+    .brand strong { display: block; font-size: 16px; letter-spacing: -0.2px; }
+    .brand small { display: block; font-size: 10px; color: #A9B8CA; text-transform: uppercase; letter-spacing: 1.2px; }
+
+    .nav-label {
+      color: #8193A9; font-size: 10px; font-weight: 800;
+      letter-spacing: 1.4px; padding: 0 12px; margin-bottom: 6px;
+    }
+    .nav { display: grid; gap: 4px; }
+    .nav button {
+      color: #CBD5E1; text-align: left; padding: 11px 12px;
+      border-radius: 10px; display: flex; align-items: center; gap: 11px;
+      font-weight: 600; transition: background 0.15s, color 0.15s;
+    }
+    .nav button:hover, .nav button.active {
+      background: var(--navy-surface); color: #FFFFFF;
+    }
+    .nav button.active { box-shadow: inset 3px 0 0 var(--emerald); }
+    .nav-ico { width: 20px; text-align: center; font-size: 15px; }
+
+    .side-card {
+      margin-top: auto;
+      background: var(--navy-surface);
+      border: 1px solid #2A3D61;
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+    .side-card b { display: block; font-size: 12px; margin-bottom: 4px; }
+    .side-card p { margin: 0 0 10px; font-size: 11px; color: #A9B8CA; }
+    .side-card button {
+      width: 100%; background: var(--emerald); color: #FFFFFF;
+      border-radius: var(--radius-sm); padding: 8px 10px;
+      font-size: 11.5px; font-weight: 700;
+    }
+
+    /* Topbar & Main */
+    .main { min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      height: 68px; background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; position: sticky; top: 0; z-index: 10;
+    }
+    .crumb { font-size: 13px; color: var(--muted); }
+    .crumb b { color: var(--text); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .ws-select {
+      padding: 7px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); background: var(--bg);
+      color: var(--text); font-weight: 600; font-size: 12px;
+    }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--pale-emerald); color: var(--emerald);
+      display: grid; place-items: center; font-weight: 800; font-size: 12px;
+    }
+
+    .content { max-width: 1240px; width: 100%; margin: 0 auto; padding: 24px 28px 64px; }
+
+    /* Demo Banner */
+    .demo-banner {
+      background: var(--pale-emerald);
+      border: 1px solid rgba(24, 168, 121, 0.3);
+      color: #0F6B4D;
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .page-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .eyebrow {
+      color: var(--emerald); font-size: 11px; font-weight: 800;
+      letter-spacing: 1.2px; text-transform: uppercase;
+    }
+    .page-head h1 { margin: 4px 0; font-size: 24px; letter-spacing: -0.4px; }
+    .page-head p { margin: 0; color: var(--muted); font-size: 13px; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .btn {
+      border-radius: var(--radius-sm); padding: 9px 14px;
+      font-weight: 700; font-size: 12.5px;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-primary { background: var(--emerald); color: #FFFFFF; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-navy { background: var(--deep-navy); color: #FFFFFF; }
+
+    /* Cards & Grids */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 18px; box-shadow: var(--shadow);
+    }
+    .stat-top { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; font-weight: 600; }
+    .stat-ico {
+      width: 32px; height: 32px; border-radius: var(--radius-sm);
+      background: var(--pale-emerald); color: var(--emerald);
+      display: grid; place-items: center; font-size: 15px;
+    }
+    .stat-val { font-size: 26px; font-weight: 800; margin: 10px 0 2px; letter-spacing: -0.5px; }
+    .muted { color: var(--muted); font-size: 12px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; }
+    .grid-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .panel-head h3 { margin: 0; font-size: 15px; }
+
+    .pill {
+      display: inline-block; font-size: 10.5px; font-weight: 700;
+      padding: 4px 9px; border-radius: 999px;
+      background: var(--pale-emerald); color: #127B58; white-space: nowrap;
+    }
+    .pill.info { background: var(--info-bg); color: var(--info); }
+    .pill.warn { background: var(--warning-bg); color: var(--warning); }
+
+    .list-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 0; border-top: 1px solid var(--border);
+    }
+    .list-row:first-of-type { border-top: 0; }
+    .list-row b { display: block; font-size: 13.5px; }
+    .list-row small { color: var(--muted); font-size: 12px; }
+
+    .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .quick-btn {
+      text-align: left; padding: 14px; border: 1px solid var(--border);
+      border-radius: var(--radius-md); background: var(--bg);
+    }
+    .quick-btn:hover { border-color: var(--emerald); background: #FFFFFF; }
+    .quick-btn b { display: block; font-size: 13px; margin-top: 6px; }
+    .quick-btn small { color: var(--muted); font-size: 11.5px; }
+
+    /* Views */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Transcripts Table */
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .search-box { flex: 1; min-width: 200px; }
+    .search-box input {
+      width: 100%; padding: 9px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); background: var(--surface); outline: none;
+    }
+    .table-wrap {
+      overflow-x: auto; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow);
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 620px; }
+    th {
+      text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+      color: var(--muted); background: #F9FBFD; padding: 12px 14px;
+    }
+    td { padding: 12px 14px; border-top: 1px solid var(--border); font-size: 13px; }
+
+    /* AI Chat & 1-Click Connectors */
+    .connector-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      margin-bottom: 10px; background: var(--bg);
+    }
+    .connector-row.connected { border-color: var(--emerald); background: #FFFFFF; }
+    .chat-box { display: flex; flex-direction: column; min-height: 360px; }
+    .messages { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 12px 0; }
+    .msg { max-width: 82%; padding: 11px 14px; border-radius: 12px; font-size: 13px; }
+    .msg.user { align-self: flex-end; background: var(--pale-emerald); }
+    .msg.ai { align-self: flex-start; background: var(--bg); border: 1px solid var(--border); }
+    .citation {
+      display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 700;
+      color: var(--emerald); background: var(--pale-emerald); padding: 2px 8px; border-radius: 999px;
+    }
+    .chat-input { display: flex; gap: 8px; margin-top: 10px; }
+    .chat-input input {
+      flex: 1; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm); outline: none;
+    }
+
+    /* Tabs inside Exports */
+    .subtabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .subtab {
+      padding: 9px 14px; font-weight: 700; font-size: 13px; color: var(--muted);
+      border-bottom: 2px solid transparent;
+    }
+    .subtab.active { color: var(--emerald); border-bottom-color: var(--emerald); }
+
+    /* Modal & Toast */
+    .modal-back {
+      position: fixed; inset: 0; background: rgba(16, 27, 51, 0.55);
+      display: none; align-items: center; justify-content: center; padding: 18px; z-index: 30;
+    }
+    .modal-back.show { display: flex; }
+    .modal {
+      width: min(460px, 100%); background: var(--surface); border-radius: var(--radius-lg);
+      padding: 22px; box-shadow: 0 24px 60px rgba(16, 27, 51, 0.25);
+    }
+    .modal h3 { margin: 0 0 8px; }
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; background: var(--deep-navy); color: #FFFFFF;
+      padding: 12px 16px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 600;
+      display: none; z-index: 40; box-shadow: var(--shadow);
+    }
+    .toast.show { display: block; }
+
+    /* Responsive Mobile 5-Tab Bottom Bar */
+    @media (max-width: 900px) {
+      .app { display: block; }
+      .sidebar {
+        position: fixed; bottom: 0; left: 0; right: 0; top: auto;
+        height: 64px; padding: 6px 8px; flex-direction: row; z-index: 20;
+      }
+      .brand, .nav-label, .side-card, .nav-admin-group { display: none; }
+      .nav { display: flex; width: 100%; justify-content: space-around; }
+      .nav button { flex-direction: column; gap: 2px; padding: 6px 8px; font-size: 10.5px; }
+      .nav button.active { box-shadow: none; color: var(--emerald); background: transparent; }
+      .content { padding: 18px 16px 86px; }
+      .stats, .grid-2, .grid-equal { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">P</div>
+        <div>
+          <strong>PLAUD Companion</strong>
+          <small>v1.0 Workspace</small>
+        </div>
+      </div>
+
+      <div>
+        <div class="nav-label">MOBILE &amp; WORKSPACE</div>
+        <nav class="nav" aria-label="Primary Navigation">
+          <button class="active" data-view="dashboard"><span class="nav-ico">⌂</span><span>Dashboard</span></button>
+          <button data-view="transcripts"><span class="nav-ico">▤</span><span>Transcripts</span></button>
+          <button data-view="ai"><span class="nav-ico">✧</span><span>AI Assistant</span></button>
+          <button data-view="exports"><span class="nav-ico">⇩</span><span>Exports</span></button>
+          <button data-view="workspace"><span class="nav-ico">⚙</span><span>Workspace</span></button>
+        </nav>
+      </div>
+
+      <div class="nav-admin-group">
+        <div class="nav-label">WEB ADMIN (NEXT.JS)</div>
+        <nav class="nav">
+          <button data-view="admin"><span class="nav-ico">▣</span><span>Admin Console</span></button>
+        </nav>
+      </div>
+
+      <div class="side-card">
+        <b>1-Click AI Connectors</b>
+        <p>Connect OpenRouter, Claude, Gemini, or OpenAI without copying raw API keys.</p>
+        <button onclick="navigate('ai')">Open AI Connectors →</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="crumb">PLAUD Companion / <b id="crumb">Dashboard</b></div>
+        <div class="topbar-right">
+          <select id="workspaceSelect" class="ws-select" onchange="switchWorkspace()">
+            <option value="Product &amp; Engineering">Product &amp; Engineering (Owner)</option>
+            <option value="Personal Workspace">Personal Workspace (Owner)</option>
+          </select>
+          <div class="avatar">JD</div>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="demo-banner">
+          <span>DEMO WORKSPACE · Matches current Flutter (#101B33 / #18A879) &amp; Next.js 14 UI</span>
+          <span class="pill">Offline Interactive Preview</span>
+        </div>
+
+        <!-- 1. DASHBOARD -->
+        <section id="dashboard" class="view active">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow">WORKSPACE OVERVIEW</div>
+              <h1 id="wsHeading">Product &amp; Engineering Overview</h1>
+              <p>Role: Owner · 4 member(s) · TXT, DOCX, PDF &amp; SRT ready</p>
+            </div>
+            <div class="actions">
+              <button class="btn btn-secondary" onclick="navigate('transcripts')">＋ Import Transcript</button>
+              <button class="btn btn-primary" onclick="navigate('ai')">✧ Ask AI</button>
+            </div>
+          </div>
+
+          <div class="stats">
+            <div class="card">
+              <div class="stat-top"><span>Total Transcripts</span><span class="stat-ico">▤</span></div>
+              <div class="stat-val" id="statCount">128</div>
+              <div class="muted">TXT, DOCX, PDF, SRT</div>
+            </div>
+            <div class="card">
+              <div class="stat-top"><span>Recording Time</span><span class="stat-ico">◷</span></div>
+              <div class="stat-val">46.8h</div>
+              <div class="muted">Across all projects</div>
+            </div>
+            <div class="card">
+              <div class="stat-top"><span>AI Summaries</span><span class="stat-ico">✧</span></div>
+              <div class="stat-val">94</div>
+              <div class="muted">OpenRouter · Claude · Gemini · OpenAI</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="panel-head">
+                <h3>Recent Transcripts</h3>
+                <button class="btn btn-secondary" onclick="navigate('transcripts')">View all →</button>
+              </div>
+              <div class="list-row">
+                <div><b>Weekly Business Meeting</b><small>42 min · 3 speakers · DOCX / PDF Ready</small></div>
+                <span class="pill">AI Ready</span>
+              </div>
+              <div class="list-row">
+                <div><b>Product Planning Session</b><small>58 min · 4 speakers · SRT</small></div>
+                <span class="pill">AI Ready</span>
+              </div>
+              <div class="list-row">
+                <div><b>Client Discovery Call</b><small>31 min · 2 speakers · PDF</small></div>
+                <span class="pill info">Imported</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head"><h3>Quick Actions</h3><span class="muted">One-tap workflows</span></div>
+              <div class="quick-grid">
+                <button class="quick-btn" onclick="navigate('ai')">
+                  <span>✧</span><b>1-Click AI</b><small>OpenRouter / Claude / Gemini</small>
+                </button>
+                <button class="quick-btn" onclick="navigate('exports')">
+                  <span>⇩</span><b>DOCX + PDF ZIP</b><small>Generate bulk exports</small>
+                </button>
+                <button class="quick-btn" onclick="navigate('workspace')">
+                  <span>⌘</span><b>PLAUD SDK v1.0</b><small>Sync BLE device audio</small>
+                </button>
+                <button class="quick-btn" onclick="navigate('admin')">
+                  <span>▣</span><b>Web Admin</b><small>Next.js 14 telemetry</small>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. TRANSCRIPTS -->
+        <section id="transcripts" class="view">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow">LIBRARY &amp; IMPORTS</div>
+              <h1>Transcripts</h1>
+              <p>Parse TXT, DOCX, PDF (PyMuPDF), and SRT files with workspace isolation.</p>
+            </div>
+            <div class="actions">
+              <button class="btn btn-primary" onclick="toast('Demo: Upload TXT, DOCX, PDF, or SRT to /api/v1/imports')">＋ Upload File</button>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <div class="search-box">
+              <input id="searchInput" placeholder="Search transcripts..." oninput="filterTable()" />
+            </div>
+            <select id="formatFilter" class="ws-select" onchange="filterTable()">
+              <option value="">All formats</option>
+              <option value="DOCX">DOCX</option>
+              <option value="PDF">PDF</option>
+              <option value="SRT">SRT</option>
+              <option value="TXT">TXT</option>
+            </select>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Title</th><th>Format</th><th>Duration</th><th>Status</th><th>Action</th></tr>
+              </thead>
+              <tbody id="txBody">
+                <tr data-title="Weekly Business Meeting" data-fmt="DOCX">
+                  <td><b>Weekly Business Meeting</b><br><span class="muted">3 speakers · Business Meetings</span></td>
+                  <td>DOCX</td><td>42 min</td><td><span class="pill">AI Ready</span></td>
+                  <td><button class="btn btn-secondary" onclick="openTxModal('Weekly Business Meeting')">Inspect</button></td>
+                </tr>
+                <tr data-title="Product Planning Session" data-fmt="SRT">
+                  <td><b>Product Planning Session</b><br><span class="muted">4 speakers · Product Research</span></td>
+                  <td>SRT</td><td>58 min</td><td><span class="pill">AI Ready</span></td>
+                  <td><button class="btn btn-secondary" onclick="openTxModal('Product Planning Session')">Inspect</button></td>
+                </tr>
+                <tr data-title="Client Discovery Call" data-fmt="PDF">
+                  <td><b>Client Discovery Call</b><br><span class="muted">2 speakers · Client Discussions</span></td>
+                  <td>PDF</td><td>31 min</td><td><span class="pill info">Imported</span></td>
+                  <td><button class="btn btn-secondary" onclick="openTxModal('Client Discovery Call')">Inspect</button></td>
+                </tr>
+                <tr data-title="Architecture Review Notes" data-fmt="TXT">
+                  <td><b>Architecture Review Notes</b><br><span class="muted">2 speakers · Engineering</span></td>
+                  <td>TXT</td><td>24 min</td><td><span class="pill">AI Ready</span></td>
+                  <td><button class="btn btn-secondary" onclick="openTxModal('Architecture Review Notes')">Inspect</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3. AI ASSISTANT & 1-CLICK CONNECTORS -->
+        <section id="ai" class="view">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow">1-CLICK AI CONNECTORS</div>
+              <h1>AI Assistant</h1>
+              <p>Click any provider to connect via OAuth/backend vault — zero client-side secrets.</p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card chat-box">
+              <div class="panel-head">
+                <h3>Grounded Workspace Chat</h3>
+                <span class="pill" id="activeProviderPill">Active: OpenRouter</span>
+              </div>
+              <div class="messages" id="chatMessages">
+                <div class="msg ai">
+                  Ask me anything across your workspace transcripts. Answers include segment citations.
+                  <div><span class="citation">tr-101 · 00:02:15</span></div>
+                </div>
+                <div class="msg user">What are the action items from the Weekly Business Meeting?</div>
+                <div class="msg ai">
+                  1) Finalize mobile UX navigation before month-end.<br>
+                  2) Ship DOCX + PDF bulk ZIP exports.<br>
+                  3) Enable 1-Click OpenRouter &amp; Anthropic connectors.
+                  <div><span class="citation">tr-101 · 00:02:32</span></div>
+                </div>
+              </div>
+              <div class="chat-input">
+                <input id="chatInput" placeholder="Ask a question about your transcripts..." />
+                <button class="btn btn-primary" onclick="sendChat()">Send</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head">
+                <h3>1-Click AI Connectors</h3>
+                <span class="muted">Server-managed</span>
+              </div>
+              <div class="connector-row connected" id="conn-openrouter">
+                <div><b>OpenRouter (OAuth PKCE)</b><br><small class="muted">Access Claude, GPT &amp; Gemini with 1 click</small></div>
+                <button class="btn btn-primary" onclick="connectProvider('OpenRouter')">Connected ✓</button>
+              </div>
+              <div class="connector-row" id="conn-anthropic">
+                <div><b>Anthropic Claude</b><br><small class="muted">Claude 3.7 Sonnet · Direct connector</small></div>
+                <button class="btn btn-secondary" onclick="connectProvider('Anthropic Claude')">1-Click Connect</button>
+              </div>
+              <div class="connector-row" id="conn-gemini">
+                <div><b>Google Gemini</b><br><small class="muted">Gemini 2.5 Flash / Pro</small></div>
+                <button class="btn btn-secondary" onclick="connectProvider('Google Gemini')">1-Click Connect</button>
+              </div>
+              <div class="connector-row" id="conn-openai">
+                <div><b>OpenAI</b><br><small class="muted">GPT-4o · Server key vault</small></div>
+                <button class="btn btn-secondary" onclick="connectProvider('OpenAI')">1-Click Connect</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. EXPORTS (DOCX + PDF + ZIP) -->
+        <section id="exports" class="view">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow">DOCUMENT ENGINE</div>
+              <h1>Exports (DOCX, PDF &amp; ZIP)</h1>
+              <p>Generate formatted Word (.docx) and PDF documents packaged in a validated ZIP archive.</p>
+            </div>
+          </div>
+
+          <div class="subtabs">
+            <button class="subtab active" onclick="switchExportTab('config', this)">Bulk Export Config</button>
+            <button class="subtab" onclick="switchExportTab('history', this)">Export Queue &amp; History</button>
+          </div>
+
+          <div id="export-config" class="grid-equal">
+            <div class="card">
+              <div class="panel-head"><h3>Select Transcripts (2)</h3></div>
+              <label class="list-row"><span><input type="checkbox" checked /> <b>Weekly Business Meeting</b></span><span class="pill">DOCX / PDF</span></label>
+              <label class="list-row"><span><input type="checkbox" checked /> <b>Product Planning Session</b></span><span class="pill">DOCX / PDF</span></label>
+              <label class="list-row"><span><input type="checkbox" /> <b>Client Discovery Call</b></span><span class="pill info">Imported</span></label>
+            </div>
+            <div class="card">
+              <div class="panel-head"><h3>Export Format &amp; Packaging</h3></div>
+              <div class="list-row">
+                <span>Export Format</span>
+                <select id="exportFormat" class="ws-select">
+                  <option value="DOCX + PDF (ZIP)">DOCX + PDF (ZIP Bundle)</option>
+                  <option value="PDF Only">PDF Only (.pdf / .zip)</option>
+                  <option value="DOCX Only">Word Only (.docx / .zip)</option>
+                </select>
+              </div>
+              <div class="list-row"><span>Include AI Summary &amp; Action Items</span><input type="checkbox" checked /></div>
+              <div class="list-row"><span>Package as Validated ZIP Archive</span><input type="checkbox" checked /></div>
+              <div style="margin-top:16px">
+                <button class="btn btn-primary" style="width:100%; justify-content:center" onclick="runExport()">⇩ Generate Export Package</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="export-history" class="card" style="display:none">
+            <div class="panel-head"><h3>Recent Export Jobs</h3></div>
+            <div class="list-row">
+              <div><b>weekly-meetings-bundle.zip</b><small>2 DOCX + 2 PDF files · Signed URL ready</small></div>
+              <span class="pill">Completed</span>
+            </div>
+            <div class="list-row">
+              <div><b>client-discovery-call.pdf</b><small>Formatted PDF · 31 min transcript</small></div>
+              <span class="pill">Completed</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. WORKSPACE & PLAUD HARDWARE SDK -->
+        <section id="workspace" class="view">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow">HARDWARE &amp; TEAM</div>
+              <h1>Workspace &amp; PLAUD SDK</h1>
+              <p>Manage connected PLAUD Note / NotePin hardware, projects, and member roles.</p>
+            </div>
+          </div>
+
+          <div class="grid-equal">
+            <div class="card">
+              <div class="panel-head">
+                <h3>PLAUD Hardware &amp; SDK</h3>
+                <span class="pill">SDK v1.0</span>
+              </div>
+              <div class="list-row">
+                <div>
+                  <b>PLAUD NotePin (BLE Connected)</b>
+                  <small id="bleStatus">Battery: 86% · Firmware v2.4.1 · 2 pending recordings</small>
+                </div>
+                <button class="btn btn-primary" id="syncBtn" onclick="syncPlaud()">↻ Sync Now</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="panel-head"><h3>Members &amp; Roles</h3><span class="pill">RBAC Enforced</span></div>
+              <div class="list-row"><div><b>Jordan Demo</b><small>jordan@plaudcompanion.app</small></div><span class="pill">Owner</span></div>
+              <div class="list-row"><div><b>Amina Patel</b><small>amina@plaudcompanion.app</small></div><span class="pill info">Admin</span></div>
+              <div class="list-row"><div><b>Sam Reviewer</b><small>sam@plaudcompanion.app</small></div><span class="pill warn">Reviewer</span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. WEB ADMIN (NEXT.JS 14) -->
+        <section id="admin" class="view">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow">NEXT.JS 14 WEB ADMIN</div>
+              <h1>Administration &amp; Telemetry</h1>
+              <p>Production server telemetry, background jobs, and Ubuntu 24.6 CloudPanel status.</p>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="card"><div class="stat-top"><span>Active Workspaces</span></div><div class="stat-val">18</div><div class="muted">Isolated via PostgreSQL</div></div>
+            <div class="card"><div class="stat-top"><span>Exports Generated</span></div><div class="stat-val">312</div><div class="muted">DOCX + PDF + ZIP</div></div>
+            <div class="card"><div class="stat-top"><span>CI/CD Pipeline</span></div><div class="stat-val">5 / 5 ✓</div><div class="muted">APK · iOS · Web · API</div></div>
+          </div>
+          <div class="card">
+            <div class="panel-head"><h3>Background Jobs</h3><span class="pill">CloudPanel Ready</span></div>
+            <div class="list-row"><div><b>job-export-zip</b><small>Product &amp; Engineering · DOCX + PDF Bundle</small></div><span class="pill">COMPLETED</span></div>
+            <div class="list-row"><div><b>job-embed-pgvector</b><small>Product &amp; Engineering · Semantic index</small></div><span class="pill">COMPLETED</span></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div id="modalBack" class="modal-back" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+      <h3 id="modalTitle">Transcript Preview</h3>
+      <p id="modalBody" class="muted"></p>
+      <div style="text-align:right; margin-top:16px">
+        <button class="btn btn-navy" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const labels = {
+      dashboard: 'Dashboard',
+      transcripts: 'Transcripts',
+      ai: 'AI Assistant',
+      exports: 'Exports',
+      workspace: 'Workspace',
+      admin: 'Web Admin Console'
+    };
+
+    function navigate(viewId) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      document.querySelectorAll('.nav button').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === viewId);
+      });
+      document.getElementById('crumb').textContent = labels[viewId] || viewId;
+    }
+
+    document.querySelectorAll('.nav button[data-view]').forEach(btn => {
+      btn.addEventListener('click', () => navigate(btn.dataset.view));
+    });
+
+    function switchWorkspace() {
+      const val = document.getElementById('workspaceSelect').value;
+      const name = val.split(' (')[0];
+      document.getElementById('wsHeading').textContent = name + ' Overview';
+      document.getElementById('statCount').textContent = name.includes('Personal') ? '42' : '128';
+      toast('Switched workspace to ' + name);
+    }
+
+    function filterTable() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const fmt = document.getElementById('formatFilter').value;
+      document.querySelectorAll('#txBody tr').forEach(row => {
+        const matchQ = row.dataset.title.toLowerCase().includes(q);
+        const matchFmt = !fmt || row.dataset.fmt === fmt;
+        row.style.display = (matchQ && matchFmt) ? '' : 'none';
+      });
+    }
+
+    function connectProvider(name) {
+      document.getElementById('activeProviderPill').textContent = 'Active: ' + name;
+      toast('1-Click Redirect → ' + name + ' connected securely on FastAPI backend.');
+    }
+
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      const box = document.getElementById('chatMessages');
+      const u = document.createElement('div');
+      u.className = 'msg user';
+      u.textContent = text;
+      const a = document.createElement('div');
+      a.className = 'msg ai';
+      a.innerHTML = 'Grounded demo answer from ' + document.getElementById('activeProviderPill').textContent + ': Verified workspace isolation &amp; citation retrieval.<br><span class="citation">tr-102 · 00:04:10</span>';
+      box.appendChild(u);
+      box.appendChild(a);
+      input.value = '';
+    }
+
+    function switchExportTab(tab, el) {
+      document.querySelectorAll('.subtab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('export-config').style.display = tab === 'config' ? 'grid' : 'none';
+      document.getElementById('export-history').style.display = tab === 'history' ? 'block' : 'none';
+    }
+
+    function runExport() {
+      const fmt = document.getElementById('exportFormat').value;
+      toast('Generated ' + fmt + ' package via backend export engine.');
+    }
+
+    function syncPlaud() {
+      const btn = document.getElementById('syncBtn');
+      btn.textContent = 'Syncing...';
+      setTimeout(() => {
+        btn.textContent = 'Synced ✓';
+        document.getElementById('bleStatus').textContent = 'Battery: 86% · Firmware v2.4.1 · 0 pending recordings';
+        toast('PLAUD SDK v1.0 synced 2 recordings into active workspace.');
+      }, 650);
+    }
+
+    function openTxModal(title) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalBody').textContent = 'Speaker-diarized transcript preview with timestamps, AI summary, and DOCX/PDF export support.';
+      document.getElementById('modalBack').classList.add('show');
+    }
+
+    function closeModal() {
+      document.getElementById('modalBack').classList.remove('show');
+    }
+
+    let toastTimer;
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="100%" height="auto" role="img" aria-label="PLAUD Companion System Architecture">
+  <rect width="1200" height="420" rx="18" fill="#F6F8FB" stroke="#E5EAF0" stroke-width="2"/>
+
+  <!-- Header -->
+  <text x="44" y="44" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="20" font-weight="800" fill="#172033">System Architecture &amp; Security Boundaries</text>
+  <text x="44" y="68" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" fill="#667085">Zero client secrets · Workspace-isolated retrieval · Backend-managed AI connectors &amp; document exports</text>
+
+  <!-- Column 1: Clients -->
+  <rect x="44" y="96" width="280" height="284" rx="14" fill="#FFFFFF" stroke="#E5EAF0" stroke-width="1.5"/>
+  <rect x="44" y="96" width="280" height="40" rx="14" fill="#101B33"/>
+  <rect x="44" y="122" width="280" height="14" fill="#101B33"/>
+  <text x="64" y="121" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">1. CLIENT APPS (NO SECRETS)</text>
+
+  <rect x="64" y="152" width="240" height="62" rx="10" fill="#E8F7F1" stroke="#18A879" stroke-opacity="0.4"/>
+  <text x="78" y="177" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#172033">Flutter Mobile (Android / iOS)</text>
+  <text x="78" y="198" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#667085">5-Tab UI · PLAUD BLE SDK · Exports</text>
+
+  <rect x="64" y="226" width="240" height="62" rx="10" fill="#F6F8FB" stroke="#E5EAF0"/>
+  <text x="78" y="251" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#172033">Next.js 14 Web Admin</text>
+  <text x="78" y="272" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#667085">Telemetry · AI Keys · Job Queue</text>
+
+  <rect x="64" y="300" width="240" height="62" rx="10" fill="#F6F8FB" stroke="#E5EAF0"/>
+  <text x="78" y="325" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#172033">Interactive HTML Demo</text>
+  <text x="78" y="346" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#667085">Idea/index.html · Offline Showcase</text>
+
+  <!-- Arrows 1 -> 2 -->
+  <g stroke="#18A879" stroke-width="2.5" fill="none">
+    <line x1="324" y1="238" x2="394" y2="238"/>
+    <polygon points="394,232 406,238 394,244" fill="#18A879"/>
+  </g>
+  <text x="364" y="226" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#18A879">HTTPS / JWT</text>
+
+  <!-- Column 2: FastAPI Backend -->
+  <rect x="408" y="96" width="420" height="284" rx="14" fill="#FFFFFF" stroke="#E5EAF0" stroke-width="1.5"/>
+  <rect x="408" y="96" width="420" height="40" rx="14" fill="#172541"/>
+  <rect x="408" y="122" width="420" height="14" fill="#172541"/>
+  <text x="428" y="121" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">2. PYTHON FASTAPI BACKEND (/api/v1)</text>
+
+  <rect x="428" y="152" width="184" height="96" rx="10" fill="#F6F8FB" stroke="#E5EAF0"/>
+  <text x="442" y="176" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#172033">Auth &amp; Workspace RBAC</text>
+  <text x="442" y="197" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">• Owner / Admin / Member /</text>
+  <text x="442" y="214" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">  Reviewer isolation</text>
+  <text x="442" y="231" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">• Untrusted input guards</text>
+
+  <rect x="624" y="152" width="184" height="96" rx="10" fill="#F6F8FB" stroke="#E5EAF0"/>
+  <text x="638" y="176" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#172033">Multi-Format Importers</text>
+  <text x="638" y="197" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">• TXT, DOCX, PDF (PyMuPDF)</text>
+  <text x="638" y="214" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">• SRT subtitles &amp; speakers</text>
+  <text x="638" y="231" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">• SHA-256 deduplication</text>
+
+  <rect x="428" y="262" width="184" height="98" rx="10" fill="#E8F7F1" stroke="#18A879" stroke-opacity="0.45"/>
+  <text x="442" y="286" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#172033">1-Click AI Connectors</text>
+  <text x="442" y="307" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#172033">• OpenRouter OAuth PKCE</text>
+  <text x="442" y="324" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#172033">• Anthropic · Gemini · OpenAI</text>
+  <text x="442" y="341" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">• Server-side encrypted vault</text>
+
+  <rect x="624" y="262" width="184" height="98" rx="10" fill="#F6F8FB" stroke="#E5EAF0"/>
+  <text x="638" y="286" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#172033">DOCX + PDF + ZIP Engine</text>
+  <text x="638" y="307" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">• python-docx formatting</text>
+  <text x="638" y="324" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">• PyMuPDF PDF rendering</text>
+  <text x="638" y="341" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">• Validated ZIP bundles</text>
+
+  <!-- Arrows 2 -> 3 -->
+  <g stroke="#18A879" stroke-width="2.5" fill="none">
+    <line x1="828" y1="238" x2="884" y2="238"/>
+    <polygon points="884,232 896,238 884,244" fill="#18A879"/>
+  </g>
+
+  <!-- Column 3: Data & External -->
+  <rect x="898" y="96" width="258" height="284" rx="14" fill="#FFFFFF" stroke="#E5EAF0" stroke-width="1.5"/>
+  <rect x="898" y="96" width="258" height="40" rx="14" fill="#101B33"/>
+  <rect x="898" y="122" width="258" height="14" fill="#101B33"/>
+  <text x="918" y="121" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">3. DATA &amp; INFRASTRUCTURE</text>
+
+  <rect x="918" y="152" width="218" height="62" rx="10" fill="#F6F8FB" stroke="#E5EAF0"/>
+  <text x="932" y="177" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13.5" font-weight="700" fill="#172033">PostgreSQL + pgvector</text>
+  <text x="932" y="198" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">Alembic migrations · Embeddings</text>
+
+  <rect x="918" y="226" width="218" height="62" rx="10" fill="#F6F8FB" stroke="#E5EAF0"/>
+  <text x="932" y="251" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13.5" font-weight="700" fill="#172033">Private Object Storage</text>
+  <text x="932" y="272" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">Signed short-lived download URLs</text>
+
+  <rect x="918" y="300" width="218" height="62" rx="10" fill="#E8F7F1" stroke="#18A879" stroke-opacity="0.4"/>
+  <text x="932" y="325" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13.5" font-weight="700" fill="#172033">Ubuntu 24.6 CloudPanel</text>
+  <text x="932" y="346" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11.5" fill="#667085">Nginx reverse proxy · systemd</text>
+</svg>

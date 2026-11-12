@@ -1,62 +1,121 @@
+<p align="center">
+  <img src="Docs/assets/hero-banner.svg" alt="PLAUD Companion Hero Banner" width="100%" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/iqbalmbadhan/plaud-companion/actions/workflows/ci-pipeline.yml">
+    <img src="https://github.com/iqbalmbadhan/plaud-companion/actions/workflows/ci-pipeline.yml/badge.svg" alt="CI/CD Pipeline" />
+  </a>
+  <img src="https://img.shields.io/badge/Mobile-Flutter%20Android%20%26%20iOS-18A879?style=flat-square&logo=flutter&logoColor=white" alt="Flutter" />
+  <img src="https://img.shields.io/badge/Web%20Admin-Next.js%2014%20%2B%20TS-101B33?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js 14" />
+  <img src="https://img.shields.io/badge/Backend-FastAPI%20%2B%20pgvector-18A879?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Deploy-Ubuntu%2024.6%20CloudPanel-101B33?style=flat-square&logo=ubuntu&logoColor=white" alt="CloudPanel" />
+</p>
+
 # PLAUD Companion
 
-A cross-platform transcript management and AI productivity platform for individuals and teams.
+**PLAUD Companion** is a production-oriented, cross-platform transcript management and AI productivity workspace for individuals and teams. Import transcripts from PLAUD devices (`TXT`, `DOCX`, `PDF`, `SRT`), organize them across isolated workspaces, connect AI providers with **1-Click AI Connectors** (no manual API key juggling for non-technical users), and export formatted **DOCX**, **PDF**, or bulk **ZIP** bundles.
 
-## Product goal
+---
 
-PLAUD Companion lets users import transcripts exported from PLAUD devices (and other supported sources), organize and search them, ask AI questions, collaborate in workspaces, and export one or many transcripts as Word documents packaged in a ZIP archive.
+## Key Capabilities
 
-> **Integration constraint:** The initial release uses user-authorized manual file import. Do not assume PLAUD provides a public API. Implement direct synchronization only after confirming official documentation, permission, and contractual authorization.
+- **Multi-Format Transcript Import**: Parse and deduplicate `TXT`, `DOCX`, `PDF` (via PyMuPDF), and `SRT` subtitle/speaker files with workspace-scoped isolation.
+- **1-Click AI Connectors**: Non-technical users can connect **OpenRouter** (OAuth PKCE), **Anthropic Claude**, **Google Gemini**, or **OpenAI** directly from the app; provider secrets stay strictly on the FastAPI backend.
+- **DOCX, PDF & Bulk ZIP Export**: Generate styled Word (`.docx`) and `.pdf` documents individually or packaged in a validated `.zip` archive.
+- **5-Tab Responsive Mobile App (Flutter)**: Designed in Deep Navy (`#101B33`) and Emerald (`#18A879`) with Dashboard, Transcripts, AI Assistant, Bulk Exports, and Workspace (including **PLAUD Hardware & SDK v1.0** sync card).
+- **Web Admin Console (Next.js 14)**: Manage workspaces, AI provider status, background jobs, and data retention policies.
+- **Automated Multi-Platform CI/CD**: GitHub Actions builds and verifies Backend FastAPI tests, Next.js Web Admin, Flutter tests/analysis, **Android APK**, and **iOS Runner**.
 
-## Documentation map
+---
 
-- [`AGENTS.md`](AGENTS.md) — instructions for AI coding agents.
-- [`docs/PRODUCT_REQUIREMENTS.md`](docs/PRODUCT_REQUIREMENTS.md) — product scope and requirements.
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system architecture and boundaries.
-- [`docs/DATABASE.md`](docs/DATABASE.md) — data model and isolation rules.
-- [`docs/API.md`](docs/API.md) — API conventions and endpoint contract.
-- [`docs/UX.md`](docs/UX.md) — design system and user journeys.
-- [`docs/AI.md`](docs/AI.md) — OpenAI/Gemini abstraction, retrieval and safety.
-- [`docs/IMPORTS.md`](docs/IMPORTS.md) — file import and transcript processing.
-- [`docs/EXPORTS.md`](docs/EXPORTS.md) — DOCX and ZIP export behavior.
-- [`docs/SECURITY_PRIVACY.md`](docs/SECURITY_PRIVACY.md) — security and privacy requirements.
-- [`docs/TESTING.md`](docs/TESTING.md) — test strategy and acceptance criteria.
-- [`docs/ROADMAP.md`](docs/ROADMAP.md) — phased implementation plan.
-- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — local, staging and production deployment.
-- [`docs/DECISIONS.md`](docs/DECISIONS.md) — architecture decisions and open questions.
+## UI Look & Feel
 
-## Suggested repository structure
+<p align="center">
+  <img src="Docs/assets/ui-showcase.svg" alt="PLAUD Companion Mobile and Web UI Showcase" width="100%" />
+</p>
+
+> **Try the Interactive HTML Demo:** Open [`Idea/index.html`](Idea/index.html) in any browser to explore the current UI look & feel, 5-tab navigation, 1-Click AI Connectors, DOCX/PDF/ZIP export builder, and PLAUD Hardware & SDK panel.
+
+---
+
+## Architecture & Security Boundaries
+
+<p align="center">
+  <img src="Docs/assets/architecture-overview.svg" alt="PLAUD Companion System Architecture" width="100%" />
+</p>
+
+1. **Zero client secrets**: API keys, database credentials, and signing secrets never live in Flutter or Next.js browser bundles.
+2. **Workspace RBAC**: Owner, Admin, Member, and Reviewer permissions are enforced server-side before database retrieval, vector search, or export download.
+3. **Untrusted input isolation**: Transcript bodies, filenames, and PDFs are treated as untrusted data and never allowed to override system instructions.
+
+---
+
+## Repository Structure
 
 ```text
 plaud-companion/
-├── AGENTS.md
-├── README.md
-├── apps/
-│   ├── mobile/                 # Flutter Android + iOS
-│   └── admin-web/              # Next.js + TypeScript
-├── backend/                    # FastAPI
-│   ├── app/
-│   ├── migrations/
-│   └── tests/
-├── infrastructure/
-├── docs/
-├── reference/
-│   └── prototype/
+├── .github/workflows/
+│   └── ci-pipeline.yml         # FastAPI tests, Next.js build, Flutter tests, Android APK & iOS Runner
+├── backend/                    # Python FastAPI API, Alembic migrations, importers, AI connectors, DOCX/PDF/ZIP exports
+├── mobile/                     # Flutter cross-platform app (Android & iOS)
+├── web/                        # Next.js 14 + TypeScript Admin Web Console
+├── deploy/cloudpanel/          # Ubuntu 24.6 CloudPanel systemd, Nginx & deploy script
+├── Idea/
+│   ├── index.html              # Updated interactive HTML UI demo (current look & feel)
+│   └── plaud_companion_prototype-1.html
+├── Docs/
+│   ├── assets/                 # README SVG graphics
+│   ├── CLOUDPANEL_DEPLOYMENT.md
+│   ├── ARCHITECTURE.md
+│   ├── AI.md
+│   ├── EXPORTS.md
+│   ├── IMPORTS.md
+│   ├── UX.md
+│   └── ...
 ├── .env.example
-└── docker-compose.yml
+├── docker-compose.yml
+├── AGENTS.md
+└── README.md
 ```
 
-## Development principles
+---
 
-1. Build in small, reviewable phases.
-2. Keep provider credentials on the backend.
-3. Enforce workspace authorization in every server-side data access path.
-4. Treat uploaded transcript content as untrusted data.
-5. Use background jobs for expensive or long-running work.
-6. Never mark an operation complete until its output has been verified.
-7. Keep demo data and mock adapters clearly separated from production services.
-8. Record assumptions and unresolved decisions in `docs/DECISIONS.md`.
+## Quick Start
 
-## Current status
+### 1. Download Mobile & Web Builds from GitHub Actions
+Open the latest passing run in [**GitHub Actions**](https://github.com/iqbalmbadhan/plaud-companion/actions) and download:
+- `plaud-companion-android-apk` — installable Android `.apk`
+- `plaud-companion-ios-build` — unsigned iOS `Runner.app`
+- `plaud-companion-web-build` — Next.js production `.next` bundle
 
-This documentation pack describes the intended product. It does not mean the application has already been implemented. Track implementation status in issues or a project board and update the documents when decisions change.
+### 2. Local Backend (FastAPI)
+```bash
+cd backend
+python -m venv .venv
+# Windows: .venv\Scripts\activate | Linux/macOS: source .venv/bin/activate
+pip install -r requirements.txt
+pytest
+uvicorn app.main:app --reload
+```
+
+### 3. Deploy to Ubuntu 24.6 CloudPanel VPS
+See [`Docs/CLOUDPANEL_DEPLOYMENT.md`](Docs/CLOUDPANEL_DEPLOYMENT.md) and [`deploy/cloudpanel/deploy-cloudpanel.sh`](deploy/cloudpanel/deploy-cloudpanel.sh) for step-by-step systemd + Nginx setup.
+
+---
+
+## Documentation Map
+
+- [`AGENTS.md`](AGENTS.md) — engineering rules and definition of done.
+- [`Docs/PRODUCT_REQUIREMENTS.md`](Docs/PRODUCT_REQUIREMENTS.md) — product scope and requirements.
+- [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md) — system architecture and boundaries.
+- [`Docs/DATABASE.md`](Docs/DATABASE.md) — data model and isolation rules.
+- [`Docs/API.md`](Docs/API.md) — API conventions and endpoint contract.
+- [`Docs/UX.md`](Docs/UX.md) — design tokens (`#101B33`, `#18A879`, `#F6F8FB`) and user journeys.
+- [`Docs/AI.md`](Docs/AI.md) — 1-Click AI connectors, OpenRouter/Anthropic/Gemini/OpenAI adapters, and retrieval safety.
+- [`Docs/IMPORTS.md`](Docs/IMPORTS.md) — TXT/DOCX/PDF/SRT import and deduplication.
+- [`Docs/EXPORTS.md`](Docs/EXPORTS.md) — DOCX, PDF, and ZIP export behavior.
+- [`Docs/CLOUDPANEL_DEPLOYMENT.md`](Docs/CLOUDPANEL_DEPLOYMENT.md) — Ubuntu 24.6 CloudPanel VPS hosting guide.
+- [`Docs/SECURITY_PRIVACY.md`](Docs/SECURITY_PRIVACY.md) — security and privacy requirements.
+- [`Docs/TESTING.md`](Docs/TESTING.md) — test strategy and acceptance criteria.
+- [`Docs/DECISIONS.md`](Docs/DECISIONS.md) — architecture decisions (`DEC-001` through `DEC-003`).
