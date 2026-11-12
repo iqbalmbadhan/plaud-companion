@@ -43,6 +43,8 @@ void main() {
 
     await tester.tap(find.text('Workspace'));
     await tester.pumpAndSettle();
+    expect(find.text('PLAUD Hardware & SDK'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Members & Roles'), 200.0);
     expect(find.text('Members & Roles'), findsOneWidget);
   });
 

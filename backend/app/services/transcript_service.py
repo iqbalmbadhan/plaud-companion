@@ -134,6 +134,7 @@ class TranscriptService:
 
         segments_out = []
         if request.segments:
+            seg_models = []
             for seg_req in request.segments:
                 seg = TranscriptSegment(
                     transcript_id=transcript.id,
@@ -144,6 +145,9 @@ class TranscriptService:
                     text=seg_req.text.strip(),
                 )
                 self.db.add(seg)
+                seg_models.append(seg)
+            await self.db.flush()
+            for seg in seg_models:
                 segments_out.append(
                     TranscriptSegmentResponse(
                         id=seg.id,
