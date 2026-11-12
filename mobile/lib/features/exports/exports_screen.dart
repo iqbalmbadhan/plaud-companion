@@ -136,6 +136,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
                                     title:
                                         '${_selectedIds.length} Transcript(s) Export',
                                     format: _exportFormat,
+                                    itemCount: _selectedIds.length,
                                     status: 'Completed',
                                     createdAt: 'Just now',
                                   ),
