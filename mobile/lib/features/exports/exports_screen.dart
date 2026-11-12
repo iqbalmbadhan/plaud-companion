@@ -85,6 +85,7 @@ class _ExportsScreenState extends State<ExportsScreen> {
                     ),
                     const Divider(),
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       value: _exportFormat,
                       decoration: const InputDecoration(
                         labelText: 'Export Format',

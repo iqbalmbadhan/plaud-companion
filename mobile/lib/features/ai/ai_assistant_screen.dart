@@ -71,6 +71,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: _provider,
                 decoration: const InputDecoration(labelText: 'Active Provider'),
                 items: const [
