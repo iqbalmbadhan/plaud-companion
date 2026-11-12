@@ -28,7 +28,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.whiteSurface,
         elevation: 0,
         margin: EdgeInsets.zero,

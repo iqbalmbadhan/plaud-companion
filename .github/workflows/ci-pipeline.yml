@@ -77,6 +77,7 @@ jobs:
         with:
           name: plaud-companion-web-build
           path: web/.next
+          include-hidden-files: true
           retention-days: 14
 
   mobile-tests:
