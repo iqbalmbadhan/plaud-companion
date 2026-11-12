@@ -16,6 +16,7 @@ from app.models.entities import (
     ExportJobItem,
     ExportStatus,
     AuditEvent,
+    ProviderConnection,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "ExportJobItem",
     "ExportStatus",
     "AuditEvent",
+    "ProviderConnection",
 ]

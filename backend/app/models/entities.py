@@ -300,3 +300,24 @@ class AuditEvent(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, nullable=False
     )
+
+
+class ProviderConnection(Base, TimestampMixin):
+    __tablename__ = "provider_connections"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "provider", name="uq_workspace_provider"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    workspace_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    provider: Mapped[str] = mapped_column(String(50), nullable=False)
+    api_key_encrypted: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    auth_mode: Mapped[str] = mapped_column(String(50), default="oauth", nullable=False)
+    enabled: Mapped[bool] = mapped_column(default=True, nullable=False)
+    default_model: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    allowed_models: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    created_by_user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id"), nullable=False
+    )
