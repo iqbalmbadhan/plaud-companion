@@ -139,6 +139,7 @@ jobs:
           cp android/app/src/main/AndroidManifest.xml /tmp/AndroidManifest.xml
           cp android/app/build.gradle /tmp/app_build.gradle
           flutter create --platforms=android --org com.plaudcompanion --project-name plaud_companion .
+          rm -f android/settings.gradle.kts android/build.gradle.kts android/app/build.gradle.kts
           cp /tmp/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           cp /tmp/app_build.gradle android/app/build.gradle
 

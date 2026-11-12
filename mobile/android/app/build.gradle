@@ -5,8 +5,8 @@ plugins {
 }
 
 android {
-    namespace = "com.plaudcompanion.app"
-    compileSdk = 34
+    namespace = "com.plaudcompanion.plaud_companion"
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -19,9 +19,9 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.plaudcompanion.app"
+        applicationId = "com.plaudcompanion.plaud_companion"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
