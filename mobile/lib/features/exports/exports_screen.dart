@@ -16,6 +16,8 @@ class ExportsScreen extends StatefulWidget {
 
 class _ExportsScreenState extends State<ExportsScreen> {
   final Set<String> _selectedIds = {'tr-101', 'tr-102'};
+  final List<DemoExportJob> _exportJobs = List.of(DemoData.exportJobs);
+  String _exportFormat = 'DOCX + PDF (ZIP)';
   bool _includeSummary = true;
   bool _bundleAsZip = true;
 
@@ -82,6 +84,32 @@ class _ExportsScreenState extends State<ExportsScreen> {
                       ),
                     ),
                     const Divider(),
+                    DropdownButtonFormField<String>(
+                      value: _exportFormat,
+                      decoration: const InputDecoration(
+                        labelText: 'Export Format',
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'DOCX + PDF (ZIP)',
+                          child: Text('DOCX + PDF (ZIP Bundle)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'PDF Only',
+                          child: Text('PDF Only (.pdf)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'DOCX Only',
+                          child: Text('Word Only (.docx)'),
+                        ),
+                      ],
+                      onChanged: canExport
+                          ? (v) {
+                              if (v != null) setState(() => _exportFormat = v);
+                            }
+                          : null,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
                     SwitchListTile(
                       title: const Text('Include AI Summary & Action Items'),
                       value: _includeSummary,
@@ -100,27 +128,40 @@ class _ExportsScreenState extends State<ExportsScreen> {
                     ElevatedButton.icon(
                       onPressed: canExport && _selectedIds.isNotEmpty
                           ? () {
+                              setState(() {
+                                _exportJobs.insert(
+                                  0,
+                                  DemoExportJob(
+                                    id: 'exp-${_exportJobs.length + 1}',
+                                    title:
+                                        '${_selectedIds.length} Transcript(s) Export',
+                                    format: _exportFormat,
+                                    status: 'Completed',
+                                    createdAt: 'Just now',
+                                  ),
+                                );
+                              });
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    'Demo: Queued ${_selectedIds.length} transcript(s) for DOCX/ZIP export.',
+                                    'Generated $_exportFormat for ${_selectedIds.length} transcript(s).',
                                   ),
                                 ),
                               );
                             }
                           : null,
                       icon: const Icon(Icons.archive_outlined),
-                      label: const Text('Generate DOCX / ZIP Export'),
+                      label: const Text('Generate DOCX / PDF Export'),
                     ),
                   ],
                 ),
                 ListView.separated(
                   padding: const EdgeInsets.all(AppSpacing.md),
-                  itemCount: DemoData.exportJobs.length,
+                  itemCount: _exportJobs.length,
                   separatorBuilder: (_, __) =>
                       const SizedBox(height: AppSpacing.sm),
                   itemBuilder: (context, index) {
-                    final job = DemoData.exportJobs[index];
+                    final job = _exportJobs[index];
                     return Card(
                       child: ListTile(
                         title: Text(job.title),

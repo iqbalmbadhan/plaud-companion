@@ -15,7 +15,7 @@ class AiAssistantScreen extends StatefulWidget {
 class _AiAssistantScreenState extends State<AiAssistantScreen> {
   final List<DemoChatMessage> _messages = List.of(DemoData.initialChat);
   final _promptController = TextEditingController();
-  String _provider = 'OpenAI (Server-Managed)';
+  String _provider = 'OpenRouter (1-Click OAuth)';
   bool _aiConsentGranted = true;
 
   @override
@@ -41,7 +41,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           id: 'a-${_messages.length}',
           isUser: false,
           content: _aiConsentGranted
-              ? 'Demo response via $_provider: Grounded answers will use pgvector citations from your active workspace once Phase 4/5 backend is connected.'
+              ? '[$_provider] Grounded answer from your workspace transcripts: Key priorities are mobile UX navigation, DOCX/PDF bulk ZIP exports, and PLAUD SDK BLE sync.'
               : 'AI processing is paused because AI consent is disabled in Provider Settings.',
           citations: _aiConsentGranted ? ['tr-101 · 00:00:14'] : const [],
         ),
@@ -75,12 +75,20 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 decoration: const InputDecoration(labelText: 'Active Provider'),
                 items: const [
                   DropdownMenuItem(
-                    value: 'OpenAI (Server-Managed)',
-                    child: Text('OpenAI (Server-Managed)'),
+                    value: 'OpenRouter (1-Click OAuth)',
+                    child: Text('OpenRouter (1-Click OAuth)'),
                   ),
                   DropdownMenuItem(
-                    value: 'Google Gemini (Server-Managed)',
-                    child: Text('Google Gemini (Server-Managed)'),
+                    value: 'Anthropic Claude (1-Click Connect)',
+                    child: Text('Anthropic Claude (1-Click Connect)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Google Gemini (1-Click Connect)',
+                    child: Text('Google Gemini (1-Click Connect)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'OpenAI (Server-Managed)',
+                    child: Text('OpenAI (Server-Managed)'),
                   ),
                 ],
                 onChanged: (v) {

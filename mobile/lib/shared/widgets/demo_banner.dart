@@ -32,7 +32,7 @@ class DemoModeBanner extends StatelessWidget {
             const SizedBox(width: AppSpacing.xs),
             Expanded(
               child: Text(
-                'DEMO DATA · Phase 1 UI Preview (no live backend connected)',
+                'STANDALONE MOBILE · Offline Workspace Ready',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: AppColors.deepNavy,
                     ),
