@@ -91,10 +91,14 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'PLAUD Hardware & SDK',
-              style: Theme.of(context).textTheme.titleLarge,
+            Expanded(
+              child: Text(
+                'PLAUD Hardware & SDK',
+                style: Theme.of(context).textTheme.titleLarge,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
+            const SizedBox(width: AppSpacing.xs),
             const StatusBadge(label: 'SDK v1.0'),
           ],
         ),
@@ -145,10 +149,13 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${_activeDevice?.pendingRecordingsCount ?? 0} pending recordings on device',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                    Expanded(
+                      child: Text(
+                        '${_activeDevice?.pendingRecordingsCount ?? 0} pending recordings on device',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                     ),
+                    const SizedBox(width: AppSpacing.sm),
                     FilledButton.icon(
                       onPressed: (_activeDevice != null &&
                               !_isSyncing &&
@@ -194,9 +201,12 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Members & Roles',
-              style: Theme.of(context).textTheme.titleLarge,
+            Expanded(
+              child: Text(
+                'Members & Roles',
+                style: Theme.of(context).textTheme.titleLarge,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             if (canManage)
               TextButton.icon(
