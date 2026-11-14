@@ -3,6 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#18A879">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>PLAUD Companion — Sign In</title>
     <style>
         :root {
@@ -158,6 +162,10 @@
 
             <button type="submit" class="btn-primary">Sign In to Workspace</button>
         </form>
+
+        <div style="margin-top:20px; text-align:center; font-size:13px; color:var(--muted);">
+            Don't have an account? <a href="{{ route('register') }}" style="color:var(--emerald); text-decoration:none; font-weight:600;">Create an account</a>
+        </div>
     </div>
 
     <div class="security-footer">

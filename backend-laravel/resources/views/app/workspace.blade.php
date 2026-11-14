@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="{{ csrf_token() }}" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#18A879" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PLAUD Companion" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
   <title>PLAUD Companion — Transcript &amp; AI Productivity Workspace</title>
   <style>
     :root {
@@ -1047,6 +1053,10 @@
           <input id="globalSearch" type="text" placeholder="Search transcripts, speakers, action items, or projects..." oninput="handleGlobalSearch(this.value)" />
         </div>
         <div class="top-actions">
+          <button class="btn sm" id="btnPwaInstall" style="display:none; background:rgba(24,168,121,0.15); border:1px solid var(--emerald); color:var(--emerald-dark); font-weight:700;" onclick="installPwa()">📲 Install App</button>
+          @if($user['is_super_admin'])
+            <a href="{{ url('/settings/users') }}" class="btn sm" title="Super-Admin User Management" style="text-decoration:none;">👥 Users</a>
+          @endif
           <button class="btn" onclick="switchView('transcripts'); document.getElementById('fileUploadInput').click();">+ Import Files</button>
           <button class="btn" onclick="openModal('newTranscriptModal')">+ Paste Transcript</button>
           <button class="btn primary" onclick="switchView('assistant')">✨ Ask AI</button>
@@ -1296,10 +1306,11 @@
               <label style="font-size:12px; font-weight:700; color:var(--muted);">Active Provider:</label>
               <select id="aiProviderSelect" class="form-select" style="width:auto;">
                 <option value="auto">Auto (Best Connected / Built-in Fallback)</option>
-                <option value="openrouter">OpenRouter</option>
-                <option value="gemini">Google Gemini</option>
-                <option value="claude">Anthropic Claude</option>
-                <option value="openai">OpenAI</option>
+                <option value="builtin">⚡ PLAUD Neural Engine (Local / 0ms)</option>
+                <option value="openrouter">OpenRouter (Multi-Model)</option>
+                <option value="gemini">Google Gemini (Fast)</option>
+                <option value="claude">Anthropic Claude (High Accuracy)</option>
+                <option value="openai">OpenAI (GPT-4o)</option>
               </select>
             </div>
           </div>
@@ -1551,7 +1562,8 @@
               </div>
               <span>Manage full server backups, verify Ed25519-signed release ZIPs, apply atomic updates, or roll back</span>
             </div>
-            <div style="display:flex; gap:8px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <a href="{{ url('/settings/users') }}" class="btn sm primary" style="text-decoration:none;">👥 Manage Users &amp; Access</a>
               <button class="btn sm" onclick="loadAdminUpdaterStatus()">↻ Refresh Status</button>
               <a href="{{ url('/settings/updates') }}" class="btn sm">Open Full Updater Console ↗</a>
             </div>
@@ -2929,6 +2941,43 @@
       }));
       dropZone.addEventListener('drop', e => {
         if (e.dataTransfer?.files?.length) handleFileUpload(e.dataTransfer.files);
+      });
+    }
+
+    // PWA Service Worker & Install Prompt Registration
+    let deferredPwaPrompt = null;
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => {
+          console.warn('[PWA] Service Worker registration failed:', err);
+        });
+      });
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPwaPrompt = e;
+      const btn = document.getElementById('btnPwaInstall');
+      if (btn) btn.style.display = 'inline-flex';
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredPwaPrompt = null;
+      const btn = document.getElementById('btnPwaInstall');
+      if (btn) btn.style.display = 'none';
+      showToast('PLAUD Companion App installed successfully!');
+    });
+
+    function installPwa() {
+      if (!deferredPwaPrompt) return;
+      deferredPwaPrompt.prompt();
+      deferredPwaPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          showToast('Installing PLAUD Companion App...');
+        }
+        deferredPwaPrompt = null;
+        const btn = document.getElementById('btnPwaInstall');
+        if (btn) btn.style.display = 'none';
       });
     }
 

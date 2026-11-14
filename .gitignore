@@ -40,4 +40,6 @@ Thumbs.db
 
 # Build artifacts & releases
 dist/*.zip
+mobile_artifacts/
+*.apk
 

@@ -163,7 +163,9 @@
                 <p>Super-Admin Control Panel (Signed Ed25519 Releases)</p>
             </div>
         </div>
-        <div style="display:flex; gap:8px; align-items:center;">
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <a href="{{ route('settings.users') }}" class="btn btn-secondary" style="text-decoration:none;">Manage Users</a>
+            <a href="{{ route('app.home') }}" class="btn btn-secondary" style="text-decoration:none;">← Workspace</a>
             <span id="updater-badge" class="pill {{ $updaterEnabled ? 'ok' : 'warn' }}">
                 {{ $updaterEnabled ? 'UPDATER ENABLED' : 'KEY NOT CONFIGURED (503)' }}
             </span>

@@ -60,6 +60,8 @@ Route::middleware(['web.auth'])->group(function (): void {
 // Web authentication
 Route::get('/login', [WebAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [WebAuthController::class, 'login'])->middleware('throttle:10,1')->name('login.post');
+Route::get('/register', [WebAuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [WebAuthController::class, 'register'])->middleware('throttle:10,1')->name('register.post');
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 Route::match(['GET', 'POST'], '/auth/logout', [WebAuthController::class, 'logout'])->name('auth.logout');
 Route::get('/demo', static fn () => view('auth.demo'))->name('demo');
@@ -71,6 +73,16 @@ Route::prefix('install')->middleware('not_installed')->group(function (): void {
     Route::post('/test-db', [InstallController::class, 'testDatabase'])->name('install.test-db');
     Route::post('/configure', [InstallController::class, 'configureEnvironment'])->name('install.configure');
     Route::post('/run', [InstallController::class, 'install'])->name('install.run');
+});
+
+// Super-admin-only User & Access Management Panel
+Route::middleware(['web.auth', 'super_admin'])->prefix('settings/users')->group(function (): void {
+    Route::get('/', [\App\Http\Controllers\UserManagementController::class, 'index'])->name('settings.users');
+    Route::prefix('api')->group(function (): void {
+        Route::get('/list', [\App\Http\Controllers\UserManagementController::class, 'apiList']);
+        Route::post('/{userId}/toggle-status', [\App\Http\Controllers\UserManagementController::class, 'toggleStatus']);
+        Route::post('/{userId}/toggle-admin', [\App\Http\Controllers\UserManagementController::class, 'toggleAdmin']);
+    });
 });
 
 // Super-admin-only Settings Update & Backup Panel

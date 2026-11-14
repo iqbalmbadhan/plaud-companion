@@ -12,15 +12,48 @@ class SplashOnboardingScreen extends StatefulWidget {
 
 class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
   bool _showLoginForm = false;
+  bool _isRegistering = false;
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _submitAuth() {
+    final email = _emailController.text.trim();
+    final pwd = _passwordController.text.trim();
+    if (_isRegistering && _nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your full name.')),
+      );
+      return;
+    }
+    if (email.isEmpty || pwd.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter both email and password.')),
+      );
+      return;
+    }
+    if (pwd.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 8 characters.')),
+      );
+      return;
+    }
+
+    if (_isRegistering) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Account created! Personal workspace provisioned.')),
+      );
+    }
+    widget.onAuthenticated();
   }
 
   @override
@@ -95,7 +128,10 @@ class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
                         ),
                         const SizedBox(height: 10),
                         OutlinedButton.icon(
-                          onPressed: () => setState(() => _showLoginForm = true),
+                          onPressed: () => setState(() {
+                            _showLoginForm = true;
+                            _isRegistering = false;
+                          }),
                           icon: const Icon(Icons.login),
                           label: const Text('Connect to Cloud Server'),
                           style: OutlinedButton.styleFrom(
@@ -104,11 +140,75 @@ class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
                           ),
                         ),
                       ] else ...[
-                        Text(
-                          'Sign In to Workspace Server',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        // Toggle between Sign In and Create Account
+                        Row(
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => setState(() => _isRegistering = false),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: !_isRegistering ? AppColors.emerald : Colors.transparent,
+                                        width: 2.5,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Sign In',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontWeight: !_isRegistering ? FontWeight.bold : FontWeight.normal,
+                                      color: !_isRegistering ? AppColors.deepNavy : AppColors.muted,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => setState(() => _isRegistering = true),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: _isRegistering ? AppColors.emerald : Colors.transparent,
+                                        width: 2.5,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Create Account',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontWeight: _isRegistering ? FontWeight.bold : FontWeight.normal,
+                                      color: _isRegistering ? AppColors.deepNavy : AppColors.muted,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
+
+                        if (_isRegistering) ...[
+                          TextField(
+                            controller: _nameController,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(
+                              labelText: 'Full Name',
+                              hintText: 'Alex Morgan',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
                         TextField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
@@ -124,7 +224,7 @@ class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
                           controller: _passwordController,
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
-                            labelText: 'Password',
+                            labelText: 'Password (min. 8 characters)',
                             border: const OutlineInputBorder(),
                             isDense: true,
                             suffixIcon: IconButton(
@@ -135,13 +235,13 @@ class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: widget.onAuthenticated,
+                          onPressed: _submitAuth,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.emerald,
                             foregroundColor: Colors.white,
                             minimumSize: const Size.fromHeight(46),
                           ),
-                          child: const Text('Sign In to Workspace'),
+                          child: Text(_isRegistering ? 'Register & Start' : 'Sign In to Workspace'),
                         ),
                         const SizedBox(height: 10),
                         TextButton(

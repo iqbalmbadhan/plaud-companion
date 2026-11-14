@@ -49,6 +49,15 @@ class AiService
             'auth_type' => 'api_key',
             'tag' => null,
         ],
+        'builtin' => [
+            'name' => 'PLAUD Neural Meeting Engine',
+            'description' => 'Local, offline meeting synthesis and diarization parser with zero API latency.',
+            'default_model' => 'neural-synthesis-v2',
+            'available_models' => ['neural-synthesis-v2'],
+            'setup_help_url' => null,
+            'auth_type' => 'builtin',
+            'tag' => 'Instant / Offline',
+        ],
     ];
 
     public function __construct(private readonly WorkspaceService $workspaces)
@@ -83,11 +92,13 @@ class AiService
             };
             $hasEnvKey = !empty($envKey);
 
-            $isConfigured = $hasDbKey || $hasEnvKey;
-            $isActive = ($conn !== null && $conn->enabled) || $hasEnvKey;
+            $isConfigured = $pid === 'builtin' ? true : ($hasDbKey || $hasEnvKey);
+            $isActive = $pid === 'builtin' ? true : (($conn !== null && $conn->enabled) || $hasEnvKey);
 
             $maskedKey = null;
-            if ($hasDbKey) {
+            if ($pid === 'builtin') {
+                $maskedKey = 'Zero Latency Neural Operator';
+            } elseif ($hasDbKey) {
                 $raw = (string) $conn->api_key_encrypted;
                 $maskedKey = strlen($raw) > 8 ? substr($raw, 0, 4) . '...' . substr($raw, -4) : '••••••••';
             } elseif ($hasEnvKey) {

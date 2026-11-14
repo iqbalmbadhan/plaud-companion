@@ -1,0 +1,59 @@
+{
+  "name": "PLAUD Companion",
+  "short_name": "PLAUD",
+  "description": "Cross-platform PLAUD hardware management, AI meeting intelligence, and diarized transcript exports",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B132B",
+  "theme_color": "#18A879",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": [
+    "productivity",
+    "utilities",
+    "business"
+  ],
+  "shortcuts": [
+    {
+      "name": "Transcripts & Recordings",
+      "short_name": "Transcripts",
+      "description": "View and manage diarized meeting recordings",
+      "url": "/app#transcripts",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI Intelligence Studio",
+      "short_name": "AI Studio",
+      "description": "Synthesize meetings and extract action items",
+      "url": "/app#ai",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Hardware Bridge",
+      "short_name": "Hardware",
+      "description": "Connect PLAUD Note & NotePin via Bluetooth",
+      "url": "/app#device",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    }
+  ]
+}
