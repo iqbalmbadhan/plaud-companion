@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../core/data/demo_data.dart';
-import '../../core/models/demo_models.dart';
+import '../../core/models/app_models.dart';
+import '../../core/services/ai_service.dart';
+import '../../core/services/app_state.dart';
 import '../../core/theme/app_tokens.dart';
-import '../../shared/widgets/demo_banner.dart';
-import '../../shared/widgets/stat_card.dart';
+
+class ChatMessage {
+  final String text;
+  final bool isUser;
+  final DateTime timestamp;
+
+  const ChatMessage({required this.text, required this.isUser, required this.timestamp});
+}
 
 class AiAssistantScreen extends StatefulWidget {
   const AiAssistantScreen({super.key});
@@ -13,236 +20,297 @@ class AiAssistantScreen extends StatefulWidget {
 }
 
 class _AiAssistantScreenState extends State<AiAssistantScreen> {
-  final List<DemoChatMessage> _messages = List.of(DemoData.initialChat);
-  final _promptController = TextEditingController();
-  String _provider = 'OpenRouter (1-Click OAuth)';
-  bool _aiConsentGranted = true;
+  final List<ChatMessage> _messages = [
+    ChatMessage(
+      text: 'Hello! I am your PLAUD Companion AI assistant. Ask me questions across your meeting transcripts or extract action matrices.',
+      isUser: false,
+      timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
+    ),
+  ];
+  final _textController = TextEditingController();
+  bool _isProcessing = false;
 
   @override
   void dispose() {
-    _promptController.dispose();
+    _textController.dispose();
     super.dispose();
   }
 
-  void _sendPrompt(String text) {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
+  Future<void> _sendMessage(String query) async {
+    final text = query.trim();
+    if (text.isEmpty) return;
+    _textController.clear();
 
     setState(() {
-      _messages.add(
-        DemoChatMessage(
-          id: 'u-${_messages.length}',
-          isUser: true,
-          content: trimmed,
-        ),
-      );
-      _messages.add(
-        DemoChatMessage(
-          id: 'a-${_messages.length}',
-          isUser: false,
-          content: _aiConsentGranted
-              ? '[$_provider] Grounded answer from your workspace transcripts: Key priorities are mobile UX navigation, DOCX/PDF bulk ZIP exports, and PLAUD SDK BLE sync.'
-              : 'AI processing is paused because AI consent is disabled in Provider Settings.',
-          citations: _aiConsentGranted ? ['tr-101 · 00:00:14'] : const [],
-        ),
-      );
-      _promptController.clear();
+      _messages.add(ChatMessage(text: text, isUser: true, timestamp: DateTime.now()));
+      _isProcessing = true;
+    });
+
+    final answer = await AiService.askQuestion(text, AppState.instance.transcripts);
+
+    setState(() {
+      _messages.add(ChatMessage(text: answer, isUser: false, timestamp: DateTime.now()));
+      _isProcessing = false;
     });
   }
 
-  void _openProviderSettings() {
+  void _openProviderConfigModal() {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'AI Provider & Privacy Settings',
-                style: Theme.of(ctx).textTheme.titleLarge,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Provider API keys are stored strictly on the FastAPI backend—never in mobile or web clients.',
-                style: Theme.of(ctx).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              DropdownButtonFormField<String>(
-                isExpanded: true,
-                value: _provider,
-                decoration: const InputDecoration(labelText: 'Active Provider'),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'OpenRouter (1-Click OAuth)',
-                    child: Text('OpenRouter (1-Click OAuth)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Anthropic Claude (1-Click Connect)',
-                    child: Text('Anthropic Claude (1-Click Connect)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Google Gemini (1-Click Connect)',
-                    child: Text('Google Gemini (1-Click Connect)'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'OpenAI (Server-Managed)',
-                    child: Text('OpenAI (Server-Managed)'),
-                  ),
-                ],
-                onChanged: (v) {
-                  if (v == null) return;
-                  setSheetState(() => _provider = v);
-                  setState(() => _provider = v);
-                },
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Allow AI transcript processing'),
-                subtitle: const Text(
-                  'Required before sending workspace text to external models.',
+        builder: (ctx, setSheetState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              left: AppSpacing.md,
+              right: AppSpacing.md,
+              top: AppSpacing.md,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('AI Operator Settings', style: Theme.of(ctx).textTheme.titleLarge),
+                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                  ],
                 ),
-                value: _aiConsentGranted,
-                onChanged: (v) {
-                  setSheetState(() => _aiConsentGranted = v);
-                  setState(() => _aiConsentGranted = v);
-                },
-              ),
-            ],
-          ),
-        ),
+                const Text(
+                  'Configure real API keys for OpenAI, Google Gemini, Anthropic Claude, or use the built-in offline neural engine.',
+                  style: TextStyle(fontSize: 12, color: AppColors.muted),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                ...AiService.providers.map((provider) {
+                  final isSelected = AiService.activeProvider.id == provider.id;
+                  final keyController = TextEditingController(text: provider.apiKey ?? '');
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Radio<String>(
+                                value: provider.id,
+                                groupValue: AiService.activeProvider.id,
+                                onChanged: (val) {
+                                  setSheetState(() => AiService.setActiveProvider(val!));
+                                  setState(() {});
+                                },
+                              ),
+                              Expanded(
+                                child: Text(
+                                  provider.name,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                                ),
+                              ),
+                              if (provider.isConnected)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.paleEmerald,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '${provider.latencyMs ?? 4}ms',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.deepNavy),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          if (provider.id != 'builtin' && isSelected) ...[
+                            const SizedBox(height: 6),
+                            TextField(
+                              controller: keyController,
+                              obscureText: true,
+                              decoration: InputDecoration(
+                                labelText: '${provider.name} API Key',
+                                hintText: 'Enter API key...',
+                                border: const OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                              onChanged: (v) => provider.apiKey = v.trim(),
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                final res = await AiService.testConnection(provider);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('${provider.name}: ${res["message"]}')),
+                                );
+                                setSheetState(() {});
+                                setState(() {});
+                              },
+                              icon: const Icon(Icons.speed, size: 16),
+                              label: const Text('Test & Measure Latency'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.deepNavy,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.xs,
+    final active = AiService.activeProvider;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('AI Meeting Intelligence'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: 'Operator Settings',
+            onPressed: _openProviderConfigModal,
           ),
-          child: Column(
-            children: [
-              const DemoModeBanner(compact: true),
-              const SizedBox(height: AppSpacing.xs),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Workspace AI Assistant',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Provider & Model Settings',
-                    onPressed: _openProviderSettings,
-                    icon: const Icon(Icons.tune),
-                  ),
-                ],
-              ),
-              Wrap(
-                spacing: AppSpacing.xs,
-                children: [
-                  ActionChip(
-                    label: const Text('Action items'),
-                    onPressed: () =>
-                        _sendPrompt('List all action items from Q4 meetings'),
-                  ),
-                  ActionChip(
-                    label: const Text('Executive summary'),
-                    onPressed: () =>
-                        _sendPrompt('Give an executive summary of recent calls'),
-                  ),
-                  ActionChip(
-                    label: const Text('Key decisions'),
-                    onPressed: () =>
-                        _sendPrompt('What key decisions were recorded?'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            itemCount: _messages.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-            itemBuilder: (context, index) {
-              final msg = _messages[index];
-              return Align(
-                alignment:
-                    msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 560),
-                  child: Card(
-                    color: msg.isUser
-                        ? AppColors.deepNavy
-                        : AppColors.whiteSurface,
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            msg.content,
-                            style: TextStyle(
-                              color: msg.isUser
-                                  ? Colors.white
-                                  : AppColors.primaryText,
-                            ),
-                          ),
-                          if (msg.citations.isNotEmpty) ...[
-                            const SizedBox(height: AppSpacing.xs),
-                            Wrap(
-                              spacing: AppSpacing.xs,
-                              children: msg.citations
-                                  .map((c) => StatusBadge(label: c))
-                                  .toList(),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Active Provider Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 8),
+            color: const Color(0xFFF1F5F9),
             child: Row(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _promptController,
-                    decoration: const InputDecoration(
-                      hintText: 'Ask about your workspace transcripts...',
-                    ),
-                    onSubmitted: _sendPrompt,
-                  ),
+                const Icon(Icons.bolt, color: AppColors.emerald, size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  'Operator: ${active.name}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                 ),
-                const SizedBox(width: AppSpacing.xs),
-                ElevatedButton(
-                  onPressed: () => _sendPrompt(_promptController.text),
-                  child: const Icon(Icons.send),
+                const Spacer(),
+                InkWell(
+                  onTap: _openProviderConfigModal,
+                  child: Text(
+                    active.apiKey != null && active.apiKey!.isNotEmpty ? 'Configured ⚙' : 'Change ⚙',
+                    style: const TextStyle(fontSize: 12, color: AppColors.emerald, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
+
+          // Messages
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              itemCount: _messages.length,
+              itemBuilder: (ctx, i) {
+                final m = _messages[i];
+                return Align(
+                  alignment: m.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+                    decoration: BoxDecoration(
+                      color: m.isUser ? AppColors.emerald : Colors.white,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: m.isUser ? null : Border.all(color: AppColors.border),
+                      boxShadow: const [
+                        BoxShadow(color: Color(0x0A000000), offset: Offset(0, 1), blurRadius: 4),
+                      ],
+                    ),
+                    child: Text(
+                      m.text,
+                      style: TextStyle(
+                        color: m.isUser ? Colors.white : AppColors.deepNavy,
+                        fontSize: 13.5,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          if (_isProcessing)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                  SizedBox(width: 8),
+                  Text('Synthesizing answer...', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                ],
+              ),
+            ),
+
+          // Quick Prompt Pills
+          SizedBox(
+            height: 38,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              children: [
+                ActionChip(
+                  label: const Text('Summarize latest meeting', style: TextStyle(fontSize: 11)),
+                  onPressed: () => _sendMessage('Summarize the latest meeting discussion points and decisions.'),
+                ),
+                const SizedBox(width: 6),
+                ActionChip(
+                  label: const Text('Extract action matrix', style: TextStyle(fontSize: 11)),
+                  onPressed: () => _sendMessage('What action items and assignees were identified across recordings?'),
+                ),
+                const SizedBox(width: 6),
+                ActionChip(
+                  label: const Text('PLAUD BLE status', style: TextStyle(fontSize: 11)),
+                  onPressed: () => _sendMessage('What is the status of the PLAUD Note hardware integration?'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // Chat Input Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _textController,
+                    decoration: InputDecoration(
+                      hintText: 'Ask anything about your meetings...',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      isDense: true,
+                    ),
+                    onSubmitted: _sendMessage,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  icon: const Icon(Icons.send, size: 18),
+                  onPressed: () => _sendMessage(_textController.text),
+                  style: IconButton.styleFrom(backgroundColor: AppColors.emerald),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

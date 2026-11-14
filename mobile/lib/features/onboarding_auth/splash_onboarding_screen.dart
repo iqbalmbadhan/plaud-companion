@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_tokens.dart';
 
-enum AuthMode { signIn, register, resetPassword, verifyEmail }
-
 class SplashOnboardingScreen extends StatefulWidget {
   const SplashOnboardingScreen({super.key, required this.onAuthenticated});
 
@@ -13,45 +11,16 @@ class SplashOnboardingScreen extends StatefulWidget {
 }
 
 class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
-  AuthMode _mode = AuthMode.signIn;
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'owner@example.com');
-  final _passwordController = TextEditingController(text: 'DemoPassword123!');
-  final _nameController = TextEditingController();
+  bool _showLoginForm = false;
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  String? _statusMessage;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _nameController.dispose();
     super.dispose();
-  }
-
-  void _submit() {
-    if (_mode == AuthMode.verifyEmail) {
-      widget.onAuthenticated();
-      return;
-    }
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-
-    if (_mode == AuthMode.resetPassword) {
-      setState(() {
-        _statusMessage =
-            'If an account exists for ${_emailController.text.trim()}, a reset link has been queued (Demo).';
-      });
-      return;
-    }
-    if (_mode == AuthMode.register) {
-      setState(() {
-        _mode = AuthMode.verifyEmail;
-        _statusMessage =
-            'Verification code sent to ${_emailController.text.trim()} (Demo).';
-      });
-      return;
-    }
-    widget.onAuthenticated();
   }
 
   @override
@@ -63,178 +32,122 @@ class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
+              constraints: const BoxConstraints(maxWidth: 420),
               child: Card(
+                elevation: 12,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: AppColors.deepNavy,
-                                borderRadius: BorderRadius.circular(AppRadius.sm),
-                              ),
-                              child: const Icon(
-                                Icons.graphic_eq,
-                                color: AppColors.emeraldAccent,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'PLAUD Companion',
-                                  style: Theme.of(context).textTheme.titleLarge,
-                                ),
-                                Text(
-                                  'Phase 1 Demo Workspace',
-                                  style: Theme.of(context).textTheme.labelMedium,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          switch (_mode) {
-                            AuthMode.signIn => 'Sign in to your workspace',
-                            AuthMode.register => 'Create your account',
-                            AuthMode.resetPassword => 'Reset your password',
-                            AuthMode.verifyEmail => 'Verify your email',
-                          },
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'Turn transcripts into structured team notes, grounded AI Q&A, and .docx exports.',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        if (_statusMessage != null) ...[
+                  padding: const EdgeInsets.all(28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Brand Header
+                      Row(
+                        children: [
                           Container(
-                            padding: const EdgeInsets.all(AppSpacing.sm),
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              color: AppColors.paleEmerald,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                              color: AppColors.emerald,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Text(
-                              _statusMessage!,
-                              style: const TextStyle(color: AppColors.deepNavy),
-                            ),
+                            child: const Icon(Icons.graphic_eq, color: Colors.white, size: 26),
                           ),
-                          const SizedBox(height: AppSpacing.md),
-                        ],
-                        if (_mode == AuthMode.register) ...[
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Full name',
-                              hintText: 'Alex Morgan',
-                            ),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'Enter your name'
-                                : null,
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                        ],
-                        if (_mode != AuthMode.verifyEmail) ...[
-                          TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              labelText: 'Work email',
-                              hintText: 'you@company.com',
-                            ),
-                            validator: (v) {
-                              if (v == null || !v.contains('@')) {
-                                return 'Enter a valid email address';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                        ],
-                        if (_mode == AuthMode.signIn ||
-                            _mode == AuthMode.register) ...[
-                          TextFormField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                              suffixIcon: IconButton(
-                                tooltip: _obscurePassword
-                                    ? 'Show password'
-                                    : 'Hide password',
-                                onPressed: () => setState(
-                                  () => _obscurePassword = !_obscurePassword,
-                                ),
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                ),
+                          const SizedBox(width: 12),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'PLAUD Companion',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.deepNavy),
                               ),
-                            ),
-                            validator: (v) {
-                              if (v == null || v.length < 8) {
-                                return 'Password must be at least 8 characters';
-                              }
-                              return null;
-                            },
+                              Text(
+                                'Hardware BLE & AI Workspace',
+                                style: TextStyle(fontSize: 12, color: AppColors.muted),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: AppSpacing.md),
                         ],
-                        ElevatedButton(
-                          onPressed: _submit,
-                          child: Text(
-                            switch (_mode) {
-                              AuthMode.signIn => 'Continue to Demo Workspace',
-                              AuthMode.register => 'Create Account',
-                              AuthMode.resetPassword => 'Send Reset Link',
-                              AuthMode.verifyEmail => 'Complete Verification',
-                            },
+                      ),
+                      const SizedBox(height: 24),
+
+                      if (!_showLoginForm) ...[
+                        // Feature highlights
+                        _buildFeatureRow(Icons.bluetooth_audio, 'Connect PLAUD Note & NotePin hardware via Bluetooth Low Energy.'),
+                        const SizedBox(height: 12),
+                        _buildFeatureRow(Icons.auto_awesome, 'Multi-model AI synthesis (OpenAI, Gemini, Claude, OpenRouter, Local).'),
+                        const SizedBox(height: 12),
+                        _buildFeatureRow(Icons.file_present_outlined, 'Export executive summaries & diarized transcripts to Word (.docx) & PDF.'),
+                        const SizedBox(height: 28),
+
+                        ElevatedButton.icon(
+                          onPressed: widget.onAuthenticated,
+                          icon: const Icon(Icons.arrow_forward),
+                          label: const Text('Start Using PLAUD Companion'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.emerald,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(48),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          children: [
-                            if (_mode != AuthMode.register)
-                              TextButton(
-                                onPressed: () => setState(() {
-                                  _statusMessage = null;
-                                  _mode = AuthMode.register;
-                                }),
-                                child: const Text('Create account'),
-                              ),
-                            if (_mode != AuthMode.signIn)
-                              TextButton(
-                                onPressed: () => setState(() {
-                                  _statusMessage = null;
-                                  _mode = AuthMode.signIn;
-                                }),
-                                child: const Text('Back to sign in'),
-                              ),
-                            if (_mode == AuthMode.signIn)
-                              TextButton(
-                                onPressed: () => setState(() {
-                                  _statusMessage = null;
-                                  _mode = AuthMode.resetPassword;
-                                }),
-                                child: const Text('Forgot password?'),
-                              ),
-                          ],
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          onPressed: () => setState(() => _showLoginForm = true),
+                          icon: const Icon(Icons.login),
+                          label: const Text('Connect to Cloud Server'),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(46),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ] else ...[
+                        Text(
+                          'Sign In to Workspace Server',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                            labelText: 'Work Email',
+                            hintText: 'name@company.com',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: widget.onAuthenticated,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.emerald,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(46),
+                          ),
+                          child: const Text('Sign In to Workspace'),
+                        ),
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed: () => setState(() => _showLoginForm = false),
+                          child: const Text('← Back to Quick Start'),
                         ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
               ),
@@ -242,6 +155,26 @@ class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFeatureRow(IconData icon, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.paleEmerald,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.emerald, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(text, style: const TextStyle(fontSize: 12.5, height: 1.4, color: Color(0xFF334155))),
+        ),
+      ],
     );
   }
 }

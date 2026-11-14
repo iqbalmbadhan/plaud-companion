@@ -6,6 +6,7 @@ abstract final class AppColors {
   static const Color deepNavy = Color(0xFF101B33);
   static const Color navySurface = Color(0xFF172541);
   static const Color emeraldAccent = Color(0xFF18A879);
+  static const Color emerald = Color(0xFF18A879);
   static const Color paleEmerald = Color(0xFFE8F7F1);
 
   // Neutral Surfaces & Borders
@@ -16,6 +17,7 @@ abstract final class AppColors {
   // Typography
   static const Color primaryText = Color(0xFF172033);
   static const Color secondaryText = Color(0xFF667085);
+  static const Color muted = Color(0xFF667085);
 
   // Semantic States
   static const Color success = Color(0xFF18A879);

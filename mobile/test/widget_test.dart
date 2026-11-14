@@ -1,91 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plaud_companion/core/data/demo_data.dart';
-import 'package:plaud_companion/core/services/plaud_sdk_service.dart';
-import 'package:plaud_companion/features/workspace/workspace_screen.dart';
+import 'package:plaud_companion/core/services/app_state.dart';
 import 'package:plaud_companion/main.dart';
 
 void main() {
-  testWidgets('Auth screen validates input and signs into Demo Workspace',
-      (tester) async {
+  testWidgets('Auth screen displays PLAUD Companion and signs in', (tester) async {
     await tester.pumpWidget(const PlaudCompanionApp());
-    expect(find.text('Sign in to your workspace'), findsOneWidget);
+    expect(find.text('PLAUD Companion'), findsOneWidget);
+    expect(find.text('Start Using PLAUD Companion'), findsOneWidget);
 
-    await tester.tap(find.text('Continue to Demo Workspace'));
+    await tester.tap(find.text('Start Using PLAUD Companion'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Product & Engineering Overview'), findsOneWidget);
-    expect(find.text('128'), findsOneWidget);
+    expect(find.text('Recent Recordings'), findsOneWidget);
   });
 
-  testWidgets('5-tab mobile navigation transitions across core screens',
-      (tester) async {
-    tester.view.physicalSize = const Size(400, 844);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-
+  testWidgets('5-tab mobile navigation transitions across core screens', (tester) async {
     await tester.pumpWidget(const PlaudCompanionApp(initialAuthenticated: true));
 
     expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.byType(NavigationRail), findsNothing);
 
+    // 1. Transcripts tab
     await tester.tap(find.text('Transcripts'));
     await tester.pumpAndSettle();
-    expect(find.text('Q4 Mobile Architecture & Plaud SDK Sync'), findsOneWidget);
+    expect(find.text('Transcripts & Recordings'), findsOneWidget);
 
-    await tester.tap(find.text('AI'));
+    // 2. AI tab
+    await tester.tap(find.text('AI Studio'));
     await tester.pumpAndSettle();
-    expect(find.text('Workspace AI Assistant'), findsOneWidget);
+    expect(find.text('AI Meeting Intelligence'), findsOneWidget);
 
+    // 3. Exports tab
     await tester.tap(find.text('Exports'));
     await tester.pumpAndSettle();
-    expect(find.text('Bulk Export Config'), findsOneWidget);
+    expect(find.text('Export Deliverables'), findsOneWidget);
 
-    await tester.tap(find.text('Workspace'));
+    // 4. Hardware tab
+    await tester.tap(find.text('Hardware'));
     await tester.pumpAndSettle();
-    expect(find.text('PLAUD Hardware & SDK'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Members & Roles'), 200.0);
-    expect(find.text('Members & Roles'), findsOneWidget);
+    expect(find.text('Workspace & Hardware Settings'), findsOneWidget);
   });
 
-  testWidgets('Desktop layout renders NavigationRail sidebar', (tester) async {
-    tester.view.physicalSize = const Size(1280, 800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
+  testWidgets('Export service generates valid DOCX and PDF bytes', (tester) async {
+    final t = AppState.instance.transcripts.first;
+    final docx = await AppState.instance.exportTranscript(transcript: t, format: 'docx');
+    expect(docx.title.endsWith('.docx'), isTrue);
+    expect(docx.sizeBytes > 500, isTrue);
 
-    await tester.pumpWidget(const PlaudCompanionApp(initialAuthenticated: true));
-
-    expect(find.byType(NavigationRail), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
-  });
-
-  testWidgets('Workspace screen shows Plaud Hardware & SDK status and syncs recordings',
-      (tester) async {
-    final mockPlaudService = MockPlaudSdkService();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: WorkspaceScreen(
-            activeWorkspace: DemoData.workspaces.first,
-            onSelectWorkspace: (_) {},
-            onSignOut: () {},
-            plaudService: mockPlaudService,
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('PLAUD Hardware & SDK'), findsOneWidget);
-    expect(find.text('PLAUD NOTE (8821)'), findsOneWidget);
-    expect(find.text('2 pending recordings on device'), findsOneWidget);
-
-    // Tap sync button
-    await tester.tap(find.text('Sync Now'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('0 pending recordings on device'), findsOneWidget);
-    expect(find.text('Plaud audio recordings successfully synced to workspace!'),
-        findsOneWidget);
+    final pdf = await AppState.instance.exportTranscript(transcript: t, format: 'pdf');
+    expect(pdf.title.endsWith('.pdf'), isTrue);
+    expect(pdf.sizeBytes > 200, isTrue);
   });
 }
