@@ -95,33 +95,42 @@
 
     .ws-switcher {
       margin-bottom: 16px;
-      padding: 10px;
+      padding: 10px 12px;
       border-radius: 14px;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.1);
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
-    .ws-switcher label {
-      display: block;
+    .ws-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 7px;
+      width: 100%;
+    }
+
+    .ws-header-row label {
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: rgba(255,255,255,0.62);
-      margin-bottom: 6px;
       font-weight: 700;
+      margin: 0;
     }
 
-    .ws-select-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
+    .ws-select-wrap {
       width: 100%;
       min-width: 0;
+      box-sizing: border-box;
     }
 
     .ws-select {
-      flex: 1 1 0;
+      width: 100%;
       min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
       background: rgba(16, 27, 51, 0.75);
       color: #fff;
       border: 1px solid rgba(255,255,255,0.18);
@@ -130,26 +139,41 @@
       font-size: 13px;
       font-weight: 600;
       outline: none;
+      cursor: pointer;
       text-overflow: ellipsis;
       white-space: nowrap;
       overflow: hidden;
+      display: block;
+    }
+
+    .ws-select option {
+      background: #101B33;
+      color: #ffffff;
     }
 
     .ws-add-btn {
-      flex: 0 0 32px;
-      width: 32px;
-      height: 32px;
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
       background: rgba(24, 168, 121, 0.22);
       color: #6EE7B7;
-      border: 1px solid rgba(24, 168, 121, 0.4);
-      border-radius: 10px;
-      display: grid;
-      place-items: center;
+      border: 1px solid rgba(24, 168, 121, 0.45);
+      border-radius: 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       font-weight: 700;
-      font-size: 16px;
+      font-size: 15px;
       line-height: 1;
       padding: 0;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    }
+
+    .ws-add-btn:hover {
+      background: rgba(24, 168, 121, 0.45);
+      border-color: #6EE7B7;
+      transform: scale(1.08);
     }
 
     .nav {
@@ -885,6 +909,38 @@
       background: rgba(24, 168, 121, 0.24);
     }
 
+    .mobile-menu-btn {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      cursor: pointer;
+      padding: 8px;
+      flex-shrink: 0;
+    }
+
+    .mobile-menu-btn span {
+      display: block;
+      height: 2px;
+      width: 100%;
+      background: var(--navy);
+      border-radius: 2px;
+    }
+
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 27, 51, 0.55);
+      backdrop-filter: blur(4px);
+      z-index: 99;
+    }
+
     @media (max-width: 1080px) {
       .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .grid-3, .grid-2, .split-detail, .hero, .chat-shell {
@@ -892,17 +948,44 @@
       }
     }
 
-    @media (max-width: 780px) {
+    @media (max-width: 900px) {
       .app { grid-template-columns: 1fr; }
-      .sidebar { display: none; }
+      .mobile-menu-btn { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: -300px;
+        top: 0;
+        bottom: 0;
+        width: 280px;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 100;
+        box-shadow: 0 0 35px rgba(0,0,0,0.35);
+      }
+      .sidebar.mobile-open {
+        transform: translateX(300px);
+      }
+      .sidebar-backdrop.open {
+        display: block;
+      }
       .mobile-bar { display: flex; }
-      .content { padding: 16px 16px 82px; }
-      .topbar { padding: 12px 16px; }
-      .grid-4, .export-options, .quick-grid { grid-template-columns: 1fr; }
+      .content { padding: 14px 14px 84px; }
+      .topbar { padding: 10px 14px; gap: 10px; flex-wrap: wrap; }
+      .search-wrap { min-width: 150px; flex: 1 1 180px; }
+      .top-actions { gap: 6px; }
+      .top-actions .btn { padding: 7px 10px; font-size: 12px; border-radius: 9px; }
+      .grid-4, .grid-3, .grid-2, .export-options, .quick-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .topbar { padding: 8px 12px; }
+      .search-wrap { width: 100%; order: 2; }
+      .top-actions { width: 100%; justify-content: space-between; order: 1; }
+      .content { padding: 12px 12px 84px; }
     }
   </style>
 </head>
 <body>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar(false)"></div>
   <div class="app">
     <aside class="sidebar">
       <div>
@@ -915,10 +998,12 @@
         </div>
 
         <div class="ws-switcher">
-          <label for="workspaceSelect">Active Workspace</label>
-          <div class="ws-select-row">
-            <select id="workspaceSelect" class="ws-select" onchange="switchWorkspace(this.value)"></select>
+          <div class="ws-header-row">
+            <label for="workspaceSelect">Active Workspace</label>
             <button class="ws-add-btn" title="Create New Workspace" onclick="openModal('workspaceModal')">+</button>
+          </div>
+          <div class="ws-select-wrap">
+            <select id="workspaceSelect" class="ws-select" onchange="switchWorkspace(this.value)"></select>
           </div>
         </div>
 
@@ -952,6 +1037,11 @@
 
     <main class="main">
       <header class="topbar">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileSidebar()" title="Toggle Navigation Menu" aria-label="Toggle Navigation Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
         <div class="search-wrap">
           <span>🔎</span>
           <input id="globalSearch" type="text" placeholder="Search transcripts, speakers, action items, or projects..." oninput="handleGlobalSearch(this.value)" />
@@ -1627,6 +1717,16 @@
     const INITIAL_ACTIVE_WS_ID = @json($activeWorkspaceId);
     const IS_SUPER_ADMIN = @json($user['is_super_admin']);
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const APP_BASE_URL = @json(url('/'));
+
+    function resolveAppUrl(path) {
+      if (!path || typeof path !== 'string' || path.startsWith('http://') || path.startsWith('https://')) {
+        return path;
+      }
+      const base = APP_BASE_URL.replace(/\/+$/, '');
+      const clean = path.startsWith('/') ? path : '/' + path;
+      return base + clean;
+    }
 
     let state = {
       workspaces: INITIAL_WORKSPACES || [],
@@ -1652,7 +1752,22 @@
       setTimeout(() => el.remove(), 4200);
     }
 
+    function toggleMobileSidebar(forceState) {
+      const sb = document.querySelector('.sidebar');
+      const bd = document.getElementById('sidebarBackdrop');
+      if (!sb || !bd) return;
+      const isOpen = forceState !== undefined ? forceState : !sb.classList.contains('mobile-open');
+      if (isOpen) {
+        sb.classList.add('mobile-open');
+        bd.classList.add('open');
+      } else {
+        sb.classList.remove('mobile-open');
+        bd.classList.remove('open');
+      }
+    }
+
     async function apiFetch(url, options = {}) {
+      const resolvedUrl = resolveAppUrl(url);
       const headers = Object.assign({
         'Accept': 'application/json',
         'X-CSRF-TOKEN': CSRF_TOKEN
@@ -1663,7 +1778,7 @@
         options.body = JSON.stringify(options.body);
       }
 
-      const res = await fetch(url, Object.assign({}, options, {
+      const res = await fetch(resolvedUrl, Object.assign({}, options, {
         headers,
         credentials: 'same-origin'
       }));
@@ -1681,6 +1796,7 @@
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
     function switchView(viewId) {
+      toggleMobileSidebar(false);
       document.querySelectorAll('.content').forEach(s => s.classList.remove('active'));
       const target = document.getElementById(viewId);
       if (target) target.classList.add('active');
@@ -2213,7 +2329,7 @@
               </div>
             </div>
           </div>
-          <a class="btn primary sm" href="/app/api/exports/${job.id}/download">⬇ Download ZIP</a>
+          <a class="btn primary sm" href="${resolveAppUrl(`/app/api/exports/${job.id}/download`)}">⬇ Download ZIP</a>
         </div>
       `).join('');
     }
@@ -2247,7 +2363,7 @@
         showToast('Export package ready! Starting download...');
         await loadWorkspaceExports();
         document.getElementById('statExportCount').textContent = state.exports.length;
-        window.location.href = `/app/api/exports/${job.id}/download`;
+        window.location.href = resolveAppUrl(`/app/api/exports/${job.id}/download`);
       } catch (e) {
         showToast(e.message, true);
       } finally {
@@ -2378,7 +2494,7 @@
                   <div style="font-size:11.5px; color:var(--muted);">${formatBytes(b.size_bytes)} • ${formatDate(b.created_at)}</div>
                 </div>
                 <div style="display:flex; gap:6px;">
-                  <a class="btn sm" href="/settings/updates/api/backups/${encodeURIComponent(b.filename)}">⬇ ZIP</a>
+                  <a class="btn sm" href="${resolveAppUrl(`/settings/updates/api/backups/${encodeURIComponent(b.filename)}`)}">⬇ ZIP</a>
                   <button class="btn danger sm" onclick="rollbackToAdminBackup('${escapeHtml(b.filename)}')">Rollback</button>
                 </div>
               </div>
@@ -2411,7 +2527,7 @@
         const res = await apiFetch('/settings/updates/api/backup', { method: 'POST' });
         showToast(`Backup created: ${res.filename}`);
         await loadAdminUpdaterStatus();
-        if (res.download_url) window.location.href = res.download_url;
+        if (res.download_url) window.location.href = resolveAppUrl(res.download_url);
       } catch (e) {
         showToast(e.message, true);
       } finally {
