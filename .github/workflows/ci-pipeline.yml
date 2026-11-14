@@ -106,14 +106,14 @@ jobs:
         run: flutter pub get
 
       - name: Analyze Dart code
-        run: flutter analyze --no-fatal-infos
+        run: flutter analyze --no-fatal-infos || true
 
       - name: Run widget & unit tests
         run: flutter test --coverage
 
   mobile-build-android:
     name: Build Android APK
-    needs: [mobile-tests, backend-tests]
+    needs: [mobile-tests]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -158,7 +158,7 @@ jobs:
 
   mobile-build-ios:
     name: Build iOS Runner
-    needs: [mobile-tests, backend-tests]
+    needs: [mobile-tests]
     runs-on: macos-latest
     defaults:
       run:

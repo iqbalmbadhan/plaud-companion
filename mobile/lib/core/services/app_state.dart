@@ -1,7 +1,5 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import '../models/app_models.dart';
-import 'ai_service.dart';
 import 'export_service.dart';
 import 'plaud_device_service.dart';
 
@@ -11,6 +9,8 @@ class AppState extends ChangeNotifier {
     _initDefaultData();
     PlaudDeviceService.instance.addListener(notifyListeners);
   }
+
+  void refresh() => notifyListeners();
 
   final List<Transcript> _transcripts = [];
   final List<ExportItem> _exportHistory = [];

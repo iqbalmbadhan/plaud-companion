@@ -294,7 +294,7 @@ class _TranscriptDetailScreenState extends State<TranscriptDetailScreen> {
       widget.transcript.actionItems = actions;
       _isLoadingAi = false;
     });
-    AppState.instance.notifyListeners();
+    AppState.instance.refresh();
   }
 
   @override

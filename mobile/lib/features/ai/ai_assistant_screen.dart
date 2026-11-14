@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/models/app_models.dart';
 import '../../core/services/ai_service.dart';
 import '../../core/services/app_state.dart';
 import '../../core/theme/app_tokens.dart';
