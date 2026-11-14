@@ -60,6 +60,7 @@ Route::get('/login', [WebAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [WebAuthController::class, 'login'])->middleware('throttle:10,1')->name('login.post');
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 Route::match(['GET', 'POST'], '/auth/logout', [WebAuthController::class, 'logout'])->name('auth.logout');
+Route::get('/demo', static fn () => view('auth.demo'))->name('demo');
 
 // 1-Click Installer routes (blocked with 404 once storage/app/installed.lock exists)
 Route::prefix('install')->middleware('not_installed')->group(function (): void {
