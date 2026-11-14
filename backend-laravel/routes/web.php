@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 // Main PLAUD Companion Web Application (redirects to /install if not installed, or /login if unauthenticated)
 Route::middleware(['web.auth'])->group(function (): void {
     Route::get('/', [DashboardController::class, 'index'])->name('app.home');
+    Route::get('/app', [DashboardController::class, 'index'])->name('app.dashboard');
 
     // Session-authenticated JSON endpoints for the Web Workspace UI
     Route::prefix('app/api')->group(function (): void {
