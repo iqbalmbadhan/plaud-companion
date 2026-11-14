@@ -141,8 +141,25 @@ class Updater
 
                 // 6. MIGRATE
                 $this->status->patch(['step' => 'migrate']);
-                $migResult = $this->migrationRunner->run();
-                $migrationsRan = (bool) ($migResult['ran'] ?? false);
+                try {
+                    $migResult = $this->migrationRunner->run();
+                    $migrationsRan = (bool) ($migResult['ran'] ?? false);
+                } catch (\Throwable $migEx) {
+                    $artisanClass = 'Illuminate\\Support\\Facades\\Artisan';
+                    if (class_exists($artisanClass)) {
+                        $artisanExit = (int) $artisanClass::call('migrate', [
+                            '--force' => true,
+                            '--no-interaction' => true,
+                        ]);
+                        if ($artisanExit !== 0) {
+                            $artisanOut = trim((string) $artisanClass::output());
+                            throw new UpdateException('update_migrate_failed', "Database migration failed (exit {$artisanExit}): {$artisanOut}", [], 422, $migEx);
+                        }
+                        $migrationsRan = true;
+                    } else {
+                        throw $migEx;
+                    }
+                }
 
                 // 7. FINISH
                 $this->status->patch(['step' => 'finish']);

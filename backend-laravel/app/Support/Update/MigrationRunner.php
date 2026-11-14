@@ -34,11 +34,14 @@ class MigrationRunner
      */
     public function run(): array
     {
-        if ($this->freshProcess && $this->canUseProcOpen()) {
-            return $this->runFreshProcess();
+        $sapi = strtolower(php_sapi_name());
+        $isWeb = str_contains($sapi, 'fpm') || str_contains($sapi, 'cgi') || str_contains($sapi, 'apache');
+
+        if ($isWeb || !$this->freshProcess || !$this->canUseProcOpen()) {
+            return $this->runInProcess();
         }
 
-        return $this->runInProcess();
+        return $this->runFreshProcess();
     }
 
     public static function resolveCliBinary(): ?string
@@ -50,18 +53,21 @@ class MigrationRunner
             }
         }
 
-        $candidates = ['php', '/usr/bin/php', '/usr/local/bin/php'];
+        $candidates = [];
         if (defined('PHP_VERSION')) {
             $short = substr(PHP_VERSION, 0, 3);
             $candidates[] = "/usr/bin/php{$short}";
+            $candidates[] = "/usr/local/bin/php{$short}";
         }
+        $candidates[] = '/usr/bin/php';
+        $candidates[] = '/usr/local/bin/php';
 
         foreach ($candidates as $cand) {
-            if ($cand === 'php') {
-                return 'php';
-            }
             if (is_executable($cand)) {
-                return $cand;
+                $base = strtolower(basename($cand));
+                if (!str_contains($base, 'fpm') && !str_contains($base, 'cgi')) {
+                    return $cand;
+                }
             }
         }
 

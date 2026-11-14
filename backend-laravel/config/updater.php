@@ -84,8 +84,8 @@ return [
     // Keep exactly one previous copy for manual rollback
     'keep_previous' => 1,
 
-    // Fresh PHP process for migrations when proc_open is available
-    'fresh_process' => true,
+    // Run database migrations in-process via Artisan::call for 100% stability on web/FPM hosts
+    'fresh_process' => false,
 
     // Optional public update feed (no tokens, HTTPS + SSRF-guarded)
     'feed_url' => $envFn('UPDATER_FEED_URL', ''),
