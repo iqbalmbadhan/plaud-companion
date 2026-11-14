@@ -177,7 +177,7 @@
         <!-- Status & PHP Limits -->
         <div class="card">
             <h2>Live Updater Status</h2>
-            <p class="sub">Polls <code>/api/v1/updates/status</code> every 2 seconds.</p>
+            <p class="sub">Polls <code>/settings/updates/api/status</code> every 2 seconds.</p>
             <div class="kv">
                 <div class="kv-row"><span>State</span><strong id="st-state">—</strong></div>
                 <div class="kv-row"><span>Step</span><span id="st-step">—</span></div>
@@ -268,7 +268,7 @@ function showAlert(msg, type = 'error') {
 
 async function pollStatus() {
     try {
-        const res = await fetch('/api/v1/updates/status', {
+        const res = await fetch('/settings/updates/api/status', {
             headers: { 'Accept': 'application/json' },
             credentials: 'same-origin'
         });
@@ -330,7 +330,7 @@ async function uploadPackage() {
         if (file.size <= chunkSize) {
             const fd = new FormData();
             fd.append('file', file);
-            const res = await fetch('/api/v1/updates/upload', {
+            const res = await fetch('/settings/updates/api/upload', {
                 method: 'POST',
                 headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                 credentials: 'same-origin',
@@ -352,7 +352,7 @@ async function uploadPackage() {
                 fd.append('total_chunks', String(totalChunks));
                 fd.append('total_size', String(file.size));
                 fd.append('chunk', file.slice(start, end), file.name + '.part');
-                const res = await fetch('/api/v1/updates/upload', {
+                const res = await fetch('/settings/updates/api/upload', {
                     method: 'POST',
                     headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                     credentials: 'same-origin',
@@ -372,7 +372,7 @@ async function uploadPackage() {
 
 async function deleteStaged() {
     try {
-        const res = await fetch('/api/v1/updates/upload', {
+        const res = await fetch('/settings/updates/api/upload', {
             method: 'DELETE',
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
             credentials: 'same-origin'
@@ -390,7 +390,7 @@ async function applyUpdate() {
     const confirmation = document.getElementById('apply-confirm').value;
     const allowDowngrade = document.getElementById('allow-downgrade').checked;
     try {
-        const res = await fetch('/api/v1/updates/apply', {
+        const res = await fetch('/settings/updates/api/apply', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -413,7 +413,7 @@ async function applyUpdate() {
 async function triggerRollback() {
     const confirmation = document.getElementById('rollback-confirm').value;
     try {
-        const res = await fetch('/api/v1/updates/rollback', {
+        const res = await fetch('/settings/updates/api/rollback', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -435,7 +435,7 @@ async function triggerRollback() {
 
 async function createBackup() {
     try {
-        const res = await fetch('/api/v1/updates/backup', {
+        const res = await fetch('/settings/updates/api/backup', {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
             credentials: 'same-origin'

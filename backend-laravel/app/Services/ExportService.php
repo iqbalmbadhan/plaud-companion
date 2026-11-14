@@ -225,6 +225,36 @@ class ExportService
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    public function listWorkspaceExports(string $workspaceId, string $userId): array
+    {
+        $this->workspaces->requireMembership($workspaceId, $userId);
+
+        return ExportJob::query()
+            ->with(['items.transcript'])
+            ->where('workspace_id', $workspaceId)
+            ->orderByDesc('created_at')
+            ->limit(30)
+            ->get()
+            ->map(function (ExportJob $job): array {
+                $format = (string) ($job->settings['format'] ?? 'both');
+                $items = $job->items->map(static fn (ExportJobItem $item): array => [
+                    'id' => $item->id,
+                    'transcript_id' => $item->transcript_id,
+                    'transcript_title' => $item->transcript?->title ?? 'Unknown',
+                    'status' => $item->status,
+                    'output_filename' => $item->output_storage_key,
+                    'format' => $format,
+                    'error_code' => $item->error_code,
+                ])->all();
+
+                return $this->formatJobResponse($job, $items);
+            })
+            ->all();
+    }
+
+    /**
      * @return array{0: string, 1: string}
      */
     public function downloadExportArchive(string $exportId, string $userId): array

@@ -342,7 +342,7 @@
 </div>
 
 <script>
-const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
 function showAlert(msg, type = 'error') {
     const el = document.getElementById('alert');
@@ -377,6 +377,7 @@ function toggleDbFields() {
 async function apiPost(url, payload) {
     const res = await fetch(url, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',

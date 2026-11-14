@@ -14,6 +14,11 @@ class ExportController extends Controller
     {
     }
 
+    public function index(Request $request, string $workspaceId): JsonResponse
+    {
+        return response()->json($this->exports->listWorkspaceExports($workspaceId, $request->user()->id));
+    }
+
     public function store(Request $request, string $workspaceId): JsonResponse
     {
         $validated = $request->validate([

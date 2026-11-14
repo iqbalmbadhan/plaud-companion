@@ -15,20 +15,22 @@ use Throwable;
 
 class InstallController extends Controller
 {
-    public function show(Request $request): View
+    public function show(Request $request)
     {
-        return view('install.wizard', [
-            'preflight' => $this->collectPreflight(),
-            'defaults' => [
-                'app_name' => 'PLAUD Companion',
-                'app_url' => $request->getSchemeAndHttpHost(),
-                'db_connection' => 'mysql',
-                'db_host' => '127.0.0.1',
-                'db_port' => 3306,
-                'db_database' => 'plaud_companion',
-                'db_username' => 'plaud',
-            ],
-        ]);
+        return response()
+            ->view('install.wizard', [
+                'preflight' => $this->collectPreflight(),
+                'defaults' => [
+                    'app_name' => 'PLAUD Companion',
+                    'app_url' => $request->getSchemeAndHttpHost(),
+                    'db_connection' => 'mysql',
+                    'db_host' => '127.0.0.1',
+                    'db_port' => 3306,
+                    'db_database' => 'plaud_companion',
+                    'db_username' => 'plaud',
+                ],
+            ])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     public function preflight(): JsonResponse
@@ -207,6 +209,7 @@ class InstallController extends Controller
         if (!is_dir($lockDir)) {
             @mkdir($lockDir, 0775, true);
         }
+        @unlink(storage_path('framework/.install_app_key'));
 
         $versionFile = base_path('VERSION');
         $version = is_file($versionFile) ? trim((string) file_get_contents($versionFile)) : '1.0.0';
@@ -250,6 +253,8 @@ class InstallController extends Controller
         $writableTargets = [
             'storage' => storage_path(),
             'storage/app' => storage_path('app'),
+            'storage/framework/sessions' => storage_path('framework/sessions'),
+            'storage/framework/views' => storage_path('framework/views'),
             'storage/logs' => storage_path('logs'),
             'bootstrap/cache' => base_path('bootstrap/cache'),
         ];
@@ -355,9 +360,15 @@ class InstallController extends Controller
         }
 
         $existingAppKey = $this->readEnvValue($content, 'APP_KEY');
-        $appKey = ($existingAppKey !== '' && str_starts_with($existingAppKey, 'base64:'))
-            ? $existingAppKey
-            : 'base64:' . base64_encode(random_bytes(32));
+        if ($existingAppKey === '' || !str_starts_with($existingAppKey, 'base64:')) {
+            $installKeyFile = storage_path('framework/.install_app_key');
+            $bootstrapKey = is_file($installKeyFile) ? trim((string) @file_get_contents($installKeyFile)) : '';
+            $appKey = str_starts_with($bootstrapKey, 'base64:')
+                ? $bootstrapKey
+                : 'base64:' . base64_encode(random_bytes(32));
+        } else {
+            $appKey = $existingAppKey;
+        }
 
         $existingJwt = $this->readEnvValue($content, 'JWT_SECRET_KEY');
         $jwtSecret = ($existingJwt !== '' && !str_starts_with($existingJwt, 'replace_with_'))
@@ -412,7 +423,7 @@ class InstallController extends Controller
         $pattern = '/^' . preg_quote($key, '/') . '=.*$/m';
 
         if (preg_match($pattern, $content)) {
-            return (string) preg_replace($pattern, str_replace('$', '\\$', $line), $content, 1);
+            return (string) preg_replace($pattern, str_replace(['\\', '$'], ['\\\\', '\\$'], $line), $content, 1);
         }
 
         $suffix = ($content !== '' && !str_ends_with($content, "\n")) ? "\n" : '';

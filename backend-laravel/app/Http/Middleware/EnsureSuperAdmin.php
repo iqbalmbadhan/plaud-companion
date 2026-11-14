@@ -16,7 +16,18 @@ class EnsureSuperAdmin
     {
         $user = $request->user();
 
-        if ($user === null || $user->is_super_admin !== true) {
+        if ($user === null) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'error' => 'forbidden',
+                    'detail' => 'Super-admin privileges are required.',
+                ], 403);
+            }
+
+            return redirect()->guest(route('login'));
+        }
+
+        if ($user->is_super_admin !== true) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'error' => 'forbidden',

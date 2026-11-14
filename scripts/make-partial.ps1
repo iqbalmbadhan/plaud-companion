@@ -1,6 +1,5 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [string]$PrivateKeyFile,
+    [string]$PrivateKeyFile = '',
     [string]$MinVersion = '',
     [string]$BaselineFile = '',
     [string]$Version = '',
@@ -13,9 +12,7 @@ $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot 'lib\release-names.ps1')
 
-if (-not (Test-Path -LiteralPath $PrivateKeyFile)) {
-    throw "Private key file not found: $PrivateKeyFile"
-}
+$PrivateKeyFile = Resolve-PrivateKeyFile -PrivateKeyFile $PrivateKeyFile
 
 $repoRoot = Get-RepoRoot -ScriptDir $PSScriptRoot
 $backendDir = Join-Path $repoRoot 'backend-laravel'
@@ -33,11 +30,11 @@ if ($SkipBump -and (Test-Path -LiteralPath $versionFile)) {
     $releaseVer = (Get-Content -LiteralPath $versionFile -Raw).Trim()
     if ($releaseVer -notmatch '^\d{4}\.\d{2}\.\d{2}\.\d{4}$') {
         $releaseVer = Get-NextMonotonicVersion -VersionFilePath $versionFile -VersionOverride $Version
-        Set-Content -LiteralPath $versionFile -Value ($releaseVer + "`n") -NoNewline -Encoding UTF8
+        Set-Content -LiteralPath $versionFile -Value ($releaseVer + "`n") -NoNewline -Encoding ASCII
     }
 } else {
     $releaseVer = Get-NextMonotonicVersion -VersionFilePath $versionFile -VersionOverride $Version
-    Set-Content -LiteralPath $versionFile -Value ($releaseVer + "`n") -NoNewline -Encoding UTF8
+    Set-Content -LiteralPath $versionFile -Value ($releaseVer + "`n") -NoNewline -Encoding ASCII
 }
 
 Write-Host "Building PLAUD Companion partial patch v$releaseVer (min_version=$effectiveMinVer)..."
@@ -74,24 +71,30 @@ try {
         }
     }
 
-    Assert-StagingClean -StagingDir $patchStaging -Mode 'update'
+    Assert-StagingClean -StagingDir $patchStaging -Mode 'partial'
 
     $patchZipPath = Join-Path $resolvedOutDir $script:PatchUpdateZipName
     New-ZipFromDirectory -SourceDir $patchStaging -ZipOutputPath $patchZipPath
 
-    $signingLib = (Join-Path $PSScriptRoot 'lib\release-signing.php') -replace '\\', '/'
-    $removedJson = ConvertTo-Json -InputObject @($removedList) -Compress
-    $phpSignCode = @'
-require_once $argv[1];
-$removed = json_decode($argv[6], true);
-if (!is_array($removed)) { $removed = []; }
-$pkg = signReleaseZip($argv[2], $argv[3], $argv[4], "partial", $argv[5], $removed);
-fwrite(STDOUT, "Signed & verified partial release v{$pkg->version} (" . count($pkg->files) . " files, " . count($pkg->removed) . " removed)\n");
-'@
+    $signScript = Join-Path $PSScriptRoot 'sign-release.php'
+    $removedFile = Join-Path ([System.IO.Path]::GetTempPath()) ('plaud_removed_' + [Guid]::NewGuid().ToString('N') + '.json')
+    try {
+        $removedJson = ConvertTo-Json -InputObject @($removedList) -Compress
+        if ($removedList.Count -eq 0) {
+            $removedJson = '[]'
+        } elseif ($removedList.Count -eq 1) {
+            $removedJson = '[' + $removedJson + ']'
+        }
+        Set-Content -LiteralPath $removedFile -Value $removedJson -NoNewline -Encoding UTF8
 
-    & php -r $phpSignCode $signingLib $patchZipPath $PrivateKeyFile $releaseVer $effectiveMinVer $removedJson
-    if ($LASTEXITCODE -ne 0) {
-        throw "Partial release signing failed with exit code $LASTEXITCODE."
+        & php $signScript $patchZipPath $PrivateKeyFile '--kind=partial' "--min-version=$effectiveMinVer" "--version=$releaseVer" "--removed-file=$removedFile"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Partial release signing failed with exit code $LASTEXITCODE."
+        }
+    } finally {
+        if (Test-Path -LiteralPath $removedFile) {
+            Remove-Item -LiteralPath $removedFile -Force -ErrorAction SilentlyContinue
+        }
     }
 
     Write-Host "Created signed partial update: $patchZipPath ($changedCount changed/added, $($removedList.Count) removed)"

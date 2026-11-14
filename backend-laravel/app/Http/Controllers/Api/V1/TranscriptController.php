@@ -69,6 +69,10 @@ class TranscriptController extends Controller
     {
         $this->workspaces->requireMembership($workspaceId, $request->user()->id, ['owner', 'admin', 'editor']);
 
+        if (!$request->has('content_text') && $request->has('raw_text')) {
+            $request->merge(['content_text' => $request->input('raw_text')]);
+        }
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'min:1', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -96,8 +100,12 @@ class TranscriptController extends Controller
         }
 
         $contentHash = hash('sha256', trim($validated['content_text']));
+        $segmentsInput = $validated['segments'] ?? [];
+        if (empty($segmentsInput)) {
+            $segmentsInput = $this->parseSpeakerSegments($validated['content_text']);
+        }
 
-        $transcript = DB::transaction(function () use ($workspaceId, $request, $validated, $contentHash): Transcript {
+        $transcript = DB::transaction(function () use ($workspaceId, $request, $validated, $contentHash, $segmentsInput): Transcript {
             $t = Transcript::create([
                 'id' => (string) Str::uuid(),
                 'workspace_id' => $workspaceId,
@@ -108,12 +116,12 @@ class TranscriptController extends Controller
                 'source_type' => $validated['source_type'] ?? 'manual_upload',
                 'recorded_at' => $validated['recorded_at'] ?? null,
                 'language' => $validated['language'] ?? 'en',
-                'status' => 'imported',
+                'status' => 'processed',
                 'content_text' => $validated['content_text'],
                 'content_hash' => $contentHash,
             ]);
 
-            foreach ($validated['segments'] ?? [] as $seg) {
+            foreach ($segmentsInput as $seg) {
                 TranscriptSegment::create([
                     'id' => (string) Str::uuid(),
                     'transcript_id' => $t->id,
@@ -184,5 +192,53 @@ class TranscriptController extends Controller
                 'text' => $s->text,
             ])->all(),
         ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function parseSpeakerSegments(string $text): array
+    {
+        $lines = preg_split('/\R+/', trim($text)) ?: [];
+        $segments = [];
+        $seq = 1;
+        $cursorMs = 0;
+
+        foreach ($lines as $rawLine) {
+            $line = trim($rawLine);
+            if ($line === '') {
+                continue;
+            }
+
+            $speaker = 'Speaker ' . (($seq % 2 === 1) ? '1' : '2');
+            $startMs = $cursorMs;
+            $body = $line;
+
+            if (preg_match('/^\[?(\d{1,2}):(\d{2})(?::(\d{2}))?\]?\s*([^:]{1,50}):\s*(.+)$/', $line, $m)) {
+                if ($m[3] !== '') {
+                    $startMs = ((int) $m[1] * 3600 + (int) $m[2] * 60 + (int) $m[3]) * 1000;
+                } else {
+                    $startMs = ((int) $m[1] * 60 + (int) $m[2]) * 1000;
+                }
+                $speaker = trim($m[4]);
+                $body = trim($m[5]);
+            } elseif (preg_match('/^([^:]{1,50}):\s*(.+)$/', $line, $m)) {
+                $speaker = trim($m[1]);
+                $body = trim($m[2]);
+            }
+
+            $endMs = $startMs + 15000;
+            $cursorMs = $endMs;
+
+            $segments[] = [
+                'sequence_number' => $seq++,
+                'speaker_label' => $speaker,
+                'start_ms' => $startMs,
+                'end_ms' => $endMs,
+                'text' => $body,
+            ];
+        }
+
+        return $segments;
     }
 }

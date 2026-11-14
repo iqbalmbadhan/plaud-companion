@@ -52,6 +52,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/workspaces/{workspaceId}/ai/ask', [AiController::class, 'ask']);
 
         // Exports
+        Route::get('/workspaces/{workspaceId}/exports', [ExportController::class, 'index']);
         Route::post('/workspaces/{workspaceId}/exports', [ExportController::class, 'store']);
         Route::get('/exports/{exportId}', [ExportController::class, 'show']);
         Route::get('/exports/{exportId}/download', [ExportController::class, 'download']);

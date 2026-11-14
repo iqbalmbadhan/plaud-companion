@@ -11,12 +11,8 @@ $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot 'lib\release-names.ps1')
 
-if (-not $FreshOnly -and [string]::IsNullOrWhiteSpace($PrivateKeyFile)) {
-    throw 'PrivateKeyFile is required to sign plaud-companion-update-full.zip (or pass -FreshOnly).'
-}
-
-if (-not $FreshOnly -and -not (Test-Path -LiteralPath $PrivateKeyFile)) {
-    throw "Private key file not found: $PrivateKeyFile"
+if (-not $FreshOnly) {
+    $PrivateKeyFile = Resolve-PrivateKeyFile -PrivateKeyFile $PrivateKeyFile
 }
 
 $repoRoot = Get-RepoRoot -ScriptDir $PSScriptRoot
@@ -28,11 +24,11 @@ if ($SkipBump -and (Test-Path -LiteralPath $versionFile)) {
     $releaseVer = (Get-Content -LiteralPath $versionFile -Raw).Trim()
     if ($releaseVer -notmatch '^\d{4}\.\d{2}\.\d{2}\.\d{4}$') {
         $releaseVer = Get-NextMonotonicVersion -VersionFilePath $versionFile -VersionOverride $Version
-        Set-Content -LiteralPath $versionFile -Value ($releaseVer + "`n") -NoNewline -Encoding UTF8
+        Set-Content -LiteralPath $versionFile -Value ($releaseVer + "`n") -NoNewline -Encoding ASCII
     }
 } else {
     $releaseVer = Get-NextMonotonicVersion -VersionFilePath $versionFile -VersionOverride $Version
-    Set-Content -LiteralPath $versionFile -Value ($releaseVer + "`n") -NoNewline -Encoding UTF8
+    Set-Content -LiteralPath $versionFile -Value ($releaseVer + "`n") -NoNewline -Encoding ASCII
 }
 
 Write-Host "Building PLAUD Companion release v$releaseVer..."

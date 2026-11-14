@@ -41,6 +41,33 @@ class MigrationRunner
         return $this->runInProcess();
     }
 
+    public static function resolveCliBinary(): ?string
+    {
+        if (defined('PHP_BINARY') && PHP_BINARY !== '') {
+            $base = strtolower(basename(PHP_BINARY));
+            if (!str_contains($base, 'fpm') && !str_contains($base, 'cgi')) {
+                return PHP_BINARY;
+            }
+        }
+
+        $candidates = ['php', '/usr/bin/php', '/usr/local/bin/php'];
+        if (defined('PHP_VERSION')) {
+            $short = substr(PHP_VERSION, 0, 3);
+            $candidates[] = "/usr/bin/php{$short}";
+        }
+
+        foreach ($candidates as $cand) {
+            if ($cand === 'php') {
+                return 'php';
+            }
+            if (is_executable($cand)) {
+                return $cand;
+            }
+        }
+
+        return null;
+    }
+
     private function runFreshProcess(): array
     {
         if ($this->processRunner !== null) {
@@ -48,7 +75,7 @@ class MigrationRunner
             $exitCode = (int) ($res['exit_code'] ?? 1);
             $output = (string) ($res['output'] ?? '');
             if ($exitCode !== 0) {
-                throw new UpdateException('update_migrate_failed', "Database migration failed (exit {$exitCode}): {$output}");
+                return $this->runInProcess();
             }
             return [
                 'ran' => true,
@@ -60,10 +87,14 @@ class MigrationRunner
 
         $artisan = $this->rootPath . DIRECTORY_SEPARATOR . 'artisan';
         if (!is_file($artisan)) {
-            throw new UpdateException('update_migrate_failed', 'artisan entrypoint not found for fresh-process migration.');
+            return $this->runInProcess();
         }
 
-        $phpBin = defined('PHP_BINARY') && PHP_BINARY !== '' ? PHP_BINARY : 'php';
+        $phpBin = self::resolveCliBinary();
+        if ($phpBin === null || str_contains(strtolower($phpBin), 'fpm')) {
+            return $this->runInProcess();
+        }
+
         $cmd = [$phpBin, $artisan, 'migrate', '--force', '--no-interaction'];
         $descriptors = [
             0 => ['pipe', 'r'],
@@ -87,7 +118,8 @@ class MigrationRunner
         $combined = trim($stdout . ($stderr !== '' ? "\n" . $stderr : ''));
 
         if ($exitCode !== 0) {
-            throw new UpdateException('update_migrate_failed', "Database migration failed (exit {$exitCode}): {$combined}");
+            // If sub-process exited with non-zero (e.g. php-fpm usage error), fall back to in-process Artisan
+            return $this->runInProcess();
         }
 
         return [

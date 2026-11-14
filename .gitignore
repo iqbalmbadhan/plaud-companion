@@ -37,3 +37,7 @@ venv/
 Thumbs.db
 .idea/
 .vscode/
+
+# Build artifacts & releases
+dist/*.zip
+

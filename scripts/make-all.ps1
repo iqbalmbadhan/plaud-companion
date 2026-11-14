@@ -1,6 +1,5 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [string]$PrivateKeyFile,
+    [string]$PrivateKeyFile = '',
     [string]$Version = '',
     [string]$OutputDir = ''
 )
@@ -9,6 +8,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 . (Join-Path $PSScriptRoot 'lib\release-names.ps1')
+
+$PrivateKeyFile = Resolve-PrivateKeyFile -PrivateKeyFile $PrivateKeyFile
 
 $repoRoot = Get-RepoRoot -ScriptDir $PSScriptRoot
 $resolvedOutDir = if ([string]::IsNullOrWhiteSpace($OutputDir)) { Join-Path $repoRoot 'dist' } else { $OutputDir }

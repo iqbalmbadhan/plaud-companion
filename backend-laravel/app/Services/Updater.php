@@ -844,8 +844,8 @@ class Updater
 
         $cmd = $down ? 'down' : 'up';
         $artisan = $this->root . DIRECTORY_SEPARATOR . 'artisan';
-        if ($this->migrationRunner->canUseProcOpen() && is_file($artisan)) {
-            $phpBin = defined('PHP_BINARY') && PHP_BINARY !== '' ? PHP_BINARY : 'php';
+        $phpBin = MigrationRunner::resolveCliBinary();
+        if ($phpBin !== null && !str_contains(strtolower($phpBin), 'fpm') && $this->migrationRunner->canUseProcOpen() && is_file($artisan)) {
             $proc = @proc_open(
                 [$phpBin, $artisan, $cmd],
                 [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],

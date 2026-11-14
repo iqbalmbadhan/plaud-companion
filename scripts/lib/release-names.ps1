@@ -50,7 +50,7 @@ function Get-RepoRoot {
         [Parameter(Mandatory = $true)]
         [string]$ScriptDir
     )
-    $resolved = Resolve-Path (Join-Path $ScriptDir '..\..')
+    $resolved = Resolve-Path (Join-Path $ScriptDir '..')
     return $resolved.Path
 }
 
@@ -110,6 +110,33 @@ function Assert-PublicKeyPresent {
     }
 }
 
+function Resolve-PrivateKeyFile {
+    param(
+        [string]$PrivateKeyFile = ''
+    )
+
+    $defaultPath = Join-Path $env:USERPROFILE '.plaud-companion\plaud-companion.updater-key'
+    $candidate = if ([string]::IsNullOrWhiteSpace($PrivateKeyFile)) { $defaultPath } else { $PrivateKeyFile.Trim() }
+
+    if (-not (Test-Path -LiteralPath $candidate)) {
+        if ($candidate -match '^[A-Za-z0-9+/]{40,}={0,2}$') {
+            throw (
+                "You passed a base64 key string ('$candidate'), not a file path.`n" +
+                "  -PrivateKeyFile must be the path to your PRIVATE .updater-key file outside the repo (default: $defaultPath).`n" +
+                "  Note: backend-laravel\config\updater-public.key contains the PUBLIC key; keep the PRIVATE key file outside the repo.`n" +
+                "  If you haven't generated it yet, run: php scripts/updater-keys.php `"$defaultPath`""
+            )
+        }
+        throw (
+            "Private key file not found: $candidate`n" +
+            "  Pass -PrivateKeyFile <path-to-private.updater-key> or generate one at the default path:`n" +
+            "  php scripts/updater-keys.php `"$defaultPath`""
+        )
+    }
+
+    return (Resolve-Path -LiteralPath $candidate).Path
+}
+
 function Test-UpdateRelPathAllowed {
     param(
         [Parameter(Mandatory = $true)]
@@ -156,13 +183,15 @@ function Assert-StagingClean {
     param(
         [Parameter(Mandatory = $true)]
         [string]$StagingDir,
-        [ValidateSet('update', 'fresh')]
+        [ValidateSet('update', 'fresh', 'partial')]
         [string]$Mode = 'update'
     )
 
-    $pubKeyFile = Join-Path $StagingDir 'config\updater-public.key'
-    if (-not (Test-Path -LiteralPath $pubKeyFile)) {
-        throw 'Allow-list check failed: config/updater-public.key is missing from staging.'
+    if ($Mode -ne 'partial') {
+        $pubKeyFile = Join-Path $StagingDir 'config\updater-public.key'
+        if (-not (Test-Path -LiteralPath $pubKeyFile)) {
+            throw 'Allow-list check failed: config/updater-public.key is missing from staging.'
+        }
     }
 
     $envFile = Join-Path $StagingDir '.env'
@@ -171,8 +200,8 @@ function Assert-StagingClean {
     }
 
     $storageDir = Join-Path $StagingDir 'storage'
-    if (Test-Path -LiteralPath $storageDir) {
-        throw 'Security check failed: storage/ must never be packaged in a release.'
+    if ($Mode -ne 'fresh' -and (Test-Path -LiteralPath $storageDir)) {
+        throw 'Security check failed: storage/ must never be packaged in an update release.'
     }
 
     $rootLen = $StagingDir.TrimEnd('\', '/').Length + 1
@@ -183,14 +212,14 @@ function Assert-StagingClean {
         if ($rel -imatch '^\.env(\..+)?$' -and -not ($Mode -eq 'fresh' -and $rel -ceq '.env.example')) {
             throw "Security check failed: forbidden env file '$rel' in staging."
         }
-        if ($rel -imatch '^storage(/|$)') {
+        if ($rel -imatch '^storage(/|$)' -and -not ($Mode -eq 'fresh' -and $rel -cmatch '^storage/.+/\.gitkeep$')) {
             throw "Security check failed: forbidden storage path '$rel' in staging."
         }
         if ($rel -imatch '^(?!vendor/).*\.(key|pem|sql|bak)$' -and $rel -cne $script:PublicKeyExceptionRelPath) {
             throw "Security check failed: potential secret/key file '$rel' in staging."
         }
 
-        if ($Mode -eq 'update') {
+        if ($Mode -eq 'update' -or $Mode -eq 'partial') {
             if (-not (Test-UpdateRelPathAllowed -RelPath $rel)) {
                 throw "Allow-list check failed: '$rel' is not allowed in an update zip."
             }
@@ -277,16 +306,35 @@ function New-CleanComposerStaging {
             }
         }
 
-        Set-Content -LiteralPath (Join-Path $stagingRoot 'VERSION') -Value ($VersionStr + "`n") -NoNewline -Encoding UTF8
+        Set-Content -LiteralPath (Join-Path $stagingRoot 'VERSION') -Value ($VersionStr + "`n") -NoNewline -Encoding ASCII
 
         # Build clean production vendor in temp staging
         Push-Location $stagingRoot
         try {
-            $composerCmd = Get-Command composer -ErrorAction SilentlyContinue
-            if ($null -eq $composerCmd) {
-                throw 'Composer is required on PATH to build clean --no-dev vendor directory.'
+            $caBundle = Join-Path $env:USERPROFILE '.plaud-companion\ca-bundle.crt'
+            $phpIniArgs = @()
+            if ((Test-Path -LiteralPath $caBundle) -and [string]::IsNullOrWhiteSpace($env:COMPOSER_CAFILE)) {
+                $phpIniArgs = @('-d', "curl.cainfo=$caBundle", '-d', "openssl.cafile=$caBundle")
             }
-            & composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
+
+            $composerCmd = Get-Command composer -ErrorAction SilentlyContinue
+            if ($null -ne $composerCmd) {
+                & $composerCmd.Source install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
+            } else {
+                $composerPharCandidates = @(
+                    (Join-Path $BackendDir 'composer.phar'),
+                    (Join-Path (Split-Path -Parent $BackendDir) 'composer.phar'),
+                    (Join-Path $env:USERPROFILE 'composer.phar')
+                )
+                $composerPhar = $composerPharCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+                if ($null -eq $composerPhar) {
+                    throw (
+                        "Composer is required on PATH (or as composer.phar in repo root / user profile) to build clean --no-dev vendor directory.`n" +
+                        "Install Composer (https://getcomposer.org/download/) and ensure 'composer' is on PATH."
+                    )
+                }
+                & php @phpIniArgs $composerPhar install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
+            }
             if ($LASTEXITCODE -ne 0) {
                 throw "composer install failed with exit code $LASTEXITCODE."
             }
@@ -299,6 +347,24 @@ function New-CleanComposerStaging {
             $strayPath = Join-Path $stagingRoot $stray
             if (Test-Path -LiteralPath $strayPath) {
                 Remove-Item -LiteralPath $strayPath -Recurse -Force
+            }
+        }
+
+        if ($Mode -eq 'fresh') {
+            $skeletonDirs = @(
+                'storage\app\private',
+                'storage\app\public',
+                'storage\app\updates',
+                'storage\framework\cache\data',
+                'storage\framework\sessions',
+                'storage\framework\views',
+                'storage\logs',
+                'bootstrap\cache'
+            )
+            foreach ($skel in $skeletonDirs) {
+                $skelPath = Join-Path $stagingRoot $skel
+                New-Item -ItemType Directory -Path $skelPath -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $skelPath '.gitkeep') -Value '' -NoNewline -Encoding ASCII
             }
         }
 
