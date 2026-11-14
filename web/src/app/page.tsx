@@ -198,6 +198,62 @@ export default function AdminDashboardPage() {
           </section>
         )}
       </main>
+
+      <footer
+        style={{
+          marginTop: 40,
+          padding: "20px 24px",
+          borderTop: "1px solid var(--border-color)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12,
+          fontSize: 12,
+          color: "var(--secondary-text)",
+        }}
+      >
+        <div>
+          <strong>PLAUD Companion</strong> &bull; Next.js Admin Console
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+          <span>
+            Developed by{" "}
+            <a
+              href="https://www.iqbalmahmud.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--primary-color, #18A879)", textDecoration: "none", fontWeight: 600 }}
+            >
+              Md. Iqbal Mahmud
+            </a>
+          </span>
+          <span style={{ opacity: 0.4 }}>&bull;</span>
+          <span>
+            Technical Advisor:{" "}
+            <a
+              href="https://www.dawncsimmons.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--primary-color, #18A879)", textDecoration: "none", fontWeight: 600 }}
+            >
+              Dawn C Simmons
+            </a>
+          </span>
+          <span style={{ opacity: 0.4 }}>&bull;</span>
+          <span>
+            Brought to you by{" "}
+            <a
+              href="https://www.aiinfos.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--primary-color, #18A879)", textDecoration: "none", fontWeight: 600 }}
+            >
+              AI Infos
+            </a>
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

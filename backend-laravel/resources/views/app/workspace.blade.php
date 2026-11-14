@@ -989,6 +989,38 @@
       .top-actions { width: 100%; justify-content: space-between; order: 1; }
       .content { padding: 12px 12px 84px; }
     }
+
+    .app-footer {
+      margin-top: auto;
+      border-top: 1px solid var(--line);
+      padding: 18px 26px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.7);
+    }
+    .app-footer a {
+      color: var(--emerald-dark);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.15s ease;
+    }
+    .app-footer a:hover {
+      color: var(--emerald);
+      text-decoration: underline;
+    }
+    @media (max-width: 900px) {
+      .app-footer {
+        padding-bottom: 96px;
+        flex-direction: column;
+        text-align: center;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1640,6 +1672,20 @@
         </div>
         @endif
       </section>
+
+      <!-- APP FOOTER -->
+      <footer class="app-footer">
+        <div>
+          <strong>PLAUD Companion</strong> &bull; On-Device Cryptography Vault Active
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center;">
+          <span>Developed by <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer">Md. Iqbal Mahmud</a></span>
+          <span style="opacity:0.4;">&bull;</span>
+          <span>Technical Advisor: <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer">Dawn C Simmons</a></span>
+          <span style="opacity:0.4;">&bull;</span>
+          <span>Brought to you by <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer">AI Infos</a></span>
+        </div>
+      </footer>
     </main>
   </div>
 

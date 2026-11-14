@@ -297,6 +297,36 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                   minimumSize: const Size.fromHeight(44),
                 ),
               ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Attribution Footer
+              Center(
+                child: Column(
+                  children: [
+                    const Text(
+                      'PLAUD Companion Mobile',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.muted),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: const [
+                        Text('Developer: Md. Iqbal Mahmud (www.iqbalmahmud.com)',
+                            style: TextStyle(fontSize: 11, color: AppColors.emerald, fontWeight: FontWeight.w600)),
+                        Text('•', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                        Text('Advisor: Dawn C Simmons (www.dawncsimmons.com)',
+                            style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                        Text('•', style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                        Text('Brought to you by AI Infos (www.aiinfos.com)',
+                            style: TextStyle(fontSize: 11, color: AppColors.muted)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
             ],
           ),
         );

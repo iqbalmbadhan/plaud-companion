@@ -166,10 +166,16 @@
         </div>
     </div>
 
-    <div class="security-footer">
-        Automatic Personal Workspace Provisioning &bull; Zero Administrative Delay<br>
-        Enterprise Encryption &bull; Hardware BLE Sync &bull; Role-Based Access Control
-    </div>
+    <footer class="security-footer">
+        <div>Automatic Personal Workspace Provisioning &bull; Zero Cloud Storage Mode</div>
+        <div style="margin-top: 10px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; align-items: center;">
+            <span>Developed by <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Md. Iqbal Mahmud</a></span>
+            <span style="opacity:0.5;">&bull;</span>
+            <span>Technical Advisor: <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Dawn C Simmons</a></span>
+            <span style="opacity:0.5;">&bull;</span>
+            <span>Brought to you by <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">AI Infos</a></span>
+        </div>
+    </footer>
 </div>
 </body>
 </html>

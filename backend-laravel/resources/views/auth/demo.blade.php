@@ -260,6 +260,17 @@
             <a href="{{ url('/login') }}" style="color:var(--muted); font-size:13px; text-decoration:none;">&larr; Back to standard login</a>
             <span style="font-size:12px; color:var(--emerald);">Local Environment Ready • MySQL Database Connected</span>
         </div>
+
+        <footer style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--muted);">
+            <div><strong>PLAUD Companion</strong> &bull; On-Device Cryptography Vault</div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                <span>Developed by <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Md. Iqbal Mahmud</a></span>
+                <span style="opacity:0.4;">&bull;</span>
+                <span>Technical Advisor: <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Dawn C Simmons</a></span>
+                <span style="opacity:0.4;">&bull;</span>
+                <span>Brought to you by <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">AI Infos</a></span>
+            </div>
+        </footer>
     </div>
 </div>
 </body>

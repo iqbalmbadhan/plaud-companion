@@ -278,6 +278,17 @@
             </table>
         </div>
     </div>
+
+    <footer style="margin-top:16px; padding:16px 20px; border-top:1px solid var(--navy-border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--muted);">
+        <div><strong>PLAUD Companion</strong> &bull; On-Device Encryption &amp; Access Control</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+            <span>Developed by <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Md. Iqbal Mahmud</a></span>
+            <span style="opacity:0.4;">&bull;</span>
+            <span>Technical Advisor: <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Dawn C Simmons</a></span>
+            <span style="opacity:0.4;">&bull;</span>
+            <span>Brought to you by <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">AI Infos</a></span>
+        </div>
+    </footer>
 </div>
 
 <div id="toast" class="toast"></div>
