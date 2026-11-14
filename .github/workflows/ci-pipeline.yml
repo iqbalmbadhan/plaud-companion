@@ -142,6 +142,7 @@ jobs:
           flutter create --platforms=android --org com.plaudcompanion --project-name plaud_companion /tmp/scaffold_app
           cp -r /tmp/scaffold_app/android/gradle* android/
           cp -r /tmp/scaffold_app/android/gradle android/
+          cp /tmp/scaffold_app/android/settings.gradle android/settings.gradle
           chmod +x android/gradlew || true
           cp /tmp/backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           cp /tmp/backup/build.gradle android/app/build.gradle
@@ -150,7 +151,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Android APK
-        run: flutter build apk --release --no-tree-shake-icons || flutter build apk --debug --no-tree-shake-icons
+        run: flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation || flutter build apk --debug --no-tree-shake-icons --android-skip-build-dependency-validation
 
       - name: Upload Android APK Artifact
         uses: actions/upload-artifact@v4
