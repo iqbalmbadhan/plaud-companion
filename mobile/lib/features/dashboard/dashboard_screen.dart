@@ -304,9 +304,11 @@ class DashboardScreen extends StatelessWidget {
                 child: const Icon(Icons.rocket_launch, color: Color(0xFF38BDF8), size: 18),
               ),
               const SizedBox(width: 8),
-              const Text(
-                '1-Click PLAUD Demo Exporter',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+              const Expanded(
+                child: Text(
+                  '1-Click PLAUD Demo Exporter',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
               ),
             ],
           ),
@@ -365,8 +367,8 @@ class DashboardScreen extends StatelessWidget {
           const SizedBox(height: 6),
           Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.deepNavy)),
           const SizedBox(height: 2),
-          Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.deepNavy)),
-          Text(subtitle, style: const TextStyle(fontSize: 10, color: AppColors.muted)),
+          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.deepNavy)),
+          Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: AppColors.muted)),
         ],
       ),
     );

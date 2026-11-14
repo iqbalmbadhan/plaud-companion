@@ -5,7 +5,7 @@ import 'package:plaud_companion/main.dart';
 
 void main() {
   testWidgets('Auth screen displays PLAUD Companion and signs in', (tester) async {
-    tester.view.physicalSize = const Size(400, 844);
+    tester.view.physicalSize = const Size(450, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
 
@@ -20,7 +20,7 @@ void main() {
   });
 
   testWidgets('5-tab mobile navigation transitions across core screens', (tester) async {
-    tester.view.physicalSize = const Size(400, 844);
+    tester.view.physicalSize = const Size(450, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
 
