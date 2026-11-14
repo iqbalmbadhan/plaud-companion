@@ -54,8 +54,15 @@ Route::prefix('v1')->group(function (): void {
         // Exports
         Route::get('/workspaces/{workspaceId}/exports', [ExportController::class, 'index']);
         Route::post('/workspaces/{workspaceId}/exports', [ExportController::class, 'store']);
+        Route::post('/workspaces/{workspaceId}/exports/demo', [ExportController::class, 'demoPackage']);
         Route::get('/exports/{exportId}', [ExportController::class, 'show']);
         Route::get('/exports/{exportId}/download', [ExportController::class, 'download']);
+
+        // PLAUD Cloud Open API & BLE Hardware Bridge
+        Route::get('/workspaces/{workspaceId}/integrations/plaud/status', [\App\Http\Controllers\Api\V1\PlaudSyncController::class, 'status']);
+        Route::post('/workspaces/{workspaceId}/integrations/plaud/connect', [\App\Http\Controllers\Api\V1\PlaudSyncController::class, 'connect']);
+        Route::post('/workspaces/{workspaceId}/integrations/plaud/pair-ble', [\App\Http\Controllers\Api\V1\PlaudSyncController::class, 'pairBle']);
+        Route::post('/workspaces/{workspaceId}/integrations/plaud/sync', [\App\Http\Controllers\Api\V1\PlaudSyncController::class, 'sync']);
 
         // Signed Updater & Backup API (super_admin only)
         Route::prefix('updates')->middleware('super_admin')->group(function (): void {

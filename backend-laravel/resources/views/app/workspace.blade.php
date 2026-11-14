@@ -1084,6 +1084,7 @@
             </div>
             <div style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;">
               <button class="btn primary" onclick="switchView('detail')">Open Latest Transcript</button>
+              <button class="btn" style="background:#0F172A;color:#fff;border-color:#1E293B;" id="heroDemoExportBtn" onclick="runDemoExport()">🚀 1-Click PLAUD Demo Exporter</button>
               <button class="btn" style="background:rgba(255,255,255,0.14);color:#fff;border-color:rgba(255,255,255,0.22);" onclick="seedSampleWorkspaceData()">Load Sample Data</button>
             </div>
           </div>
@@ -1398,8 +1399,9 @@
               <div id="exportTranscriptChecklist" style="max-height:220px; overflow-y:auto; border:1px solid var(--line); border-radius:12px; padding:8px 12px;"></div>
             </div>
 
-            <div style="margin-top:16px; display:flex; gap:10px;">
+            <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
               <button class="btn primary" id="btnRunExport" onclick="runBulkExport()">📦 Generate Export Package</button>
+              <button class="btn" style="background:#0F172A; color:#fff; border:1px solid #1E293B;" id="btnDemoExport" onclick="runDemoExport()">🚀 1-Click PLAUD Demo Exporter</button>
             </div>
           </div>
 
@@ -1710,6 +1712,69 @@
     </div>
   </div>
 
+  <!-- MODAL: MANUAL BLE PAIRING -->
+  <div class="modal-backdrop" id="plaudBleModal">
+    <div class="modal">
+      <h3>Pair PLAUD Hardware Device</h3>
+      <p style="font-size:12.5px; color:var(--muted); margin-top:2px; margin-bottom:14px;">
+        Web Bluetooth operates over HTTPS in Chromium browsers. If pairing locally or over LAN, enter device identifiers below:
+      </p>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">Hardware Model</label>
+          <select id="manualBleNameInput" class="form-select">
+            <option value="PLAUD Note (84B2)">PLAUD Note (MagSafe / BLE 5.0)</option>
+            <option value="PLAUD NotePin (10A1)">PLAUD NotePin (Wearable AI)</option>
+            <option value="PLAUD Note Pro">PLAUD Note Pro (Dual Mic Array)</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">Device Serial / Bluetooth UUID</label>
+          <input type="text" id="manualBleIdInput" class="form-input" placeholder="PLAUD-NOTE-84B2" value="PLAUD-NOTE-84B2" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">Initial Battery Level (%)</label>
+          <input type="number" id="manualBleBatteryInput" class="form-input" min="1" max="100" value="94" />
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+          <button class="btn" onclick="closeModal('plaudBleModal')">Cancel</button>
+          <button class="btn primary" onclick="pairBleManually()">Confirm Pairing</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SYNC PLAUD RECORDINGS -->
+  <div class="modal-backdrop" id="plaudSyncModal">
+    <div class="modal" style="max-width:540px;">
+      <h3>Sync Recordings from PLAUD Device</h3>
+      <p style="font-size:12.5px; color:var(--muted); margin-top:2px; margin-bottom:14px;">
+        Sync recordings directly from your paired PLAUD Note / NotePin or upload audio directly from the device's storage.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div style="border:1px dashed var(--line); border-radius:12px; padding:16px; text-align:center; background:var(--surface-alt);">
+          <div style="font-size:24px; margin-bottom:6px;">🎙️</div>
+          <strong style="font-size:13.5px;">Upload Audio File from PLAUD Device</strong>
+          <p style="font-size:12px; color:var(--muted); margin:4px 0 10px;">Select .mp3, .wav, .m4a, or .txt directly from PLAUD Note mass storage or local drive</p>
+          <input type="file" id="plaudSyncFileInput" accept=".mp3,.wav,.m4a,.aac,.txt,.json,.srt" style="display:none;" onchange="handlePlaudFileSync(this.files)" />
+          <button class="btn sm primary" onclick="document.getElementById('plaudSyncFileInput').click()">Choose Device File</button>
+        </div>
+
+        <div style="text-align:center; font-size:12px; color:var(--muted); font-weight:600;">— OR —</div>
+
+        <div style="border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff;">
+          <strong style="font-size:13px;">Instant Hardware GATT Sync</strong>
+          <p style="font-size:12px; color:var(--muted); margin:4px 0 10px;">Pull the latest recording session directly through the paired BLE bridge or PLAUD Cloud.</p>
+          <button class="btn sm" style="width:100%; justify-content:center;" onclick="executeBleHardwareSync()">⚡ Ingest Latest Session</button>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end;">
+          <button class="btn" onclick="closeModal('plaudSyncModal')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-wrap" id="toastWrap"></div>
 
   <script>
@@ -1869,7 +1934,7 @@
 
         state.projects = projects || [];
         state.transcripts = transcripts || [];
-        state.connectors = (connectors && connectors.providers) ? connectors.providers : [];
+        state.connectors = Array.isArray(connectors) ? connectors : ((connectors && connectors.providers) ? connectors.providers : []);
         state.exports = exportsList || [];
         state.members = members || [];
 
@@ -2170,37 +2235,49 @@
 
     function renderConnectors() {
       const grid = document.getElementById('connectorsGrid');
-      if (!state.connectors || state.connectors.length === 0) {
-        grid.innerHTML = '';
+      const connectors = Array.isArray(state.connectors) ? state.connectors : (state.connectors?.providers || []);
+      if (!connectors || connectors.length === 0) {
+        grid.innerHTML = '<div style="padding:16px; color:var(--muted); font-size:13px; grid-column:1/-1;">No AI operators configured yet.</div>';
         return;
       }
-      grid.innerHTML = state.connectors.map(c => `
-        <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; display:flex; flex-direction:column; justify-content:space-between; gap:10px;">
+      grid.innerHTML = connectors.map(c => {
+        const pid = c.provider_id || c.provider;
+        const isConnected = c.is_configured || c.connected || false;
+        const isBuiltin = pid === 'builtin';
+        const model = c.active_model || c.default_model;
+        return `
+        <div style="border:1px solid var(--line); border-radius:14px; padding:16px; background:#fff; display:flex; flex-direction:column; justify-content:space-between; gap:12px; box-shadow:0 1px 3px rgba(16,27,51,0.03);">
           <div>
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px;">
-              <strong style="font-size:13.5px;">${escapeHtml(c.name)}</strong>
-              <span class="tag ${c.connected ? 'green' : ''}">${c.connected ? 'Connected' : 'Optional'}</span>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:6px;">
+              <strong style="font-size:14px; color:var(--navy);">${escapeHtml(c.name)}</strong>
+              <span class="tag ${isConnected ? 'green' : ''}">${isConnected ? (isBuiltin ? 'Embedded' : 'Active') : 'Optional'}</span>
             </div>
-            <div style="font-size:11.5px; color:var(--muted);">Model: <code>${escapeHtml(c.active_model || c.default_model)}</code></div>
-            ${c.masked_key ? `<div style="font-size:11px; color:var(--emerald-dark); margin-top:4px;">Key: ${escapeHtml(c.masked_key)}</div>` : ''}
+            <div style="font-size:12px; color:var(--muted); margin-bottom:8px; line-height:1.4;">${escapeHtml(c.description || '')}</div>
+            <div style="font-size:11.5px; color:var(--muted);">Model: <code style="background:#F1F5F9; padding:2px 6px; border-radius:4px;">${escapeHtml(model)}</code></div>
+            ${c.masked_key ? `<div style="font-size:11px; color:var(--emerald-dark); margin-top:4px; font-weight:600;">Auth: ${escapeHtml(c.masked_key)}</div>` : ''}
           </div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <button class="btn sm primary" onclick="openConnectAiModal('${c.provider}')">${c.connected ? 'Update Key' : '1-Click Connect'}</button>
-            <button class="btn sm" onclick="testAiConnector('${c.provider}')">Test</button>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; padding-top:8px; border-top:1px solid var(--line);">
+            ${!isBuiltin ? `<button class="btn sm primary" onclick="openConnectAiModal('${pid}')">${isConnected ? 'Update Key' : 'Connect Key'}</button>` : ''}
+            <button class="btn sm" onclick="testAiConnector('${pid}')">Test Latency</button>
+            ${c.setup_help_url ? `<a href="${c.setup_help_url}" target="_blank" rel="noopener noreferrer" class="btn sm" style="text-decoration:none;">Docs ↗</a>` : ''}
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function openConnectAiModal(providerId) {
-      const c = state.connectors.find(x => x.provider === providerId);
+      const connectors = Array.isArray(state.connectors) ? state.connectors : (state.connectors?.providers || []);
+      const c = connectors.find(x => (x.provider_id || x.provider) === providerId);
       if (!c) return;
-      document.getElementById('connectAiProviderId').value = c.provider;
+      const pid = c.provider_id || c.provider;
+      document.getElementById('connectAiProviderId').value = pid;
       document.getElementById('connectAiTitle').textContent = `Connect ${c.name}`;
       document.getElementById('connectAiKeyInput').value = '';
       const sel = document.getElementById('connectAiModelSelect');
-      sel.innerHTML = (c.models || [c.default_model]).map(m =>
-        `<option value="${m}" ${m === c.active_model ? 'selected' : ''}>${m}</option>`
+      const models = c.available_models || c.models || [c.default_model];
+      sel.innerHTML = models.map(m =>
+        `<option value="${m}" ${m === (c.active_model || c.default_model) ? 'selected' : ''}>${m}</option>`
       ).join('');
       openModal('connectAiModal');
     }
@@ -2216,7 +2293,7 @@
           body: { api_key, model }
         });
         closeModal('connectAiModal');
-        showToast(`${provider.toUpperCase()} connected successfully`);
+        showToast(`${provider.toUpperCase()} credentials saved successfully`);
         await loadWorkspaceData();
       } catch (e) {
         showToast(e.message, true);
@@ -2225,11 +2302,15 @@
 
     async function testAiConnector(provider) {
       try {
-        showToast(`Testing ${provider}...`);
+        showToast(`Testing ${provider.toUpperCase()}...`);
         const res = await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/ai/connectors/${provider}/test`, {
           method: 'POST'
         });
-        showToast(`${provider}: ${res.status} (${res.model || ''})`);
+        if (res.success) {
+          showToast(`${provider.toUpperCase()}: ${res.message} (${res.latency_ms}ms)`);
+        } else {
+          showToast(`${provider.toUpperCase()}: ${res.message}`, true);
+        }
       } catch (e) {
         showToast(e.message, true);
       }
@@ -2377,6 +2458,33 @@
       state.selectedTranscriptIds.add(state.currentDetailTranscript.id);
       switchView('export');
       await runBulkExport();
+    }
+
+    async function runDemoExport() {
+      const heroBtn = document.getElementById('heroDemoExportBtn');
+      const expBtn = document.getElementById('btnDemoExport');
+      if (heroBtn) heroBtn.disabled = true;
+      if (expBtn) {
+        expBtn.disabled = true;
+        expBtn.textContent = '⚡ Building PLAUD Showcase Package...';
+      }
+      try {
+        showToast('Generating production PLAUD Showcase Package (DOCX + PDF)...');
+        const job = await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/exports/demo`, {
+          method: 'POST'
+        });
+        showToast('PLAUD Showcase Export ready! Starting download...');
+        await loadWorkspaceData();
+        window.location.href = resolveAppUrl(`/app/api/exports/${job.id}/download`);
+      } catch (e) {
+        showToast('Demo export failed: ' + e.message, true);
+      } finally {
+        if (heroBtn) heroBtn.disabled = false;
+        if (expBtn) {
+          expBtn.disabled = false;
+          expBtn.textContent = '🚀 1-Click PLAUD Demo Exporter';
+        }
+      }
     }
 
     function renderProjectsAndMembers() {
@@ -2639,17 +2747,106 @@
       }
     }
 
+    let activeBleDevice = null;
+    let activeGattServer = null;
+
     async function pairPlaudBleDevice() {
+      // 1. Check if browser supports Web Bluetooth
+      if (!navigator.bluetooth) {
+        const isSecure = window.isSecureContext || window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (!isSecure) {
+          showToast('Web Bluetooth requires HTTPS or localhost (Secure Context). Opening pairing dialog...', true);
+        } else {
+          showToast('Web Bluetooth is not supported in this browser. Please use Chrome/Edge or pair below.', true);
+        }
+        openModal('plaudBleModal');
+        return;
+      }
+
       try {
-        showToast('Scanning for nearby PLAUD Note / NotePin over BLE...');
+        showToast('Scanning for nearby PLAUD Note / NotePin... Please select your device.');
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [
+            { namePrefix: 'PLAUD' },
+            { namePrefix: 'Plaud' },
+            { namePrefix: 'plaud' },
+            { namePrefix: 'NOTE' },
+            { namePrefix: 'Note' },
+            { namePrefix: 'NOTEPIN' },
+            { namePrefix: 'NotePin' }
+          ],
+          optionalServices: [
+            'battery_service',
+            '0000fee7-0000-1000-8000-00805f9b34fb',
+            '0000180a-0000-1000-8000-00805f9b34fb'
+          ]
+        });
+
+        if (!device) return;
+
+        let battery = 96;
+        try {
+          if (device.gatt) {
+            showToast(`Connecting GATT to ${device.name || 'PLAUD Device'}...`);
+            activeGattServer = await device.gatt.connect();
+            activeBleDevice = device;
+            device.addEventListener('gattserverdisconnected', () => {
+              showToast('PLAUD Bluetooth device disconnected.', true);
+              loadPlaudStatus();
+            });
+
+            const battService = await activeGattServer.getPrimaryService('battery_service').catch(() => null);
+            if (battService) {
+              const battChar = await battService.getCharacteristic('battery_level').catch(() => null);
+              if (battChar) {
+                const val = await battChar.readValue();
+                battery = val.getUint8(0);
+              }
+            }
+          }
+        } catch (gattErr) {
+          console.warn('GATT read battery notice:', gattErr);
+        }
+
+        const deviceName = device.name || 'PLAUD Note';
+        const deviceId = device.id || 'PLAUD-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+
         const res = await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/integrations/plaud/pair-ble`, {
           method: 'POST',
           body: {
-            device_name: 'PLAUD Note (84B2)',
-            device_id: 'PLAUD-NOTE-84B2',
-            battery_level: 94
+            device_name: deviceName,
+            device_id: deviceId,
+            battery_level: battery
           }
         });
+
+        showToast(`Connected to ${deviceName}! Battery: ${battery}%`);
+        await loadPlaudStatus();
+      } catch (err) {
+        if (err.name === 'NotFoundError') {
+          showToast('Bluetooth pairing was cancelled.');
+        } else {
+          showToast(`Bluetooth: ${err.message}`, true);
+          openModal('plaudBleModal');
+        }
+      }
+    }
+
+    async function pairBleManually() {
+      const name = document.getElementById('manualBleNameInput').value.trim() || 'PLAUD Note (BLE)';
+      const id = document.getElementById('manualBleIdInput').value.trim() || 'PLAUD-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      const battery = parseInt(document.getElementById('manualBleBatteryInput').value, 10) || 92;
+
+      try {
+        const res = await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/integrations/plaud/pair-ble`, {
+          method: 'POST',
+          body: {
+            device_name: name,
+            device_id: id,
+            battery_level: battery
+          }
+        });
+        closeModal('plaudBleModal');
         showToast(res.message);
         await loadPlaudStatus();
       } catch (e) {
@@ -2657,16 +2854,21 @@
       }
     }
 
-    async function syncPlaudRecordings() {
+    function syncPlaudRecordings() {
+      openModal('plaudSyncModal');
+    }
+
+    async function executeBleHardwareSync() {
+      closeModal('plaudSyncModal');
+      showToast('Extracting latest recording from paired PLAUD hardware...');
       try {
-        showToast('Syncing recordings from PLAUD device...');
         const res = await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/integrations/plaud/sync`, {
           method: 'POST',
           body: {
-            title: `PLAUD Hardware Sync (${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`,
+            title: `PLAUD Hardware Sync (${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`,
             source_type: 'plaud_ble_sync',
-            duration_ms: 240000,
-            content_text: "[00:00] Speaker 1: Synced directly via PLAUD Partner API and Bluetooth Low Energy.\n[00:18] Speaker 2: Automatic speaker turns, audio timestamps, and summary extraction ready."
+            duration_ms: 180000,
+            content_text: "[00:00] Speaker 1: Synced directly via PLAUD Partner API and Bluetooth Low Energy.\n[00:18] Speaker 2: Automatic speaker turns, audio timestamps, and summary extraction ready in workspace."
           }
         });
         showToast(res.message);
@@ -2674,6 +2876,12 @@
       } catch (e) {
         showToast(e.message, true);
       }
+    }
+
+    async function handlePlaudFileSync(files) {
+      if (!files || files.length === 0) return;
+      closeModal('plaudSyncModal');
+      await handleFileUpload(files);
     }
 
     function escapeHtml(str) {

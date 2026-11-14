@@ -43,6 +43,13 @@ class ExportController extends Controller
         return response()->json($job, 201);
     }
 
+    public function demoPackage(Request $request, string $workspaceId): JsonResponse
+    {
+        $job = $this->exports->createDemoExport($workspaceId, $request->user()->id);
+
+        return response()->json($job, 201);
+    }
+
     public function show(Request $request, string $exportId): JsonResponse
     {
         return response()->json($this->exports->getExportJob($exportId, $request->user()->id));

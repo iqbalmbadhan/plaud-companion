@@ -45,6 +45,7 @@ Route::middleware(['web.auth'])->group(function (): void {
 
         Route::get('/workspaces/{workspaceId}/exports', [ExportController::class, 'index']);
         Route::post('/workspaces/{workspaceId}/exports', [ExportController::class, 'store']);
+        Route::post('/workspaces/{workspaceId}/exports/demo', [ExportController::class, 'demoPackage']);
         Route::get('/exports/{exportId}', [ExportController::class, 'show']);
         Route::get('/exports/{exportId}/download', [ExportController::class, 'download']);
 
