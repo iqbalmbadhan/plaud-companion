@@ -54,18 +54,20 @@ class _SplashOnboardingScreenState extends State<SplashOnboardingScreen> {
                             child: const Icon(Icons.graphic_eq, color: Colors.white, size: 26),
                           ),
                           const SizedBox(width: 12),
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'PLAUD Companion',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.deepNavy),
-                              ),
-                              Text(
-                                'Hardware BLE & AI Workspace',
-                                style: TextStyle(fontSize: 12, color: AppColors.muted),
-                              ),
-                            ],
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'PLAUD Companion',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.deepNavy),
+                                ),
+                                Text(
+                                  'Hardware BLE & AI Workspace',
+                                  style: TextStyle(fontSize: 12, color: AppColors.muted),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
