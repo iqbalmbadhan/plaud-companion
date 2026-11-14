@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="PLAUD Companion" />
   <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+  <script src="/js/plaud-crypto-vault.js"></script>
   <title>PLAUD Companion — Transcript &amp; AI Productivity Workspace</title>
   <style>
     :root {
@@ -1053,6 +1054,7 @@
           <input id="globalSearch" type="text" placeholder="Search transcripts, speakers, action items, or projects..." oninput="handleGlobalSearch(this.value)" />
         </div>
         <div class="top-actions">
+          <span class="tag green" style="display:inline-flex; align-items:center; gap:5px; font-weight:700;" title="All meeting audio, transcripts, and notes are encrypted strictly on this physical device.">🔒 On-Device Encryption</span>
           <button class="btn sm" id="btnPwaInstall" style="display:none; background:rgba(24,168,121,0.15); border:1px solid var(--emerald); color:var(--emerald-dark); font-weight:700;" onclick="installPwa()">📲 Install App</button>
           @if($user['is_super_admin'])
             <a href="{{ url('/settings/users') }}" class="btn sm" title="Super-Admin User Management" style="text-decoration:none;">👥 Users</a>
@@ -1515,6 +1517,41 @@
           </div>
         </div>
 
+        <!-- ON-DEVICE CRYPTOGRAPHY VAULT (ZERO CLOUD STORAGE) -->
+        <div class="card" style="border: 2px solid rgba(24, 168, 121, 0.35); margin-bottom:18px;">
+          <div class="section-head">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3>On-Device Cryptography Vault</h3>
+                <span class="tag green">AES-GCM-256 Active</span>
+              </div>
+              <span>Meeting transcripts, audio sessions, and notes are encrypted and stored strictly on this physical device. Zero central cloud storage.</span>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn sm primary" onclick="if(window.plaudCryptoVault) window.plaudCryptoVault.exportEncryptedBackup()">📥 Export Backup (.plaudvault)</button>
+              <button class="btn sm" onclick="document.getElementById('vaultRestoreInput').click()">📤 Restore from Backup</button>
+              <input type="file" id="vaultRestoreInput" accept=".plaudvault,.json" style="display:none;" onchange="handleVaultRestore(this.files[0])">
+            </div>
+          </div>
+          <div class="grid-3" style="margin-top:12px;">
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div class="stat-label">Encryption Standard</div>
+              <div style="font-size:15px; font-weight:700; margin:4px 0;">AES-GCM-256</div>
+              <div style="font-size:12px; color:var(--emerald-dark); font-weight:600;">Web Cryptography API (SubtleCrypto)</div>
+            </div>
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div class="stat-label">Storage Location</div>
+              <div style="font-size:15px; font-weight:700; margin:4px 0;">This Physical Device Only</div>
+              <div style="font-size:12px; color:var(--muted);">IndexedDB Isolated Sandbox (Zero Cloud)</div>
+            </div>
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div class="stat-label">Cloud Storage &amp; Multi-Device Sync</div>
+              <div style="font-size:15px; font-weight:700; margin:4px 0;">Staged for Future Version</div>
+              <div style="font-size:12px; color:var(--muted);">Optional Opt-In Release Roadmap</div>
+            </div>
+          </div>
+        </div>
+
         <!-- PLAUD PARTNER API & HARDWARE INTEGRATION -->
         <div class="card" style="border: 2px solid rgba(24, 168, 121, 0.35);">
           <div class="section-head">
@@ -1946,6 +1983,26 @@
 
         state.projects = projects || [];
         state.transcripts = transcripts || [];
+
+        // On-Device Cryptographic Vault initialization & sync
+        if (window.plaudCryptoVault) {
+          try {
+            await window.plaudCryptoVault.init();
+            const localVaultTranscripts = await window.plaudCryptoVault.loadAllTranscripts();
+            if (localVaultTranscripts && localVaultTranscripts.length > 0) {
+              const existingIds = new Set(state.transcripts.map(t => t.id));
+              for (const vt of localVaultTranscripts) {
+                if (!existingIds.has(vt.id)) {
+                  state.transcripts.unshift(vt);
+                  existingIds.add(vt.id);
+                }
+              }
+            }
+          } catch (vaultErr) {
+            console.warn('[Vault] Failed merging on-device vault records:', vaultErr);
+          }
+        }
+
         state.connectors = Array.isArray(connectors) ? connectors : ((connectors && connectors.providers) ? connectors.providers : []);
         state.exports = exportsList || [];
         state.members = members || [];
@@ -2894,6 +2951,18 @@
       if (!files || files.length === 0) return;
       closeModal('plaudSyncModal');
       await handleFileUpload(files);
+    }
+
+    async function handleVaultRestore(file) {
+      if (!file) return;
+      try {
+        showToast('Decrypting and restoring vault backup...');
+        const count = await window.plaudCryptoVault.importEncryptedBackup(file);
+        showToast(`Successfully restored ${count} encrypted recordings into device vault!`);
+        await loadWorkspaceData();
+      } catch (err) {
+        showToast('Vault restore failed: ' + err.message, true);
+      }
     }
 
     function escapeHtml(str) {

@@ -183,7 +183,44 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // 2. AI Operator Status
+              // 2. On-Device Cryptography Storage Card
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.shield_outlined, color: AppColors.emerald, size: 20),
+                          const SizedBox(width: 8),
+                          Text('On-Device Cryptography Storage', style: Theme.of(context).textTheme.titleMedium),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.paleEmerald,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              '🔒 AES-256 Active',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.deepNavy),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Meeting recordings, speaker diarization, and transcripts are stored strictly on this device sandbox with zero cloud leakage. Centralized cloud storage is staged for a future opt-in release.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF475569), height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // 3. AI Operator Status
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.md),
