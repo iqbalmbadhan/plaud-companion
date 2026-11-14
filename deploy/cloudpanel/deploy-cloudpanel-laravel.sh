@@ -10,9 +10,11 @@ DOMAIN_NAME="${DOMAIN_NAME:-plaud.example.com}"
 SITE_DIR="${SITE_DIR:-/home/${SITE_USER}/htdocs/${DOMAIN_NAME}}"
 LARAVEL_DIR="${SITE_DIR}/backend-laravel"
 
-# Auto-detect PHP 8.4 or 8.3 binary
+# Auto-detect PHP 8.5, 8.4 or 8.3 binary
 if [ -z "${PHP_BIN:-}" ]; then
-    if command -v php8.4 >/dev/null 2>&1; then
+    if command -v php8.5 >/dev/null 2>&1; then
+        PHP_BIN="php8.5"
+    elif command -v php8.4 >/dev/null 2>&1; then
         PHP_BIN="php8.4"
     elif command -v php8.3 >/dev/null 2>&1; then
         PHP_BIN="php8.3"
@@ -81,7 +83,7 @@ fi
 
 echo "=== [5/5] Reloading PHP-FPM & Nginx (if root/sudo) ==="
 if [ "$(id -u)" -eq 0 ]; then
-    for svc in php8.4-fpm php8.3-fpm nginx; do
+    for svc in php8.5-fpm php8.4-fpm php8.3-fpm nginx; do
         if systemctl is-active --quiet "${svc}"; then
             systemctl reload "${svc}"
             echo "Reloaded ${svc}."
