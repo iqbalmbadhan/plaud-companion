@@ -33,8 +33,6 @@ abstract class TestCase extends BaseTestCase
         }
 
         $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
-
-        $this->ensureProfileRouteRegistered();
     }
 
     /**
@@ -60,49 +58,6 @@ abstract class TestCase extends BaseTestCase
         $lockFile = storage_path('app/installed.lock');
         if (is_file($lockFile)) {
             @unlink($lockFile);
-        }
-    }
-
-    /**
-     * Ensure the Milestone 4 admin user profile endpoint exists if not already registered.
-     */
-    protected function ensureProfileRouteRegistered(): void
-    {
-        $routeExists = false;
-        foreach (Route::getRoutes()->getRoutes() as $r) {
-            if (str_contains($r->uri(), 'settings/users/api/{userId}/profile')) {
-                $routeExists = true;
-                break;
-            }
-        }
-
-        if (!$routeExists) {
-            Route::middleware(['web', 'web.auth', 'super_admin'])->get('/settings/users/api/{userId}/profile', function (string $userId) {
-                $user = User::query()->find($userId);
-                if (!$user) {
-                    return response()->json(['error' => 'not_found', 'message' => 'User not found.'], 404);
-                }
-
-                $workspaces = Workspace::where('owner_user_id', $user->id)->get();
-                $transcriptsCount = Transcript::where('created_by_user_id', $user->id)->count();
-                $deviceActivity = AuditEvent::where('actor_user_id', $user->id)
-                    ->where('action', 'device.ble_paired')
-                    ->orderBy('created_at', 'desc')
-                    ->get();
-
-                return response()->json([
-                    'id' => $user->id,
-                    'email' => $user->email,
-                    'display_name' => $user->display_name,
-                    'status' => $user->status,
-                    'is_super_admin' => (bool) $user->is_super_admin,
-                    'created_at' => $user->created_at?->format('M d, Y H:i'),
-                    'workspaces' => $workspaces,
-                    'workspaces_count' => $workspaces->count(),
-                    'transcripts_count' => $transcriptsCount,
-                    'device_activity' => $deviceActivity,
-                ]);
-            })->name('settings.users.profile');
         }
     }
 

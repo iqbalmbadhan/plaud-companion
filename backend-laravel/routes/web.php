@@ -78,6 +78,7 @@ Route::prefix('install')->middleware('not_installed')->group(function (): void {
 // Super-admin-only User & Access Management Panel
 Route::middleware(['web.auth', 'super_admin'])->prefix('settings/users')->group(function (): void {
     Route::get('/', [\App\Http\Controllers\UserManagementController::class, 'index'])->name('settings.users');
+    Route::get('/api/{userId}/profile', [\App\Http\Controllers\UserManagementController::class, 'apiProfile'])->name('settings.users.profile');
     Route::prefix('api')->group(function (): void {
         Route::get('/list', [\App\Http\Controllers\UserManagementController::class, 'apiList']);
         Route::post('/{userId}/toggle-status', [\App\Http\Controllers\UserManagementController::class, 'toggleStatus']);

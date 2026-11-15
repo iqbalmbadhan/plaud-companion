@@ -1039,6 +1039,12 @@ class EndToEndUserWorkflowTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertStringContainsString('suspended', $response->json('message'));
+
+        $audit = AuditEvent::where('action', 'user.suspended')
+            ->where('resource_id', $target->id)
+            ->first();
+        $this->assertNotNull($audit);
+        $this->assertSame($admin->id, $audit->actor_user_id);
     }
 
     public function test_tier1_f11_toggle_status_non_admin_forbidden(): void

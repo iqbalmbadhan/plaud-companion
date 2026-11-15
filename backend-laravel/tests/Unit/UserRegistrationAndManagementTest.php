@@ -44,6 +44,7 @@ class UserRegistrationAndManagementTest extends TestCase
         $this->assertStringContainsString("register.post", $content, 'web.php must register register.post route.');
         $this->assertStringContainsString("settings/users", $content, 'web.php must register settings/users route.');
         $this->assertStringContainsString("UserManagementController", $content, 'web.php must wire UserManagementController.');
+        $this->assertStringContainsString("apiProfile", $content, 'web.php must wire apiProfile route.');
     }
 
     public function test_register_view_has_required_form_fields(): void
@@ -69,6 +70,9 @@ class UserRegistrationAndManagementTest extends TestCase
         $this->assertStringContainsString('toggleAdmin', $content);
         $this->assertStringContainsString('Total Accounts', $content);
         $this->assertStringContainsString('Suspended Accounts', $content);
+        $this->assertStringContainsString('profileModal', $content);
+        $this->assertStringContainsString('openUserProfile', $content);
+        $this->assertStringContainsString('closeProfileModal', $content);
     }
 
     public function test_registration_controller_provisions_workspace_and_redirects_to_app(): void
