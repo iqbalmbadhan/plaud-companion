@@ -43,3 +43,10 @@ dist/*.zip
 mobile_artifacts/
 *.apk
 
+# Temporary update staging & manifest artifacts
+/update/
+
+# Certificates & certificate bundles (credentials)
+*.crt
+*.pem
+
