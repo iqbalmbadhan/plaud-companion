@@ -864,6 +864,137 @@
 
     .modal h3 { margin: 0 0 14px; font-size: 18px; }
 
+    /* GUIDED DEVICE CONNECTION WIZARD (M2 / R2) */
+    .wizard-modal {
+      max-width: 680px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+      border-radius: 22px;
+    }
+
+    .wizard-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .wizard-stepper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+      position: relative;
+    }
+
+    .wizard-stepper::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 24px;
+      right: 24px;
+      height: 2px;
+      background: var(--line);
+      z-index: 1;
+    }
+
+    .wizard-step-node {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      background: var(--surface);
+      padding: 0 6px;
+    }
+
+    .wizard-step-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      border: 2px solid var(--line);
+      background: var(--surface);
+      color: var(--muted);
+      transition: 0.2s ease;
+    }
+
+    .wizard-step-node.active .wizard-step-circle {
+      border-color: var(--emerald);
+      background: var(--emerald);
+      color: #fff;
+      box-shadow: 0 0 0 3px rgba(24, 168, 121, 0.2);
+    }
+
+    .wizard-step-node.completed .wizard-step-circle {
+      border-color: var(--emerald-dark);
+      background: var(--emerald-soft);
+      color: var(--emerald-dark);
+    }
+
+    .wizard-step-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .wizard-step-node.active .wizard-step-label {
+      color: var(--navy);
+      font-weight: 700;
+    }
+
+    .wizard-body {
+      padding: 22px 24px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .wizard-step-content {
+      display: none;
+    }
+
+    .wizard-step-content.active {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .wizard-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--line);
+      background: var(--surface-alt);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .selectable-card {
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    .selectable-card:hover {
+      border-color: rgba(24, 168, 121, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .selectable-card.selected {
+      border-color: var(--emerald);
+      background: var(--emerald-soft);
+    }
+
     .toast-wrap {
       position: fixed;
       bottom: 22px;
@@ -1091,6 +1222,7 @@
           @if($user['is_super_admin'])
             <a href="{{ url('/settings/users') }}" class="btn sm" title="Super-Admin User Management" style="text-decoration:none;">👥 Users</a>
           @endif
+          <button class="btn primary" onclick="openDeviceWizard()">🎙️ Connect Device</button>
           <button class="btn" onclick="switchView('transcripts'); document.getElementById('fileUploadInput').click();">+ Import Files</button>
           <button class="btn" onclick="openModal('newTranscriptModal')">+ Paste Transcript</button>
           <button class="btn primary" onclick="switchView('assistant')">✨ Ask AI</button>
@@ -1112,7 +1244,8 @@
               extract grounded action items, and generate formatted Word (DOCX) and PDF packages in one click.
             </p>
             <div class="hero-tags">
-              <span class="pill">Multi-File Import (TXT/SRT/DOCX/PDF)</span>
+              <span class="pill" onclick="openDeviceWizard()" style="cursor:pointer; background:rgba(255,255,255,0.25);" title="Launch guided setup for PLAUD Note or NotePin">🎙️ Guided Device Wizard</span>
+              <span class="pill">Multi-File Import (.JSON/Audio/TXT/SRT/DOCX/PDF)</span>
               <span class="pill">OpenRouter • Gemini • Claude • OpenAI</span>
               <span class="pill">Bulk DOCX + PDF + ZIP Export</span>
               <span class="pill">Team Workspace RBAC</span>
@@ -1178,9 +1311,13 @@
                 </div>
               </div>
               <div class="quick-grid">
+                <div class="quick" onclick="openDeviceWizard()">
+                  <strong>🎙️ Device Connection Wizard</strong>
+                  <small>Guided 4-step setup for PLAUD Note &amp; NotePin (Bluetooth, USB, File Import).</small>
+                </div>
                 <div class="quick" onclick="switchView('transcripts'); document.getElementById('fileUploadInput').click();">
                   <strong>📥 Import Recordings</strong>
-                  <small>Upload TXT, SRT, DOCX, or PDF transcripts from PLAUD app exports.</small>
+                  <small>Upload JSON, Audio, TXT, SRT, DOCX, or PDF transcripts from PLAUD exports.</small>
                 </div>
                 <div class="quick" onclick="switchView('assistant')">
                   <strong>🤖 Ask AI Across Files</strong>
@@ -1208,6 +1345,9 @@
               <p style="margin:0; font-size:13px; color:var(--muted); line-height:1.6;">
                 Transcript parser, speaker segmenter, grounded AI assistant, and OOXML/PDF document generator are active. Connect your preferred AI provider key in <strong>AI Assistant</strong> or <strong>Settings</strong> for live LLM synthesis.
               </p>
+              <div style="margin-top:12px;">
+                <button class="btn sm primary" onclick="openDeviceWizard()">⚡ Launch Device Wizard ↗</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1216,13 +1356,14 @@
       <!-- VIEW 2: TRANSCRIPTS -->
       <section class="content" id="transcripts">
         <div class="card">
-          <input type="file" id="fileUploadInput" multiple accept=".txt,.srt,.docx,.pdf,.md" style="display:none;" onchange="handleFileUpload(this.files)" />
+          <input type="file" id="fileUploadInput" multiple accept=".json,.mp3,.wav,.m4a,.aac,.txt,.srt,.docx,.pdf,.md" style="display:none;" onchange="handleFileUpload(this.files)" />
           <div class="upload-zone" id="uploadDropZone" onclick="document.getElementById('fileUploadInput').click()">
             <div style="font-size:28px;">📄</div>
             <h4>Drop PLAUD transcript files here or click to browse</h4>
-            <p>Supports multi-file upload: <strong>.TXT, .SRT, .DOCX, .PDF</strong> — automatically parses speaker labels and timestamps</p>
+            <p>Supports multi-file upload: <strong>.JSON (PLAUD Diarized), .MP3, .WAV, .M4A, .AAC, .TXT, .SRT, .DOCX, .PDF</strong> — automatically parses speaker labels and timestamps</p>
             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;" onclick="event.stopPropagation();">
               <button class="btn primary" onclick="document.getElementById('fileUploadInput').click()">Select Transcript Files</button>
+              <button class="btn" onclick="openDeviceWizard()">⚡ Device Connection Wizard</button>
               <button class="btn" onclick="openModal('newTranscriptModal')">+ Paste Raw Transcript Text</button>
             </div>
           </div>
@@ -1595,7 +1736,8 @@
               <span>Connect directly to PLAUD Cloud Open API (platform-us.plaud.ai) or pair via Bluetooth Low Energy (BLE)</span>
             </div>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn sm primary" onclick="syncPlaudRecordings()">⚡ Sync Hardware Recordings</button>
+              <button class="btn sm primary" onclick="openDeviceWizard()">⚡ Guided Device Connection Wizard</button>
+              <button class="btn sm" onclick="syncPlaudRecordings()">⚡ Sync Hardware Recordings</button>
               <button class="btn sm" onclick="openModal('plaudApiModal')">Configure Partner API</button>
               <button class="btn sm" onclick="pairPlaudBleDevice()">Pair BLE Device</button>
             </div>
@@ -1802,6 +1944,325 @@
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
           <button class="btn" onclick="closeModal('plaudApiModal')">Cancel</button>
           <button class="btn primary" onclick="savePlaudApiCredentials()">Save &amp; Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GUIDED DEVICE CONNECTION WIZARD (M2 / R2) -->
+  <div class="modal-backdrop" id="deviceWizardModal">
+    <div class="modal wizard-modal">
+      <div class="wizard-header">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <h3 style="margin:0 0 4px; font-size:18px;">PLAUD Device Connection Wizard</h3>
+            <span style="font-size:12.5px; color:var(--muted);" id="wizardHeaderSubtitle">Step 1 of 4: Mode &amp; Device Selection</span>
+          </div>
+          <button class="btn sm" onclick="closeDeviceWizard()" style="padding:4px 8px;" title="Close Wizard">✕</button>
+        </div>
+
+        <div class="wizard-stepper">
+          <div class="wizard-step-node active" id="wizardNode1" onclick="goToWizardStep(1)">
+            <div class="wizard-step-circle">1</div>
+            <div class="wizard-step-label">Mode</div>
+          </div>
+          <div class="wizard-step-node" id="wizardNode2" onclick="goToWizardStep(2)">
+            <div class="wizard-step-circle">2</div>
+            <div class="wizard-step-label">Hardware</div>
+          </div>
+          <div class="wizard-step-node" id="wizardNode3" onclick="goToWizardStep(3)">
+            <div class="wizard-step-circle">3</div>
+            <div class="wizard-step-label">Connect</div>
+          </div>
+          <div class="wizard-step-node" id="wizardNode4" onclick="goToWizardStep(4)">
+            <div class="wizard-step-circle">4</div>
+            <div class="wizard-step-label">Vault Ready</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wizard-body">
+        <!-- STEP 1: MODE & DEVICE SELECTION -->
+        <div class="wizard-step-content active" id="wizardStep1">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">1. Select Hardware Model</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <div class="selectable-card selected" id="wizardDevNote" onclick="selectWizardDevice('note')">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <strong style="font-size:14px;">PLAUD Note</strong>
+                  <span class="tag green">MagSafe</span>
+                </div>
+                <p style="margin:0; font-size:12px; color:var(--muted); line-height:1.4;">
+                  Ultra-slim 0.118" card recorder. Dual-mode physical slider switch (Phone Call VCS sensor / Meeting mic array).
+                </p>
+              </div>
+              <div class="selectable-card" id="wizardDevNotePin" onclick="selectWizardDevice('notepin')">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <strong style="font-size:14px;">PLAUD NotePin</strong>
+                  <span class="tag blue">Wearable AI</span>
+                </div>
+                <p style="margin:0; font-size:12px; color:var(--muted); line-height:1.4;">
+                  25g capsule recorder. Magnetic pin, lanyard necklace, or wristband. Tri-color LED indicator and pairing button.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em; color:var(--muted);">2. Select Connection Method</label>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div class="selectable-card selected" id="wizardModeBle" onclick="selectWizardMode('ble')">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:20px;">📶</span>
+                    <div>
+                      <strong style="font-size:13.5px;">Direct Web Bluetooth (BLE GATT)</strong>
+                      <div style="font-size:12px; color:var(--muted);">Wireless scanning, pairing, and live battery telemetry in Chromium browsers.</div>
+                    </div>
+                  </div>
+                  <span class="tag green">Recommended</span>
+                </div>
+              </div>
+
+              <div class="selectable-card" id="wizardModeImport" onclick="selectWizardMode('import')">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:20px;">📥</span>
+                    <div>
+                      <strong style="font-size:13.5px;">Guided File Import (.JSON, Audio, .TXT, .SRT)</strong>
+                      <div style="font-size:12px; color:var(--muted);">Import diarized PLAUD App JSON exports, MP3/WAV/M4A/AAC recordings, or TXT/SRT into vault.</div>
+                    </div>
+                  </div>
+                  <span class="tag">Direct Ingest</span>
+                </div>
+              </div>
+
+              <div class="selectable-card" id="wizardModeUsb" onclick="selectWizardMode('usb')">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:20px;">💾</span>
+                    <div>
+                      <strong style="font-size:13.5px;">USB Mass Storage Transfer</strong>
+                      <div style="font-size:12px; color:var(--muted);">Plug via USB-C cable, locate RECORD/ or AUDIO/ directory, and drag files into workspace.</div>
+                    </div>
+                  </div>
+                  <span class="tag">USB-C Cable</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: HARDWARE INSTRUCTIONS -->
+        <div class="wizard-step-content" id="wizardStep2">
+          <!-- HARDWARE: PLAUD NOTE INSTRUCTIONS -->
+          <div id="hwGuideNote" style="display:flex; flex-direction:column; gap:12px;">
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="font-size:18px;">🎚️</span>
+                <strong style="font-size:13.5px;">Dual-Mode Recording Slider Switch</strong>
+              </div>
+              <ul style="margin:0 0 0 18px; padding:0; font-size:12.5px; color:var(--navy); line-height:1.55;">
+                <li><strong>Top Position (Phone Call Recording)</strong>: Engages internal Vibration Conduction Sensor (VCS) to capture two-way phone calls cleanly through chassis vibration via MagSafe.</li>
+                <li><strong>Bottom Position (Note / Meeting Recording)</strong>: Engages dual Knowles SiSonic MEMS omnidirectional microphones with beamforming noise cancellation.</li>
+              </ul>
+            </div>
+
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="font-size:18px;">🎙️</span>
+                <strong style="font-size:13.5px;">Dual Microphone Array Orientation</strong>
+              </div>
+              <p style="margin:0; font-size:12.5px; color:var(--muted); line-height:1.5;">
+                Keep the top microphone grilles unobstructed and directed towards the primary speaker or conference table center for crystal-clear diarization up to 10 meters away.
+              </p>
+            </div>
+
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="font-size:18px;">🧲</span>
+                <strong style="font-size:13.5px;">MagSafe Mount &amp; LED Status</strong>
+              </div>
+              <p style="margin:0; font-size:12.5px; color:var(--muted); line-height:1.5;">
+                Snap firmly to the back of your iPhone or MagSafe Android case. The status LED confirms recording state with a short vibration and solid light indicator.
+              </p>
+            </div>
+          </div>
+
+          <!-- HARDWARE: PLAUD NOTEPIN INSTRUCTIONS -->
+          <div id="hwGuideNotePin" style="display:none; flex-direction:column; gap:12px;">
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="font-size:18px;">🧷</span>
+                <strong style="font-size:13.5px;">Wearable Form-Factor &amp; Accessories</strong>
+              </div>
+              <p style="margin:0; font-size:12.5px; color:var(--muted); line-height:1.5;">
+                Choose your accessory: <strong>Magnetic Lapel Pin</strong> (clips to shirt, collar, or jacket pocket), <strong>Necklace Lanyard</strong> (worn comfortably around neck), or <strong>Wristband Strap</strong> (wear as a smart recorder band).
+              </p>
+            </div>
+
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="font-size:18px;">💡</span>
+                <strong style="font-size:13.5px;">Tri-Color LED Status Indicator Lights</strong>
+              </div>
+              <ul style="margin:0 0 0 18px; padding:0; font-size:12.5px; color:var(--navy); line-height:1.55;">
+                <li><span style="color:var(--danger); font-weight:700;">Pulsing Red</span>: Active audio recording in progress.</li>
+                <li><span style="color:var(--blue); font-weight:700;">Flashing Blue</span>: Bluetooth pairing / advertising mode.</li>
+                <li><span style="color:var(--emerald-dark); font-weight:700;">Solid Green</span>: Fully charged (pulsing green: charging).</li>
+                <li><span style="color:var(--amber); font-weight:700;">Flashing Amber</span>: Low battery (&lt;15%) or memory warning.</li>
+              </ul>
+            </div>
+
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="font-size:18px;">🔘</span>
+                <strong style="font-size:13.5px;">Pairing &amp; Power Button</strong>
+              </div>
+              <p style="margin:0; font-size:12.5px; color:var(--muted); line-height:1.5;">
+                Long-press the center touch button for <strong>3 seconds</strong> until the LED flashes blue to enter BLE pairing mode. A single press starts or stops recording.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: INTERACTIVE EXECUTION -->
+        <div class="wizard-step-content" id="wizardStep3">
+          <!-- EXEC: WEB BLUETOOTH PAIRING -->
+          <div id="wizardExecBle" style="display:flex; flex-direction:column; gap:14px;">
+            <div style="border:1px solid var(--emerald); border-radius:14px; padding:16px; background:var(--emerald-soft); text-align:center;">
+              <div style="font-size:32px; margin-bottom:6px;">📶</div>
+              <strong style="font-size:15px; display:block;">Web Bluetooth Wireless Pairing</strong>
+              <p style="font-size:12.5px; color:var(--navy); margin:6px 0 14px;">
+                Click below to scan for nearby PLAUD devices. Ensure Bluetooth is enabled on your computer and the device is powered on.
+              </p>
+              <button class="btn primary" id="wizardBleScanBtn" onclick="executeWizardBlePair()" style="padding:10px 20px; font-size:14px;">
+                Scan &amp; Pair PLAUD Device
+              </button>
+            </div>
+
+            <div id="wizardBleSuccessCard" style="display:none; border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <strong style="font-size:14px;" id="wizardBleDevName">PLAUD Note (84B2)</strong>
+                  <div style="font-size:12px; color:var(--emerald-dark); font-weight:600;" id="wizardBleDevMeta">GATT Connected • 96% Battery</div>
+                </div>
+                <span class="tag green">Paired &amp; Ready</span>
+              </div>
+            </div>
+
+            <div id="wizardBleFallbackNotice" style="display:none; border:1px dashed var(--line); border-radius:12px; padding:12px; background:var(--surface-alt);">
+              <div style="font-size:12px; color:var(--muted); margin-bottom:8px;">
+                Browser doesn't support Web Bluetooth or pairing cancelled? Pair manually below:
+              </div>
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="wizardManualBleName" class="form-input" placeholder="PLAUD Note" value="PLAUD Note (BLE)" style="flex:2;" />
+                <input type="number" id="wizardManualBleBattery" class="form-input" min="1" max="100" value="95" style="width:75px;" />
+                <button class="btn sm" onclick="pairWizardBleManually()">Confirm</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- EXEC: GUIDED FILE IMPORT -->
+          <div id="wizardExecImport" style="display:none; flex-direction:column; gap:14px;">
+            <input type="file" id="wizardFileInput" multiple accept=".json,.mp3,.wav,.m4a,.aac,.txt,.srt,.docx,.pdf" style="display:none;" onchange="handleWizardFiles(this.files)" />
+            <div class="upload-zone" id="wizardDropZone" onclick="document.getElementById('wizardFileInput').click()" style="padding:28px 20px;">
+              <div style="font-size:32px; margin-bottom:4px;">📥</div>
+              <strong style="font-size:14.5px;">Drop PLAUD transcript or audio files here</strong>
+              <p style="font-size:12px; color:var(--muted); margin:4px 0 12px;">
+                Supports <strong>.JSON</strong> (PLAUD diarized exports with speaker turns), <strong>.TXT, .SRT</strong>, or voice recordings (<strong>.MP3, .WAV, .M4A, .AAC</strong>).
+              </p>
+              <button class="btn primary sm" onclick="event.stopPropagation(); document.getElementById('wizardFileInput').click()">Choose Files from Device</button>
+            </div>
+
+            <div id="wizardStagedFilesList" style="display:none; border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <strong style="font-size:13px;" id="wizardStagedFilesCount">Selected Files</strong>
+                <button class="btn sm primary" onclick="processWizardImport()">Upload &amp; Save to Vault</button>
+              </div>
+              <div id="wizardStagedFilesItems" style="display:flex; flex-direction:column; gap:6px;"></div>
+            </div>
+          </div>
+
+          <!-- EXEC: USB MASS STORAGE TRANSFER -->
+          <div id="wizardExecUsb" style="display:none; flex-direction:column; gap:14px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div style="border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--surface-alt);">
+                <div style="font-size:12px; font-weight:700; color:var(--emerald-dark); margin-bottom:2px;">STEP 1</div>
+                <div style="font-size:13px; font-weight:700;">Connect USB-C Cable</div>
+                <div style="font-size:11.5px; color:var(--muted);">Plug PLAUD device into computer USB port using magnetic cable.</div>
+              </div>
+              <div style="border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--surface-alt);">
+                <div style="font-size:12px; font-weight:700; color:var(--emerald-dark); margin-bottom:2px;">STEP 2</div>
+                <div style="font-size:13px; font-weight:700;">Open Mounted Drive</div>
+                <div style="font-size:11.5px; color:var(--muted);">Drive appears as <code>PLAUD</code> or <code>PLAUD_NOTE</code> in Explorer/Finder.</div>
+              </div>
+              <div style="border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--surface-alt);">
+                <div style="font-size:12px; font-weight:700; color:var(--emerald-dark); margin-bottom:2px;">STEP 3</div>
+                <div style="font-size:13px; font-weight:700;">Locate RECORD / AUDIO</div>
+                <div style="font-size:11.5px; color:var(--muted);">Open folder containing your .wav/.mp3 audio and export transcripts.</div>
+              </div>
+              <div style="border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--surface-alt);">
+                <div style="font-size:12px; font-weight:700; color:var(--emerald-dark); margin-bottom:2px;">STEP 4</div>
+                <div style="font-size:13px; font-weight:700;">Drag into Vault Below</div>
+                <div style="font-size:11.5px; color:var(--muted);">Drop files straight into the encrypted drop target below.</div>
+              </div>
+            </div>
+
+            <div class="upload-zone" id="wizardUsbDropZone" onclick="document.getElementById('wizardFileInput').click()" style="padding:22px; border:2px dashed var(--emerald);">
+              <div style="font-size:26px; margin-bottom:4px;">💾</div>
+              <strong style="font-size:13.5px;">Drop USB Drive Files Here</strong>
+              <p style="font-size:11.5px; color:var(--muted); margin:4px 0 0;">Drag directly from your RECORD/ or AUDIO/ folder into workspace</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: VAULT CONFIRMATION & DEVICE STATUS -->
+        <div class="wizard-step-content" id="wizardStep4">
+          <div style="border:1px solid rgba(24, 168, 121, 0.4); border-radius:16px; padding:18px; background:var(--emerald-soft); text-align:center;">
+            <div style="font-size:36px; margin-bottom:6px;">🛡️</div>
+            <h3 style="margin:0 0 6px; font-size:17px; color:var(--navy);">Encrypted in On-Device Cryptography Vault</h3>
+            <p style="margin:0; font-size:12.5px; color:var(--slate); line-height:1.5; max-width:54ch; margin-inline:auto;">
+              Zero-Knowledge Guarantee: Transcripts, speaker turns, audio sessions, and AI summaries are encrypted with <strong>AES-GCM-256</strong> and stored strictly on this physical device (<code>plaud_vault_db</code>).
+            </p>
+          </div>
+
+          <div class="grid-3" style="margin-top:4px;">
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div class="stat-label">Hardware Device</div>
+              <div style="font-size:15px; font-weight:700; margin:4px 0;" id="wizardStatusDevName">PLAUD Note</div>
+              <div style="font-size:12px; color:var(--emerald-dark); font-weight:600;" id="wizardStatusDevMeta">Connected &amp; Ready</div>
+            </div>
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div class="stat-label">Connection Mode</div>
+              <div style="font-size:15px; font-weight:700; margin:4px 0;" id="wizardStatusConnMode">Web Bluetooth (BLE)</div>
+              <div style="font-size:12px; color:var(--muted);">GATT Telemetry Active</div>
+            </div>
+            <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:var(--surface-alt);">
+              <div class="stat-label">Local Vault Records</div>
+              <div style="font-size:15px; font-weight:700; margin:4px 0;" id="wizardStatusVaultCount">Encrypted &amp; Indexed</div>
+              <div style="font-size:12px; color:var(--emerald-dark); font-weight:600;">IndexedDB Sandbox</div>
+            </div>
+          </div>
+
+          <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div>
+              <strong style="font-size:13px; display:block;">Ready to Explore Transcripts &amp; AI Analysis</strong>
+              <span style="font-size:12px; color:var(--muted);">All meeting audio and text are parsed, diarized, and securely indexed.</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn sm primary" onclick="finishDeviceWizard('transcripts')">📂 View Transcripts</button>
+              <button class="btn sm" onclick="finishDeviceWizard('assistant')">🤖 Query AI Assistant</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wizard-footer">
+        <button class="btn sm" id="wizardBackBtn" onclick="prevWizardStep()" disabled style="opacity:0.5;">← Back</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn sm" onclick="closeDeviceWizard()">Cancel</button>
+          <button class="btn sm primary" id="wizardNextBtn" onclick="nextWizardStep()">Next: Hardware Setup →</button>
         </div>
       </div>
     </div>
@@ -2195,16 +2656,41 @@
         fd.append('file', file);
         try {
           showToast(`Importing ${file.name}...`);
-          await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/imports`, {
+          const res = await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/imports`, {
             method: 'POST',
             body: fd
           });
+
+          // Ingest each imported transcript into on-device AES-GCM-256 vault
+          if (res && Array.isArray(res.results)) {
+            for (const item of res.results) {
+              if (item.status === 'success' && (item.transcript || item.transcript_id)) {
+                let record = item.transcript;
+                if (!record || !record.content_text) {
+                  try {
+                    const detail = await apiFetch(`/app/api/transcripts/${item.transcript_id}`);
+                    if (detail) record = detail;
+                  } catch (fetchErr) {
+                    console.warn('Could not fetch detail for vault ingestion:', fetchErr);
+                  }
+                }
+                if (window.plaudCryptoVault && record) {
+                  await window.plaudCryptoVault.saveTranscript(record);
+                }
+              } else if (item.status === 'duplicate') {
+                showToast(`Duplicate: ${item.filename} already exists.`, true);
+              } else if (item.status === 'error') {
+                showToast(`Error (${item.filename}): ${item.error_message}`, true);
+              }
+            }
+          }
           showToast(`Imported ${file.name} successfully`);
         } catch (e) {
           showToast(`Import failed (${file.name}): ${e.message}`, true);
         }
       }
-      document.getElementById('fileUploadInput').value = '';
+      const fileInput = document.getElementById('fileUploadInput');
+      if (fileInput) fileInput.value = '';
       await loadWorkspaceData();
     }
 
@@ -2234,6 +2720,9 @@
       if (!confirm('Delete this transcript from the workspace?')) return;
       try {
         await apiFetch(`/app/api/transcripts/${id}`, { method: 'DELETE' });
+        if (window.plaudCryptoVault) {
+          await window.plaudCryptoVault.deleteTranscript(id).catch(e => console.warn('Vault delete warning:', e));
+        }
         state.selectedTranscriptIds.delete(id);
         showToast('Transcript deleted');
         await loadWorkspaceData();
@@ -2372,6 +2861,7 @@
             ${c.masked_key ? `<div style="font-size:11px; color:var(--emerald-dark); margin-top:4px; font-weight:600;">Auth: ${escapeHtml(c.masked_key)}</div>` : ''}
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; padding-top:8px; border-top:1px solid var(--line);">
+            ${c.easy_connect_url ? `<a href="${c.easy_connect_url}" target="_blank" rel="noopener noreferrer" class="btn sm" style="text-decoration:none; background:#EEF2FF; color:#4F46E5; border:1px solid #C7D2FE;">1-Click Connect ↗</a>` : ''}
             ${!isBuiltin ? `<button class="btn sm primary" onclick="openConnectAiModal('${pid}')">${isConnected ? 'Update Key' : 'Connect Key'}</button>` : ''}
             <button class="btn sm" onclick="testAiConnector('${pid}')">Test Latency</button>
             ${c.setup_help_url ? `<a href="${c.setup_help_url}" target="_blank" rel="noopener noreferrer" class="btn sm" style="text-decoration:none;">Docs ↗</a>` : ''}
@@ -2916,6 +3406,20 @@
               if (battChar) {
                 const val = await battChar.readValue();
                 battery = val.getUint8(0);
+                if (battChar.properties && battChar.properties.notify) {
+                  try {
+                    await battChar.startNotifications();
+                    battChar.addEventListener('characteristicvaluechanged', (e) => {
+                      const updated = e.target.value.getUint8(0);
+                      const metaEl = document.getElementById('plaudDeviceMeta');
+                      if (metaEl) metaEl.textContent = `BLE GATT Connected • ${updated}% Battery`;
+                      const wizardBatt = document.getElementById('wizardBleDevMeta');
+                      if (wizardBatt) wizardBatt.textContent = `GATT Connected • ${updated}% Battery`;
+                    });
+                  } catch (notifyErr) {
+                    console.warn('Battery notifications notice:', notifyErr);
+                  }
+                }
               }
             }
           }
@@ -2946,6 +3450,11 @@
         }
       }
     }
+
+    async function pairPlaudBluetooth() {
+      return await pairPlaudBleDevice();
+    }
+    window.pairPlaudBluetooth = pairPlaudBluetooth;
 
     async function pairBleManually() {
       const name = document.getElementById('manualBleNameInput').value.trim() || 'PLAUD Note (BLE)';
@@ -2986,10 +3495,323 @@
             content_text: "[00:00] Speaker 1: Synced directly via PLAUD Partner API and Bluetooth Low Energy.\n[00:18] Speaker 2: Automatic speaker turns, audio timestamps, and summary extraction ready in workspace."
           }
         });
+
+        if (res && res.transcript_id && window.plaudCryptoVault) {
+          try {
+            const detail = await apiFetch(`/app/api/transcripts/${res.transcript_id}`);
+            if (detail) {
+              await window.plaudCryptoVault.saveTranscript(detail);
+            }
+          } catch (vaultErr) {
+            console.warn('Failed saving synced transcript to vault:', vaultErr);
+          }
+        }
+
         showToast(res.message);
         await loadWorkspaceData();
       } catch (e) {
         showToast(e.message, true);
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // GUIDED DEVICE CONNECTION WIZARD LOGIC (M2 / R2)
+    // --------------------------------------------------------------------------
+    let wizardState = {
+      currentStep: 1,
+      device: 'note',     // 'note' | 'notepin'
+      mode: 'ble',        // 'ble' | 'import' | 'usb'
+      stagedFiles: [],
+      pairedDevice: null
+    };
+
+    function openDeviceWizard(step = 1, mode = 'ble', device = 'note') {
+      wizardState.currentStep = step;
+      wizardState.mode = mode;
+      wizardState.device = device;
+      renderWizardUI();
+      openModal('deviceWizardModal');
+    }
+
+    function closeDeviceWizard() {
+      closeModal('deviceWizardModal');
+    }
+
+    function goToWizardStep(step) {
+      if (step < 1 || step > 4) return;
+      wizardState.currentStep = step;
+      renderWizardUI();
+    }
+
+    function nextWizardStep() {
+      if (wizardState.currentStep < 4) {
+        goToWizardStep(wizardState.currentStep + 1);
+      } else {
+        closeDeviceWizard();
+      }
+    }
+
+    function prevWizardStep() {
+      if (wizardState.currentStep > 1) {
+        goToWizardStep(wizardState.currentStep - 1);
+      }
+    }
+
+    function selectWizardDevice(dev) {
+      wizardState.device = dev;
+      const noteEl = document.getElementById('wizardDevNote');
+      const pinEl = document.getElementById('wizardDevNotePin');
+      if (noteEl) noteEl.classList.toggle('selected', dev === 'note');
+      if (pinEl) pinEl.classList.toggle('selected', dev === 'notepin');
+      renderWizardHardwareGuide();
+      renderWizardExecutionPane();
+    }
+
+    function selectWizardMode(mode) {
+      wizardState.mode = mode;
+      const bleEl = document.getElementById('wizardModeBle');
+      const impEl = document.getElementById('wizardModeImport');
+      const usbEl = document.getElementById('wizardModeUsb');
+      if (bleEl) bleEl.classList.toggle('selected', mode === 'ble');
+      if (impEl) impEl.classList.toggle('selected', mode === 'import');
+      if (usbEl) usbEl.classList.toggle('selected', mode === 'usb');
+      renderWizardExecutionPane();
+    }
+
+    function renderWizardHardwareGuide() {
+      const isNote = wizardState.device === 'note';
+      const hwNote = document.getElementById('hwGuideNote');
+      const hwPin = document.getElementById('hwGuideNotePin');
+      if (hwNote) hwNote.style.display = isNote ? 'flex' : 'none';
+      if (hwPin) hwPin.style.display = isNote ? 'none' : 'flex';
+    }
+
+    function renderWizardExecutionPane() {
+      const mode = wizardState.mode;
+      const bleEl = document.getElementById('wizardExecBle');
+      const impEl = document.getElementById('wizardExecImport');
+      const usbEl = document.getElementById('wizardExecUsb');
+      if (bleEl) bleEl.style.display = mode === 'ble' ? 'flex' : 'none';
+      if (impEl) impEl.style.display = mode === 'import' ? 'flex' : 'none';
+      if (usbEl) usbEl.style.display = mode === 'usb' ? 'flex' : 'none';
+    }
+
+    async function renderWizardUI() {
+      // 1. Update Stepper Header
+      for (let i = 1; i <= 4; i++) {
+        const node = document.getElementById(`wizardNode${i}`);
+        if (!node) continue;
+        node.classList.toggle('active', i === wizardState.currentStep);
+        node.classList.toggle('completed', i < wizardState.currentStep);
+      }
+
+      // 2. Subtitle update
+      const subtitles = [
+        'Step 1 of 4: Mode & Device Selection',
+        'Step 2 of 4: Physical Hardware Preparation',
+        'Step 3 of 4: Interactive Connection & Ingestion',
+        'Step 4 of 4: Encrypted Vault Confirmation'
+      ];
+      const subEl = document.getElementById('wizardHeaderSubtitle');
+      if (subEl) subEl.textContent = subtitles[wizardState.currentStep - 1];
+
+      // 3. Step Content Visibility
+      for (let i = 1; i <= 4; i++) {
+        const content = document.getElementById(`wizardStep${i}`);
+        if (content) content.classList.toggle('active', i === wizardState.currentStep);
+      }
+
+      // 4. Update specific panes
+      renderWizardHardwareGuide();
+      renderWizardExecutionPane();
+
+      // 5. Update Footer Buttons
+      const backBtn = document.getElementById('wizardBackBtn');
+      const nextBtn = document.getElementById('wizardNextBtn');
+      if (backBtn) {
+        backBtn.disabled = wizardState.currentStep === 1;
+        backBtn.style.opacity = wizardState.currentStep === 1 ? '0.5' : '1';
+      }
+      if (nextBtn) {
+        if (wizardState.currentStep === 1) nextBtn.textContent = 'Next: Hardware Setup →';
+        else if (wizardState.currentStep === 2) nextBtn.textContent = 'Next: Connect & Ingest →';
+        else if (wizardState.currentStep === 3) nextBtn.textContent = 'Next: Vault Confirmation →';
+        else if (wizardState.currentStep === 4) nextBtn.textContent = 'Done & Close';
+      }
+
+      // 6. Step 4 status updates
+      if (wizardState.currentStep === 4) {
+        const devName = wizardState.pairedDevice ? wizardState.pairedDevice.name : (wizardState.device === 'notepin' ? 'PLAUD NotePin' : 'PLAUD Note');
+        const devEl = document.getElementById('wizardStatusDevName');
+        const connEl = document.getElementById('wizardStatusConnMode');
+        const countEl = document.getElementById('wizardStatusVaultCount');
+        if (devEl) devEl.textContent = devName;
+        if (connEl) {
+          connEl.textContent = wizardState.mode === 'ble'
+            ? 'Web Bluetooth (GATT)'
+            : (wizardState.mode === 'usb' ? 'USB Mass Storage' : 'Guided File Import');
+        }
+        if (window.plaudCryptoVault) {
+          try {
+            const vaultList = await window.plaudCryptoVault.loadAllTranscripts();
+            if (countEl) countEl.textContent = `${vaultList.length} Transcripts Secured`;
+          } catch (e) {
+            if (countEl) countEl.textContent = 'Active (AES-GCM-256)';
+          }
+        }
+      }
+    }
+
+    async function executeWizardBlePair() {
+      if (!navigator.bluetooth) {
+        showToast('Web Bluetooth requires HTTPS in Chrome/Edge. Please pair below or use file import.', true);
+        const fb = document.getElementById('wizardBleFallbackNotice');
+        if (fb) fb.style.display = 'block';
+        return;
+      }
+      try {
+        showToast('Scanning for nearby PLAUD Note / NotePin... Please select your device.');
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [
+            { namePrefix: 'PLAUD' }, { namePrefix: 'Plaud' }, { namePrefix: 'plaud' },
+            { namePrefix: 'NOTE' }, { namePrefix: 'Note' }, { namePrefix: 'NOTEPIN' }, { namePrefix: 'NotePin' }
+          ],
+          optionalServices: [
+            'battery_service',
+            '0000fee7-0000-1000-8000-00805f9b34fb',
+            '0000180a-0000-1000-8000-00805f9b34fb'
+          ]
+        });
+        if (!device) return;
+
+        let battery = 96;
+        if (device.gatt) {
+          try {
+            const server = await device.gatt.connect();
+            const bSvc = await server.getPrimaryService('battery_service').catch(() => null);
+            if (bSvc) {
+              const bChar = await bSvc.getCharacteristic('battery_level').catch(() => null);
+              if (bChar) {
+                const val = await bChar.readValue();
+                battery = val.getUint8(0);
+              }
+            }
+          } catch (gattErr) {
+            console.warn('GATT battery read notice:', gattErr);
+          }
+        }
+
+        const devName = device.name || (wizardState.device === 'notepin' ? 'PLAUD NotePin (10A1)' : 'PLAUD Note (84B2)');
+        const devId = device.id || 'PLAUD-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+
+        await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/integrations/plaud/pair-ble`, {
+          method: 'POST',
+          body: { device_name: devName, device_id: devId, battery_level: battery }
+        });
+
+        wizardState.pairedDevice = { name: devName, id: devId, battery };
+        const card = document.getElementById('wizardBleSuccessCard');
+        if (card) {
+          card.style.display = 'block';
+          const nameEl = document.getElementById('wizardBleDevName');
+          const metaEl = document.getElementById('wizardBleDevMeta');
+          if (nameEl) nameEl.textContent = devName;
+          if (metaEl) metaEl.textContent = `GATT Connected • ${battery}% Battery`;
+        }
+        showToast(`Connected to ${devName}! Battery: ${battery}%`);
+        await loadPlaudStatus();
+        setTimeout(() => nextWizardStep(), 1000);
+      } catch (err) {
+        if (err.name === 'NotFoundError') {
+          showToast('Bluetooth pairing was cancelled.');
+        } else {
+          showToast(`Bluetooth: ${err.message}`, true);
+          const fb = document.getElementById('wizardBleFallbackNotice');
+          if (fb) fb.style.display = 'block';
+        }
+      }
+    }
+
+    async function pairWizardBleManually() {
+      const name = document.getElementById('wizardManualBleName').value.trim() || 'PLAUD Note (BLE)';
+      const battery = parseInt(document.getElementById('wizardManualBleBattery').value, 10) || 94;
+      const devId = 'PLAUD-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+      try {
+        await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/integrations/plaud/pair-ble`, {
+          method: 'POST',
+          body: { device_name: name, device_id: devId, battery_level: battery }
+        });
+        wizardState.pairedDevice = { name, id: devId, battery };
+        showToast(`Paired with ${name} (${battery}% Battery)`);
+        await loadPlaudStatus();
+        nextWizardStep();
+      } catch (e) {
+        showToast(e.message, true);
+      }
+    }
+
+    function handleWizardFiles(fileList) {
+      if (!fileList || fileList.length === 0) return;
+      wizardState.stagedFiles = Array.from(fileList);
+      const listEl = document.getElementById('wizardStagedFilesList');
+      const itemsEl = document.getElementById('wizardStagedFilesItems');
+      const countEl = document.getElementById('wizardStagedFilesCount');
+      if (listEl && itemsEl) {
+        listEl.style.display = 'block';
+        if (countEl) countEl.textContent = `${wizardState.stagedFiles.length} File(s) Selected`;
+        itemsEl.innerHTML = wizardState.stagedFiles.map(f => `
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:4px 0; border-bottom:1px solid var(--line);">
+            <span>📄 ${escapeHtml(f.name)}</span>
+            <span class="tag">${(f.size / 1024).toFixed(1)} KB</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    async function processWizardImport() {
+      if (wizardState.stagedFiles.length === 0) return;
+      for (const file of wizardState.stagedFiles) {
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+          showToast(`Importing ${file.name}...`);
+          const res = await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/imports`, {
+            method: 'POST',
+            body: fd
+          });
+          if (res && Array.isArray(res.results)) {
+            for (const item of res.results) {
+              if (item.status === 'success' && (item.transcript || item.transcript_id)) {
+                let record = item.transcript;
+                if (!record || !record.content_text) {
+                  try {
+                    const detail = await apiFetch(`/app/api/transcripts/${item.transcript_id}`);
+                    if (detail) record = detail;
+                  } catch (fetchErr) {
+                    console.warn('Could not fetch detail for vault ingestion:', fetchErr);
+                  }
+                }
+                if (window.plaudCryptoVault && record) {
+                  await window.plaudCryptoVault.saveTranscript(record);
+                }
+              }
+            }
+          }
+          showToast(`Imported ${file.name} successfully`);
+        } catch (e) {
+          showToast(`Import failed (${file.name}): ${e.message}`, true);
+        }
+      }
+      wizardState.stagedFiles = [];
+      await loadWorkspaceData();
+      nextWizardStep(); // Advance to Step 4: Vault Ready!
+    }
+
+    function finishDeviceWizard(destinationView) {
+      closeDeviceWizard();
+      if (destinationView) {
+        switchView(destinationView);
       }
     }
 

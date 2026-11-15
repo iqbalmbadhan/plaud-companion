@@ -5,6 +5,7 @@ namespace App\Services;
 
 use App\Models\AuditEvent;
 use App\Models\Project;
+use App\Models\ProviderConnection;
 use App\Models\Transcript;
 use App\Models\TranscriptSegment;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -29,16 +30,20 @@ class PlaudSyncService
     {
         $this->workspaces->requireMembership($workspaceId, $userId);
 
-        $conn = DB::table('provider_connections')
+        $conn = ProviderConnection::query()
             ->where('workspace_id', $workspaceId)
             ->where('provider', 'plaud')
             ->first();
 
-        $bleDevice = DB::table('audit_events')
+        $bleEvents = DB::table('audit_events')
             ->where('workspace_id', $workspaceId)
             ->where('action', 'device.ble_paired')
-            ->orderByDesc('created_at')
-            ->first();
+            ->get();
+
+        $bleDevice = $bleEvents->sortBy(function ($item) {
+            $meta = json_decode((string) ($item->metadata ?? '{}'), true);
+            return ($item->created_at ?? '') . '_' . ($meta['paired_at'] ?? '') . '_' . ($item->id ?? '');
+        })->last();
 
         $bleInfo = null;
         if ($bleDevice && !empty($bleDevice->metadata)) {
@@ -47,11 +52,12 @@ class PlaudSyncService
 
         return [
             'cloud_sync' => [
+                'supported' => true,
                 'enabled' => (bool) ($conn->enabled ?? false),
                 'connected' => !empty($conn->api_key_encrypted),
                 'server_domain' => self::DEFAULT_DOMAIN,
                 'client_id' => $conn ? 'plaud_app_'.substr((string) $conn->id, 0, 8) : null,
-                'last_synced_at' => $conn->updated_at ?? null,
+                'last_synced_at' => $conn?->updated_at?->toIso8601String() ?? ($conn->updated_at ?? null),
             ],
             'ble_bridge' => [
                 'supported' => true,
@@ -78,38 +84,22 @@ class PlaudSyncService
         $this->workspaces->requireMembership($workspaceId, $userId, ['owner', 'admin']);
 
         $domain = trim((string) ($serverDomain ?: self::DEFAULT_DOMAIN));
-        $now = gmdate('Y-m-d H:i:s');
+        $cleanKey = trim($apiKey);
 
-        $existing = DB::table('provider_connections')
-            ->where('workspace_id', $workspaceId)
-            ->where('provider', 'plaud')
-            ->first();
-
-        if ($existing) {
-            DB::table('provider_connections')
-                ->where('id', $existing->id)
-                ->update([
-                    'api_key_encrypted' => $apiKey,
-                    'default_model' => $domain,
-                    'enabled' => true,
-                    'updated_at' => $now,
-                ]);
-            $connId = $existing->id;
-        } else {
-            $connId = (string) Str::uuid();
-            DB::table('provider_connections')->insert([
-                'id' => $connId,
+        /** @var ProviderConnection $conn */
+        $conn = ProviderConnection::updateOrCreate(
+            [
                 'workspace_id' => $workspaceId,
                 'provider' => 'plaud',
-                'api_key_encrypted' => $apiKey,
+            ],
+            [
+                'api_key_encrypted' => $cleanKey,
                 'auth_mode' => 'oauth_token',
                 'enabled' => true,
                 'default_model' => $domain,
                 'created_by_user_id' => $userId,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-        }
+            ]
+        );
 
         AuditEvent::create([
             'id' => (string) Str::uuid(),
@@ -117,7 +107,7 @@ class PlaudSyncService
             'actor_user_id' => $userId,
             'action' => 'integration.plaud_connected',
             'resource_type' => 'provider_connection',
-            'resource_id' => $connId,
+            'resource_id' => $conn->id,
             'metadata' => ['domain' => $domain],
             'created_at' => now(),
         ]);
@@ -144,7 +134,7 @@ class PlaudSyncService
         $battery = isset($deviceData['battery_level']) ? (int) $deviceData['battery_level'] : 95;
 
         AuditEvent::create([
-            'id' => (string) Str::uuid(),
+            'id' => (string) Str::orderedUuid(),
             'workspace_id' => $workspaceId,
             'actor_user_id' => $userId,
             'action' => 'device.ble_paired',
@@ -156,7 +146,7 @@ class PlaudSyncService
                 'battery_level' => $battery,
                 'protocol' => 'BLE_GATT',
                 'service_uuid' => '0000fee7-0000-1000-8000-00805f9b34fb',
-                'paired_at' => gmdate('c'),
+                'paired_at' => microtime(true),
             ],
             'created_at' => now(),
         ]);
@@ -284,6 +274,12 @@ class PlaudSyncService
             'success' => true,
             'message' => "Recording '{$transcript->title}' successfully synced and segmented.",
             'transcript_id' => $transcript->id,
+            'transcript' => [
+                'id' => $transcript->id,
+                'title' => $transcript->title,
+                'status' => $transcript->status,
+                'source_type' => $transcript->source_type,
+            ],
             'segment_count' => $transcript->segments->count(),
         ];
     }
