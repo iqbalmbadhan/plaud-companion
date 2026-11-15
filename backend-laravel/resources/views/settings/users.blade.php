@@ -215,7 +215,7 @@
         <div class="brand">
             <div class="badge">PC</div>
             <div>
-                <h1>User &amp; Workspace Access Control</h1>
+                <h1>User Directory &amp; Access Controls</h1>
                 <p>Super-Admin User Management Console &bull; Instant Suspension Controls</p>
             </div>
         </div>
