@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="{{ url('/manifest.json') }}">
     <meta name="theme-color" content="#18A879">
     <title>PLAUD Companion — User Management</title>
     <style>
@@ -328,7 +328,12 @@
         <div class="nav-tabs">
             <a href="{{ route('settings.users') }}" class="nav-tab active">Users</a>
             <a href="{{ route('settings.updates') }}" class="nav-tab">System Updates</a>
-            <a href="{{ route('app.home') }}" class="nav-tab">← Workspace</a>
+            <a href="{{ route('profile.show') }}" class="nav-tab">My Profile</a>
+            <a href="{{ route('app.home') }}" class="nav-tab">&larr; Workspace</a>
+            <form method="POST" action="{{ route('logout') }}" style="display:inline; margin:0;">
+                @csrf
+                <button type="submit" class="nav-tab" style="background:none; border:none; cursor:pointer;">Sign Out</button>
+            </form>
         </div>
     </div>
 
@@ -457,6 +462,7 @@
 
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+const USERS_API_BASE = '{{ url('/settings/users/api') }}';
 let searchTimer = null;
 
 function showToast(msg, isError = false) {
@@ -475,7 +481,7 @@ function debounceSearch() {
 async function loadUsers() {
     const q = document.getElementById('searchInput').value.trim();
     const status = document.getElementById('statusFilter').value;
-    const url = `/settings/users/api/list?q=${encodeURIComponent(q)}&status=${encodeURIComponent(status)}`;
+    const url = `${USERS_API_BASE}/list?q=${encodeURIComponent(q)}&status=${encodeURIComponent(status)}`;
 
     try {
         const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -539,7 +545,7 @@ async function toggleStatus(userId, name) {
     if (!confirm(`Are you sure you want to change the access status for ${name}?`)) return;
 
     try {
-        const res = await fetch(`/settings/users/api/${userId}/toggle-status`, {
+        const res = await fetch(`${USERS_API_BASE}/${userId}/toggle-status`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': CSRF,
@@ -559,7 +565,7 @@ async function toggleAdmin(userId, name) {
     if (!confirm(`Are you sure you want to change super-admin privileges for ${name}?`)) return;
 
     try {
-        const res = await fetch(`/settings/users/api/${userId}/toggle-admin`, {
+        const res = await fetch(`${USERS_API_BASE}/${userId}/toggle-admin`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': CSRF,
@@ -590,7 +596,7 @@ function closeProfileModal() {
 
 async function openUserProfile(userId) {
     try {
-        const res = await fetch(`/settings/users/api/${userId}/profile`, {
+        const res = await fetch(`${USERS_API_BASE}/${userId}/profile`, {
             headers: { 'Accept': 'application/json' }
         });
         if (!res.ok) {

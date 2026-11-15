@@ -6,10 +6,13 @@ use App\Models\AuditEvent;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceMember;
+use App\Services\TokenService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -184,5 +187,147 @@ class WebAuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    public function showForgotPassword(Request $request): View|RedirectResponse
+    {
+        if ($request->user() !== null) {
+            return redirect()->to('/app');
+        }
+
+        return view('auth.forgot-password');
+    }
+
+    public function sendResetLink(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $email = strtolower(trim($validated['email']));
+        $user = User::query()->where('email', $email)->first();
+
+        if ($user !== null && $user->status !== 'active') {
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['email' => 'This account has been suspended by an administrator. Password reset is disabled.']);
+        }
+
+        if ($user !== null) {
+            $plainToken = Str::random(64);
+            $hashedToken = hash('sha256', $plainToken);
+
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+            DB::table('password_reset_tokens')->insert([
+                'email' => $email,
+                'token' => $hashedToken,
+                'created_at' => now(),
+            ]);
+
+            $resetUrl = route('password.reset', ['token' => $plainToken, 'email' => $email]);
+
+            $mailer = strtolower((string) (config('mail.default') ?? env('MAIL_MAILER', 'log')));
+            $isDevOrLocal = !app()->environment('production');
+            $isLogOrArray = in_array($mailer, ['log', 'array'], true);
+
+            if ($isDevOrLocal && $isLogOrArray) {
+                return back()->with([
+                    'status' => 'A password reset link has been generated. Use the link below to set a new password.',
+                    'dev_reset_url' => $resetUrl,
+                    'reset_url' => $resetUrl,
+                ]);
+            }
+
+            try {
+                Mail::raw("You recently requested to reset your password for PLAUD Companion. Click the link below to set a new password:\n\n{$resetUrl}\n\nThis password reset link will expire in 60 minutes.\nIf you did not request a password reset, no further action is required.", function ($message) use ($user): void {
+                    $message->to($user->email, $user->display_name ?: $user->email)
+                        ->subject('Reset Your PLAUD Companion Password');
+                });
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return back()->with('status', 'If that email address exists in our system, a password reset link has been dispatched.');
+    }
+
+    public function showResetPassword(Request $request, string $token): View|RedirectResponse
+    {
+        if ($request->user() !== null) {
+            return redirect()->to('/app');
+        }
+
+        return view('auth.reset-password', [
+            'token' => $token,
+            'email' => (string) $request->query('email', ''),
+        ]);
+    }
+
+    public function resetPassword(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string', 'min:8', 'max:255', 'confirmed'],
+        ]);
+
+        $email = strtolower(trim($validated['email']));
+        $user = User::query()->where('email', $email)->first();
+
+        if ($user === null) {
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['email' => 'We could not find an active account with that email address.']);
+        }
+
+        if ($user->status !== 'active') {
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['email' => 'This account has been suspended by an administrator. Password reset is disabled.']);
+        }
+
+        $hashedToken = hash('sha256', $validated['token']);
+        $record = DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->where('token', $hashedToken)
+            ->first();
+
+        if (!$record) {
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['email' => 'This password reset link is invalid or has already been used.']);
+        }
+
+        if ($record->created_at && Carbon::parse($record->created_at)->addMinutes(60)->isPast()) {
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors(['email' => 'This password reset link has expired. Please request a new one.']);
+        }
+
+        $user->password_hash = app(TokenService::class)->hashPassword($validated['password']);
+        $user->setRememberToken(Str::random(60));
+        $user->save();
+
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+        AuditEvent::create([
+            'id' => (string) Str::uuid(),
+            'workspace_id' => null,
+            'actor_user_id' => $user->id,
+            'action' => 'user.password_reset',
+            'resource_type' => 'User',
+            'resource_id' => $user->id,
+            'metadata' => [
+                'email' => $user->email,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ],
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('login')->with('status', 'Your password has been reset successfully. Please sign in with your new credentials.');
     }
 }

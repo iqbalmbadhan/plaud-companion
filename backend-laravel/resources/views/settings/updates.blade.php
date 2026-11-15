@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="manifest" href="{{ url('/manifest.json') }}">
     <title>PLAUD Companion — System Updates &amp; Backups</title>
     <style>
         :root {
@@ -165,7 +166,12 @@
         </div>
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <a href="{{ route('settings.users') }}" class="btn btn-secondary" style="text-decoration:none;">Manage Users</a>
-            <a href="{{ route('app.home') }}" class="btn btn-secondary" style="text-decoration:none;">← Workspace</a>
+            <a href="{{ route('profile.show') }}" class="btn btn-secondary" style="text-decoration:none;">My Profile</a>
+            <a href="{{ route('app.home') }}" class="btn btn-secondary" style="text-decoration:none;">&larr; Workspace</a>
+            <form method="POST" action="{{ route('logout') }}" style="display:inline; margin:0;">
+                @csrf
+                <button type="submit" class="btn btn-secondary" style="cursor:pointer;">Sign Out</button>
+            </form>
             <span id="updater-badge" class="pill {{ $updaterEnabled ? 'ok' : 'warn' }}">
                 {{ $updaterEnabled ? 'UPDATER ENABLED' : 'KEY NOT CONFIGURED (503)' }}
             </span>
@@ -271,6 +277,7 @@
 
 <script>
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+const UPDATES_API_BASE = '{{ url('/settings/updates/api') }}';
 let phpLimits = @json($phpLimits);
 
 function showAlert(msg, type = 'error') {
@@ -281,7 +288,7 @@ function showAlert(msg, type = 'error') {
 
 async function pollStatus() {
     try {
-        const res = await fetch('/settings/updates/api/status', {
+        const res = await fetch(`${UPDATES_API_BASE}/status`, {
             headers: { 'Accept': 'application/json' },
             credentials: 'same-origin'
         });
@@ -343,7 +350,7 @@ async function uploadPackage() {
         if (file.size <= chunkSize) {
             const fd = new FormData();
             fd.append('file', file);
-            const res = await fetch('/settings/updates/api/upload', {
+            const res = await fetch(`${UPDATES_API_BASE}/upload`, {
                 method: 'POST',
                 headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                 credentials: 'same-origin',
@@ -365,7 +372,7 @@ async function uploadPackage() {
                 fd.append('total_chunks', String(totalChunks));
                 fd.append('total_size', String(file.size));
                 fd.append('chunk', file.slice(start, end), file.name + '.part');
-                const res = await fetch('/settings/updates/api/upload', {
+                const res = await fetch(`${UPDATES_API_BASE}/upload`, {
                     method: 'POST',
                     headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                     credentials: 'same-origin',
@@ -385,7 +392,7 @@ async function uploadPackage() {
 
 async function deleteStaged() {
     try {
-        const res = await fetch('/settings/updates/api/upload', {
+        const res = await fetch(`${UPDATES_API_BASE}/upload`, {
             method: 'DELETE',
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
             credentials: 'same-origin'
@@ -403,7 +410,7 @@ async function applyUpdate() {
     const confirmation = document.getElementById('apply-confirm').value;
     const allowDowngrade = document.getElementById('allow-downgrade').checked;
     try {
-        const res = await fetch('/settings/updates/api/apply', {
+        const res = await fetch(`${UPDATES_API_BASE}/apply`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -426,7 +433,7 @@ async function applyUpdate() {
 async function triggerRollback() {
     const confirmation = document.getElementById('rollback-confirm').value;
     try {
-        const res = await fetch('/settings/updates/api/rollback', {
+        const res = await fetch(`${UPDATES_API_BASE}/rollback`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -448,7 +455,7 @@ async function triggerRollback() {
 
 async function createBackup() {
     try {
-        const res = await fetch('/settings/updates/api/backup', {
+        const res = await fetch(`${UPDATES_API_BASE}/backup`, {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
             credentials: 'same-origin'

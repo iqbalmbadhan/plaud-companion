@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="{{ csrf_token() }}" />
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href="{{ url('/manifest.json') }}" />
   <meta name="theme-color" content="#18A879" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="PLAUD Companion" />
-  <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
-  <script src="/js/plaud-crypto-vault.js"></script>
+  <link rel="apple-touch-icon" href="{{ url('/icons/icon-192.svg') }}" />
+  <script src="{{ url('/js/plaud-crypto-vault.js') }}"></script>
   <title>PLAUD Companion — Transcript &amp; AI Productivity Workspace</title>
   <style>
     :root {
@@ -1192,6 +1192,10 @@
               <span class="badge">Config</span>
             @endif
           </button>
+          <a href="{{ route('profile.show') }}" class="nav-item-link" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-radius:12px; color:inherit; text-decoration:none; font-weight:600; font-size:13.5px; margin-top:6px; border:1px solid var(--line); background:var(--surface);">
+            <span>👤 My Profile</span>
+            <span class="badge" style="background:rgba(24,168,121,0.15); color:var(--emerald-dark);">Account</span>
+          </a>
         </nav>
       </div>
 
@@ -1220,14 +1224,14 @@
           <span class="tag green" style="display:inline-flex; align-items:center; gap:5px; font-weight:700;" title="All meeting audio, transcripts, and notes are encrypted strictly on this physical device.">🔒 On-Device Encryption</span>
           <button class="btn sm" id="btnPwaInstall" style="display:none; background:rgba(24,168,121,0.15); border:1px solid var(--emerald); color:var(--emerald-dark); font-weight:700;" onclick="installPwa()">📲 Install App</button>
           @if($user['is_super_admin'])
-            <a href="{{ url('/settings/users') }}" class="btn sm" title="Super-Admin User Management" style="text-decoration:none;">👥 Users</a>
+            <a href="{{ route('settings.users') }}" class="btn sm" title="Super-Admin User Management" style="text-decoration:none;">👥 Users</a>
           @endif
           <button class="btn primary" onclick="openDeviceWizard()">🎙️ Connect Device</button>
           <button class="btn" onclick="switchView('transcripts'); document.getElementById('fileUploadInput').click();">+ Import Files</button>
           <button class="btn" onclick="openModal('newTranscriptModal')">+ Paste Transcript</button>
           <button class="btn primary" onclick="switchView('assistant')">✨ Ask AI</button>
-          <div class="avatar" title="{{ $user['display_name'] }} ({{ $user['email'] }})">{{ $user['initials'] }}</div>
-          <form method="POST" action="{{ url('/logout') }}" style="margin:0;">
+          <a href="{{ route('profile.show') }}" class="avatar" title="View Profile: {{ $user['display_name'] }} ({{ $user['email'] }})" style="text-decoration:none;">{{ $user['initials'] }}</a>
+          <form method="POST" action="{{ route('logout') }}" style="margin:0;">
             @csrf
             <button type="submit" class="btn sm" title="Sign Out">Sign Out</button>
           </form>
@@ -1673,6 +1677,10 @@
             <div class="check-row"><strong>Email Address:</strong> <span>{{ $user['email'] }}</span></div>
             <div class="check-row"><strong>Application Version:</strong> <span>v{{ $currentVersion }}</span></div>
             <div class="check-row"><strong>Export Templates:</strong> <span>DOCX (OOXML) + PDF + ZIP</span></div>
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:var(--muted);">Manage your name and security credentials</span>
+              <a href="{{ route('profile.show') }}" class="btn sm primary" style="text-decoration:none;">👤 My Profile &amp; Password ↗</a>
+            </div>
           </div>
 
           <div class="card">
@@ -1774,9 +1782,9 @@
               <span>Manage full server backups, verify Ed25519-signed release ZIPs, apply atomic updates, or roll back</span>
             </div>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <a href="{{ url('/settings/users') }}" class="btn sm primary" style="text-decoration:none;">👥 Manage Users &amp; Access</a>
+              <a href="{{ route('settings.users') }}" class="btn sm primary" style="text-decoration:none;">👥 Manage Users &amp; Access</a>
               <button class="btn sm" onclick="loadAdminUpdaterStatus()">↻ Refresh Status</button>
-              <a href="{{ url('/settings/updates') }}" class="btn sm">Open Full Updater Console ↗</a>
+              <a href="{{ route('settings.updates') }}" class="btn sm">Open Full Updater Console ↗</a>
             </div>
           </div>
 
@@ -3885,7 +3893,7 @@
     let deferredPwaPrompt = null;
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(err => {
+        navigator.serviceWorker.register('{{ url('/sw.js') }}').catch(err => {
           console.warn('[PWA] Service Worker registration failed:', err);
         });
       });

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="manifest" href="{{ url('/manifest.json') }}">
     <title>PLAUD Companion — 1-Click Installer</title>
     <style>
         :root {
@@ -335,7 +336,7 @@
             <div id="install-summary" class="check-grid"></div>
             <div class="actions">
                 <span></span>
-                <a href="/settings/updates" class="btn btn-primary" style="text-decoration:none;">Open Update &amp; Backup Panel</a>
+                <a href="{{ route('settings.updates') }}" class="btn btn-primary" style="text-decoration:none;">Open Update &amp; Backup Panel</a>
             </div>
         </div>
     </div>
@@ -354,6 +355,7 @@
 
 <script>
 let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+const INSTALL_API_BASE = '{{ url('/install') }}';
 
 function showAlert(msg, type = 'error') {
     const el = document.getElementById('alert');
@@ -405,7 +407,7 @@ async function apiPost(url, payload) {
 
 async function refreshPreflight() {
     clearAlert();
-    const res = await fetch('/install/preflight', { headers: { 'Accept': 'application/json' } });
+    const res = await fetch(`${INSTALL_API_BASE}/preflight`, { headers: { 'Accept': 'application/json' } });
     const data = await res.json();
     document.getElementById('btn-step1-next').disabled = !data.all_ok;
     showAlert(data.all_ok ? 'All required preflight checks passed.' : 'One or more preflight checks failed.', data.all_ok ? 'success' : 'error');
@@ -427,7 +429,7 @@ function dbPayload() {
 async function testDb() {
     clearAlert();
     try {
-        const res = await apiPost('/install/test-db', dbPayload());
+        const res = await apiPost(`${INSTALL_API_BASE}/test-db`, dbPayload());
         showAlert('Database connection succeeded (server ' + (res.server_version || 'ok') + ').', 'success');
     } catch (e) {
         showAlert(e.message, 'error');
@@ -437,7 +439,7 @@ async function testDb() {
 async function saveEnv() {
     clearAlert();
     try {
-        const res = await apiPost('/install/configure', dbPayload());
+        const res = await apiPost(`${INSTALL_API_BASE}/configure`, dbPayload());
         showAlert(res.message || '.env saved.', 'success');
         setTimeout(() => goStep(3), 400);
     } catch (e) {
@@ -451,7 +453,7 @@ async function runInstall() {
     btn.disabled = true;
     btn.textContent = 'Installing...';
     try {
-        const res = await apiPost('/install/run', {
+        const res = await apiPost(`${INSTALL_API_BASE}/run`, {
             display_name: document.getElementById('display_name').value,
             email: document.getElementById('email').value,
             password: document.getElementById('password').value,

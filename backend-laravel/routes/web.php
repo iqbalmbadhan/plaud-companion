@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\TranscriptController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InstallController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WebAuthController;
 use Illuminate\Support\Facades\Route;
@@ -16,9 +17,13 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['web.auth'])->group(function (): void {
     Route::get('/', [DashboardController::class, 'index'])->name('app.home');
     Route::get('/app', [DashboardController::class, 'index'])->name('app.dashboard');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::post('/profile', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     // Session-authenticated JSON endpoints for the Web Workspace UI
     Route::prefix('app/api')->group(function (): void {
+        Route::get('/profile', [ProfileController::class, 'apiShow'])->name('app.api.profile');
         Route::get('/workspaces', [WorkspaceController::class, 'index']);
         Route::post('/workspaces', [WorkspaceController::class, 'store']);
         Route::get('/workspaces/{workspaceId}', [WorkspaceController::class, 'show']);
@@ -62,6 +67,10 @@ Route::get('/login', [WebAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [WebAuthController::class, 'login'])->middleware('throttle:10,1')->name('login.post');
 Route::get('/register', [WebAuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [WebAuthController::class, 'register'])->middleware('throttle:10,1')->name('register.post');
+Route::get('/forgot-password', [WebAuthController::class, 'showForgotPassword'])->name('password.request');
+Route::post('/forgot-password', [WebAuthController::class, 'sendResetLink'])->middleware('throttle:6,1')->name('password.email');
+Route::get('/reset-password/{token}', [WebAuthController::class, 'showResetPassword'])->name('password.reset');
+Route::post('/reset-password', [WebAuthController::class, 'resetPassword'])->middleware('throttle:6,1')->name('password.update');
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 Route::match(['GET', 'POST'], '/auth/logout', [WebAuthController::class, 'logout'])->name('auth.logout');
 Route::get('/demo', static fn () => view('auth.demo'))->name('demo');

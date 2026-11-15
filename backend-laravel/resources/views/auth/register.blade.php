@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="{{ url('/manifest.json') }}">
     <meta name="theme-color" content="#18A879">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -163,6 +163,8 @@
 
         <div class="auth-switch">
             Already have an account? <a href="{{ route('login') }}">Sign In</a>
+            <span style="opacity:0.4; margin:0 6px;">&bull;</span>
+            <a href="{{ route('demo') }}">Demo Accounts</a>
         </div>
     </div>
 

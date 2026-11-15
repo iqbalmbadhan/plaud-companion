@@ -256,8 +256,14 @@
             </div>
         </div>
 
-        <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
-            <a href="{{ url('/login') }}" style="color:var(--muted); font-size:13px; text-decoration:none;">&larr; Back to standard login</a>
+        <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <a href="{{ route('login') }}" style="color:var(--muted); font-size:13px; text-decoration:none;">&larr; Back to standard login</a>
+                <span style="opacity:0.4;">&bull;</span>
+                <a href="{{ route('register') }}" style="color:var(--emerald); font-size:13px; text-decoration:none; font-weight:600;">Create Account</a>
+                <span style="opacity:0.4;">&bull;</span>
+                <a href="{{ route('password.request') }}" style="color:var(--muted); font-size:13px; text-decoration:none;">Forgot password?</a>
+            </div>
             <span style="font-size:12px; color:var(--emerald);">Local Environment Ready • MySQL Database Connected</span>
         </div>
 

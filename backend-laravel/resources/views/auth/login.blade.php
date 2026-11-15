@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="{{ url('/manifest.json') }}">
     <meta name="theme-color" content="#18A879">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -185,6 +185,12 @@
             </div>
         </div>
 
+        @if (session('status'))
+            <div style="background: rgba(24, 168, 121, 0.15); border: 1px solid var(--emerald); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 13px; color: #6ee7b7; line-height: 1.4;">
+                {{ session('status') }}
+            </div>
+        @endif
+
         @php
             $suspendedNotice = session('suspended') ?? ($errors->has('suspended') ? $errors->first('suspended') : null);
             if (!$suspendedNotice && $errors->has('email') && str_contains(strtolower($errors->first('email')), 'suspended')) {
@@ -219,18 +225,21 @@
             <label for="password">Password</label>
             <input id="password" type="password" name="password" placeholder="Enter password" required>
 
-            <div class="row-options">
-                <label>
+            <div class="row-options" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+                <label style="margin-bottom:0; display:flex; align-items:center; gap:6px; cursor:pointer;">
                     <input type="checkbox" name="remember" value="1" checked style="accent-color:var(--emerald);">
                     Remember this device
                 </label>
+                <a href="{{ route('password.request') }}" style="color:var(--emerald); text-decoration:none; font-size:12.5px; font-weight:600;">Forgot password?</a>
             </div>
 
             <button type="submit" class="btn-primary">Sign In to Workspace</button>
         </form>
 
-        <div style="margin-top:20px; text-align:center; font-size:13px; color:var(--muted);">
-            Don't have an account? <a href="{{ route('register') }}" style="color:var(--emerald); text-decoration:none; font-weight:600;">Create an account</a>
+        <div style="margin-top:20px; text-align:center; font-size:13px; color:var(--muted); display:flex; justify-content:center; gap:10px; align-items:center; flex-wrap:wrap;">
+            <span>Don't have an account? <a href="{{ route('register') }}" style="color:var(--emerald); text-decoration:none; font-weight:600;">Create an account</a></span>
+            <span style="opacity:0.4;">&bull;</span>
+            <a href="{{ route('demo') }}" style="color:var(--muted); text-decoration:none; font-weight:500;">Demo Accounts</a>
         </div>
     </div>
 
