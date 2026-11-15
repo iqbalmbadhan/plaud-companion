@@ -121,6 +121,50 @@
             font-size: 13px;
             margin-bottom: 18px;
         }
+        .alert-suspended {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.45);
+            border-left: 4px solid var(--danger);
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
+            color: #F8FAFC;
+        }
+        .alert-suspended-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 14.5px;
+            color: #FCA5A5;
+            margin-bottom: 6px;
+        }
+        .alert-suspended-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            stroke: #EF4444;
+        }
+        .alert-suspended-body {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #E2E8F0;
+        }
+        .alert-suspended-contact {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(239, 68, 68, 0.25);
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .alert-suspended-contact a {
+            color: #34D399;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+        .alert-suspended-contact a:hover {
+            color: #6EE7B7;
+        }
         .security-footer {
             margin-top: 24px;
             text-align: center;
@@ -141,7 +185,29 @@
             </div>
         </div>
 
-        @if ($errors->any())
+        @php
+            $suspendedNotice = session('suspended') ?? ($errors->has('suspended') ? $errors->first('suspended') : null);
+            if (!$suspendedNotice && $errors->has('email') && str_contains(strtolower($errors->first('email')), 'suspended')) {
+                $suspendedNotice = $errors->first('email');
+            }
+        @endphp
+
+        @if ($suspendedNotice)
+            <div class="alert-suspended" role="alert" aria-live="assertive">
+                <div class="alert-suspended-header">
+                    <svg class="alert-suspended-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 7.5h.008v.008H12v-.008z" />
+                    </svg>
+                    <span>Account Suspended</span>
+                </div>
+                <div class="alert-suspended-body">
+                    <div>{{ $suspendedNotice }}</div>
+                    <div class="alert-suspended-contact">
+                        Need assistance or believe this is an error? Contact your workspace administrator or reach support at <a href="mailto:support@plaudcompanion.com">support@plaudcompanion.com</a>.
+                    </div>
+                </div>
+            </div>
+        @elseif ($errors->any())
             <div class="error">{{ $errors->first() }}</div>
         @endif
 

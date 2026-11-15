@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditEvent;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceMember;
@@ -21,8 +22,16 @@ class WebAuthController extends Controller
         }
 
         $user = $request->user();
-        if ($user !== null && $user->status === 'active') {
-            return redirect()->route('app.home');
+        if ($user !== null) {
+            if ($user->status !== 'active') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()->route('login')->with('suspended', 'Your account has been suspended by an administrator. Please contact support.');
+            }
+
+            return redirect()->route('app.dashboard');
         }
 
         return view('auth.login');
@@ -35,11 +44,24 @@ class WebAuthController extends Controller
         }
 
         $user = $request->user();
-        if ($user !== null && $user->status === 'active') {
-            return redirect()->route('app.home');
+        if ($user !== null) {
+            if ($user->status !== 'active') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()->route('login')->with('suspended', 'Your account has been suspended by an administrator. Please contact support.');
+            }
+
+            return redirect()->to('/app');
         }
 
         return view('auth.register');
+    }
+
+    public function showRegisterForm(Request $request): View|RedirectResponse
+    {
+        return $this->showRegister($request);
     }
 
     public function register(Request $request): RedirectResponse
@@ -47,7 +69,7 @@ class WebAuthController extends Controller
         $validated = $request->validate([
             'display_name' => ['required', 'string', 'min:2', 'max:100'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:8', 'max:255', 'confirmed'],
         ]);
 
         $email = strtolower(trim($validated['email']));
@@ -64,11 +86,12 @@ class WebAuthController extends Controller
                 'password_hash' => $pwdHash,
                 'status' => 'active',
                 'is_super_admin' => false,
+                'email_verified_at' => now(),
             ]);
 
             $ws = Workspace::create([
                 'id' => (string) Str::uuid(),
-                'name' => $u->display_name . "'s Workspace",
+                'name' => mb_substr(trim($validated['display_name']) . "'s Workspace", 0, 100),
                 'type' => 'personal',
                 'owner_user_id' => $u->id,
             ]);
@@ -82,13 +105,41 @@ class WebAuthController extends Controller
                 'joined_at' => now(),
             ]);
 
+            AuditEvent::create([
+                'id' => (string) Str::uuid(),
+                'workspace_id' => $ws->id,
+                'actor_user_id' => $u->id,
+                'action' => 'user.registered',
+                'resource_type' => 'user',
+                'resource_id' => $u->id,
+                'metadata' => [
+                    'email' => $u->email,
+                    'display_name' => $u->display_name,
+                ],
+                'created_at' => now(),
+            ]);
+
+            AuditEvent::create([
+                'id' => (string) Str::uuid(),
+                'workspace_id' => $ws->id,
+                'actor_user_id' => $u->id,
+                'action' => 'workspace.created',
+                'resource_type' => 'workspace',
+                'resource_id' => $ws->id,
+                'metadata' => [
+                    'name' => $ws->name,
+                    'type' => $ws->type,
+                ],
+                'created_at' => now(),
+            ]);
+
             return $u;
         });
 
-        Auth::login($user, true);
+        Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('app.home');
+        return redirect()->to('/app');
     }
 
     public function login(Request $request): RedirectResponse
@@ -108,15 +159,22 @@ class WebAuthController extends Controller
         }
 
         if ($user->status !== 'active') {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            $suspendedNotice = 'Your account has been suspended by an administrator. Please contact support.';
+
             return back()
                 ->withInput($request->only('email'))
-                ->withErrors(['email' => 'Your account has been suspended by an administrator. Please contact support.']);
+                ->withErrors(['email' => $suspendedNotice])
+                ->with('suspended', $suspendedNotice);
         }
 
         Auth::login($user, (bool) $request->boolean('remember', false));
         $request->session()->regenerate();
 
-        return redirect()->intended(route('app.home'));
+        return redirect()->intended(route('app.dashboard'));
     }
 
     public function logout(Request $request): RedirectResponse

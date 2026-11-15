@@ -147,16 +147,16 @@
         <form method="POST" action="{{ route('register.post') }}">
             @csrf
             <label for="display_name">Full Name or Display Name</label>
-            <input id="display_name" type="text" name="display_name" value="{{ old('display_name') }}" placeholder="Alex Morgan" required autofocus>
+            <input id="display_name" type="text" name="display_name" value="{{ old('display_name') }}" placeholder="Alex Morgan" required autofocus autocomplete="name">
 
             <label for="email">Work Email</label>
-            <input id="email" type="email" name="email" value="{{ old('email') }}" placeholder="name@company.com" required>
+            <input id="email" type="email" name="email" value="{{ old('email') }}" placeholder="name@company.com" required autocomplete="email">
 
             <label for="password">Password (min. 8 characters)</label>
-            <input id="password" type="password" name="password" placeholder="Create strong password" required minlength="8">
+            <input id="password" type="password" name="password" placeholder="Create strong password" required minlength="8" autocomplete="new-password">
 
             <label for="password_confirmation">Confirm Password</label>
-            <input id="password_confirmation" type="password" name="password_confirmation" placeholder="Re-enter password" required minlength="8">
+            <input id="password_confirmation" type="password" name="password_confirmation" placeholder="Re-enter password" required minlength="8" autocomplete="new-password">
 
             <button type="submit" class="btn-primary">Create Account &amp; Start Workspace</button>
         </form>
