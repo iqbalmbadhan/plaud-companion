@@ -24,9 +24,9 @@ class AiService
         ],
         'gemini' => [
             'name' => 'Google Gemini',
-            'description' => 'Fast, long-context analysis powered by Google Gemini.',
+            'description' => 'Fast, scalable processing with massive context windows powered by Google Gemini.',
             'default_model' => 'gemini-2.0-flash',
-            'available_models' => ['gemini-2.0-flash', 'gemini-1.5-pro'],
+            'available_models' => ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'],
             'setup_help_url' => 'https://aistudio.google.com/apikey',
             'auth_type' => 'api_key',
             'tag' => 'Fast',
@@ -51,7 +51,7 @@ class AiService
         ],
         'builtin' => [
             'name' => 'PLAUD Neural Meeting Engine',
-            'description' => 'Local, offline meeting synthesis and diarization parser with zero API latency.',
+            'description' => 'Embedded local neural engine for real-time diarization parsing, executive summaries, and action matrix synthesis.',
             'default_model' => 'neural-synthesis-v2',
             'available_models' => ['neural-synthesis-v2'],
             'setup_help_url' => null,
@@ -97,12 +97,20 @@ class AiService
 
             $maskedKey = null;
             if ($pid === 'builtin') {
-                $maskedKey = 'Zero Latency Neural Operator';
+                $maskedKey = 'Embedded Engine (Online)';
             } elseif ($hasDbKey) {
                 $raw = (string) $conn->api_key_encrypted;
                 $maskedKey = strlen($raw) > 8 ? substr($raw, 0, 4) . '...' . substr($raw, -4) : '••••••••';
             } elseif ($hasEnvKey) {
                 $maskedKey = 'Configured via .env';
+            }
+
+            $easyConnectUrl = null;
+            if ($pid === 'openrouter') {
+                $callback = function_exists('url')
+                    ? url('/settings/ai/callback')
+                    : (rtrim(config('app.url', 'http://localhost'), '/') . '/settings/ai/callback');
+                $easyConnectUrl = 'https://openrouter.ai/auth?callback_url=' . urlencode($callback);
             }
 
             $activeModel = $conn?->default_model ?: $meta['default_model'];
@@ -121,31 +129,11 @@ class AiService
                 'models' => $meta['available_models'],
                 'masked_key' => $maskedKey,
                 'setup_help_url' => $meta['setup_help_url'],
-                'easy_connect_url' => null,
+                'easy_connect_url' => $easyConnectUrl,
                 'auth_type' => $meta['auth_type'],
                 'tag' => $meta['tag'],
             ];
         }
-
-        // Add built-in local neural engine as an active and verifiable connector
-        $out[] = [
-            'provider_id' => 'builtin',
-            'provider' => 'builtin',
-            'name' => 'PLAUD Neural Meeting Engine',
-            'description' => 'Embedded local neural engine for real-time diarization parsing, executive summaries, and action matrix synthesis.',
-            'is_configured' => true,
-            'connected' => true,
-            'is_active' => true,
-            'default_model' => 'neural-synthesis-v2',
-            'active_model' => 'neural-synthesis-v2',
-            'available_models' => ['neural-synthesis-v2'],
-            'models' => ['neural-synthesis-v2'],
-            'masked_key' => 'Embedded Engine (Online)',
-            'setup_help_url' => null,
-            'easy_connect_url' => null,
-            'auth_type' => 'builtin',
-            'tag' => 'Active Fallback',
-        ];
 
         return $out;
     }
@@ -239,12 +227,7 @@ class AiService
         $pid = strtolower(trim($providerId));
 
         if ($pid === 'builtin') {
-            return [
-                'success' => true,
-                'message' => 'Built-in Neural Synthesis Operator is online and active.',
-                'provider_id' => 'builtin',
-                'latency_ms' => 4,
-            ];
+            return $this->pingProvider('builtin', '', 'neural-synthesis-v2');
         }
 
         // Look specifically for this provider's connection
@@ -309,7 +292,18 @@ class AiService
             mb_substr($transcript->content_text, 0, 60000)
         );
 
-        $raw = $this->complete($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
+        try {
+            $raw = $this->complete($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
+        } catch (\Throwable $e) {
+            if ($pid !== 'builtin') {
+                \Illuminate\Support\Facades\Log::warning("AI Provider [{$pid}] failed during summary, falling back to builtin engine: " . $e->getMessage());
+                $raw = $this->runBuiltinEngine($systemPrompt, $userPrompt);
+                $pid = 'builtin';
+                $usedModel = 'neural-synthesis-v2';
+            } else {
+                throw $e;
+            }
+        }
         $parsed = $this->decodeJsonPayload($raw);
 
         return [
@@ -339,7 +333,18 @@ class AiService
             mb_substr($transcript->content_text, 0, 60000)
         );
 
-        $raw = $this->complete($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
+        try {
+            $raw = $this->complete($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
+        } catch (\Throwable $e) {
+            if ($pid !== 'builtin') {
+                \Illuminate\Support\Facades\Log::warning("AI Provider [{$pid}] failed during action items, falling back to builtin engine: " . $e->getMessage());
+                $raw = $this->runBuiltinEngine($systemPrompt, $userPrompt);
+                $pid = 'builtin';
+                $usedModel = 'neural-synthesis-v2';
+            } else {
+                throw $e;
+            }
+        }
         $parsed = $this->decodeJsonPayload($raw);
         $items = [];
         foreach ((array) ($parsed['action_items'] ?? []) as $item) {
@@ -392,7 +397,18 @@ class AiService
             implode("\n\n", $contextBlocks)
         );
 
-        $raw = $this->complete($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
+        try {
+            $raw = $this->complete($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
+        } catch (\Throwable $e) {
+            if ($pid !== 'builtin') {
+                \Illuminate\Support\Facades\Log::warning("AI Provider [{$pid}] failed during answerQuestion, falling back to builtin engine: " . $e->getMessage());
+                $raw = $this->runBuiltinEngine($systemPrompt, $userPrompt);
+                $pid = 'builtin';
+                $usedModel = 'neural-synthesis-v2';
+            } else {
+                throw $e;
+            }
+        }
         $parsed = $this->decodeJsonPayload($raw);
 
         return [
@@ -453,21 +469,25 @@ class AiService
     /**
      * @return array<string, mixed>
      */
-    private function pingProvider(string $providerId, string $apiKey, string $model): array
+    public function pingProvider(string $providerId, string $apiKey, string $model): array
     {
         if ($providerId === 'builtin') {
+            $start = hrtime(true);
+            $this->complete('builtin', '', 'neural-synthesis-v2', 'Reply with OK.', 'Ping');
+            $latencyMs = max(1, (int) round((hrtime(true) - $start) / 1_000_000));
+
             return [
                 'success' => true,
                 'message' => 'Built-in Neural Synthesis Operator is online and active.',
                 'provider_id' => 'builtin',
-                'latency_ms' => 4,
+                'latency_ms' => $latencyMs,
             ];
         }
 
         $start = hrtime(true);
         try {
             $this->complete($providerId, $apiKey, $model, 'Reply with OK.', 'Ping');
-            $latencyMs = (int) round((hrtime(true) - $start) / 1_000_000);
+            $latencyMs = max(1, (int) round((hrtime(true) - $start) / 1_000_000));
 
             return [
                 'success' => true,
@@ -476,9 +496,28 @@ class AiService
                 'latency_ms' => $latencyMs,
             ];
         } catch (\Throwable $e) {
+            $rawMsg = $e->getMessage();
+            $sanitized = $apiKey !== '' ? str_replace($apiKey, '[REDACTED]', $rawMsg) : $rawMsg;
+            $sanitized = preg_replace('/(key=)[^&\s]+/i', '$1[REDACTED]', $sanitized);
+            $sanitized = preg_replace('/(Bearer\s+)[A-Za-z0-9_\-\.]+/i', '$1[REDACTED]', $sanitized);
+            $sanitized = preg_replace('/(x-(?:goog-)?api-key:\s*)[^\s]+/i', '$1[REDACTED]', $sanitized);
+            $sanitized = preg_replace('/sk-[a-zA-Z0-9_\-]{10,}/i', '[REDACTED]', $sanitized);
+
+            if (str_contains($rawMsg, '401') || str_contains($rawMsg, '403') || str_contains($rawMsg, 'Unauthorized') || str_contains($rawMsg, 'API_KEY_INVALID')) {
+                $cleanMsg = 'Authentication failed. Please verify that your API key is correct and active.';
+            } elseif (str_contains($rawMsg, '429') || str_contains($rawMsg, 'quota') || str_contains($rawMsg, 'rate limit') || str_contains($rawMsg, 'RESOURCE_EXHAUSTED')) {
+                $cleanMsg = 'Rate limit or quota exceeded for this provider account.';
+            } elseif (str_contains($rawMsg, '404') || str_contains($rawMsg, 'model_not_found') || str_contains($rawMsg, 'NOT_FOUND')) {
+                $cleanMsg = "Model '{$model}' not found or not supported for generateContent. Please choose an active model.";
+            } elseif (str_contains($rawMsg, 'cURL error 28') || str_contains($rawMsg, 'timed out') || str_contains($rawMsg, 'timeout')) {
+                $cleanMsg = 'Connection timed out while contacting provider endpoint.';
+            } else {
+                $cleanMsg = 'Provider connection failed: ' . Str::limit($sanitized, 160);
+            }
+
             return [
                 'success' => false,
-                'message' => 'Provider connection failed: '.$e->getMessage(),
+                'message' => $cleanMsg,
                 'provider_id' => $providerId,
                 'latency_ms' => null,
             ];
@@ -653,23 +692,55 @@ class AiService
 
     private function callGemini(string $apiKey, string $model, string $systemPrompt, string $userPrompt): string
     {
+        $cleanModel = preg_replace('#^models/#', '', trim($model));
+        if ($cleanModel === '') {
+            $cleanModel = 'gemini-2.0-flash';
+        }
+
         $url = sprintf(
-            'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
-            urlencode($model),
-            urlencode($apiKey)
+            'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
+            urlencode($cleanModel)
         );
 
-        $resp = Http::timeout(45)->post($url, [
-            'systemInstruction' => [
-                'parts' => [['text' => $systemPrompt]],
-            ],
-            'contents' => [
-                ['parts' => [['text' => $userPrompt]]],
-            ],
-        ]);
+        $resp = Http::timeout(45)
+            ->withHeaders(['x-goog-api-key' => $apiKey])
+            ->post($url, [
+                'systemInstruction' => [
+                    'parts' => [['text' => $systemPrompt]],
+                ],
+                'contents' => [
+                    ['parts' => [['text' => $userPrompt]]],
+                ],
+            ]);
 
         if ($resp->failed()) {
-            throw new \RuntimeException('Gemini HTTP '.$resp->status());
+            $status = $resp->status();
+            $apiError = data_get($resp->json(), 'error.message');
+
+            // If 404 (model not found for generateContent), attempt fallback to gemini-1.5-flash
+            if ($status === 404 && !in_array($cleanModel, ['gemini-1.5-flash', 'gemini-2.0-flash'], true)) {
+                $fallbackModel = 'gemini-1.5-flash';
+                $fallbackUrl = sprintf(
+                    'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
+                    urlencode($fallbackModel)
+                );
+                $fallbackResp = Http::timeout(45)
+                    ->withHeaders(['x-goog-api-key' => $apiKey])
+                    ->post($fallbackUrl, [
+                        'contents' => [
+                            ['parts' => [['text' => $systemPrompt . "\n\n" . $userPrompt]]],
+                        ],
+                    ]);
+                if ($fallbackResp->successful()) {
+                    return (string) data_get($fallbackResp->json(), 'candidates.0.content.parts.0.text', '');
+                }
+            }
+
+            if ($apiError) {
+                throw new \RuntimeException("Gemini API Error ({$status}): {$apiError}");
+            }
+
+            throw new \RuntimeException('Gemini HTTP ' . $status);
         }
 
         return (string) data_get($resp->json(), 'candidates.0.content.parts.0.text', '');

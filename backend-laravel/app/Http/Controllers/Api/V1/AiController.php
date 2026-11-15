@@ -43,8 +43,11 @@ class AiController extends Controller
         return response()->json($this->ai->testWorkspaceConnection($workspaceId, $request->user()->id, $providerId));
     }
 
-    public function summary(Request $request, string $transcriptId): JsonResponse
+    public function summary(Request $request, string $arg1, ?string $arg2 = null): JsonResponse
     {
+        $transcriptId = $arg2 !== null ? $arg2 : $arg1;
+        $workspaceId = $arg2 !== null ? $arg1 : null;
+
         $validated = $request->validate([
             'summary_type' => ['sometimes', 'string', 'in:concise,detailed,executive,meeting_minutes'],
             'provider_id' => ['nullable', 'string', 'max:50'],
@@ -54,6 +57,10 @@ class AiController extends Controller
         $transcript = Transcript::query()->find($transcriptId);
         if (!$transcript) {
             return response()->json(['detail' => 'Transcript not found.'], 404);
+        }
+
+        if ($workspaceId !== null && $transcript->workspace_id !== $workspaceId) {
+            return response()->json(['detail' => 'Transcript does not belong to specified workspace.'], 404);
         }
 
         $this->workspaces->requireMembership($transcript->workspace_id, $request->user()->id);
@@ -66,11 +73,18 @@ class AiController extends Controller
         ));
     }
 
-    public function actionItems(Request $request, string $transcriptId): JsonResponse
+    public function actionItems(Request $request, string $arg1, ?string $arg2 = null): JsonResponse
     {
+        $transcriptId = $arg2 !== null ? $arg2 : $arg1;
+        $workspaceId = $arg2 !== null ? $arg1 : null;
+
         $transcript = Transcript::query()->find($transcriptId);
         if (!$transcript) {
             return response()->json(['detail' => 'Transcript not found.'], 404);
+        }
+
+        if ($workspaceId !== null && $transcript->workspace_id !== $workspaceId) {
+            return response()->json(['detail' => 'Transcript does not belong to specified workspace.'], 404);
         }
 
         $this->workspaces->requireMembership($transcript->workspace_id, $request->user()->id);
@@ -90,29 +104,51 @@ class AiController extends Controller
 
         $this->workspaces->requireMembership($workspaceId, $request->user()->id);
 
-        $transcripts = Transcript::query()
-            ->with('segments')
-            ->where('workspace_id', $workspaceId)
-            ->whereIn('id', $validated['transcript_ids'])
-            ->get();
+        try {
+            $transcripts = Transcript::query()
+                ->with('segments')
+                ->where('workspace_id', $workspaceId)
+                ->whereIn('id', $validated['transcript_ids'])
+                ->get();
 
-        if ($transcripts->isEmpty()) {
-            return response()->json(['detail' => 'None of the specified transcripts were found in this workspace.'], 400);
+            if ($transcripts->isEmpty()) {
+                return response()->json(['detail' => 'None of the specified transcripts were found in this workspace.'], 400);
+            }
+
+            $tData = $transcripts->map(static fn (Transcript $t): array => [
+                'id' => $t->id,
+                'title' => $t->title,
+                'text' => (string) ($t->content_text ?? ''),
+                'speaker' => $t->segments->first()?->speaker_label ?? 'Speaker',
+            ])->all();
+
+            return response()->json($this->ai->answerQuestion(
+                $workspaceId,
+                $validated['question'],
+                $tData,
+                $validated['provider_id'] ?? null,
+                $validated['model'] ?? null
+            ));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+            throw $e;
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            $rawMsg = $e->getMessage();
+            $sanitized = preg_replace('/(key=)[^&\s]+/i', '$1[REDACTED]', $rawMsg);
+            $sanitized = preg_replace('/(Bearer\s+)[A-Za-z0-9_\-\.]+/i', '$1[REDACTED]', $sanitized);
+            $sanitized = preg_replace('/sk-[a-zA-Z0-9_\-]{10,}/i', '[REDACTED]', $sanitized);
+
+            return response()->json([
+                'answer' => 'Unable to complete cross-transcript AI synthesis at this time: ' . \Illuminate\Support\Str::limit($sanitized, 160),
+                'citations' => [],
+                'provider_used' => 'system-error-handler',
+                'model_used' => 'none',
+                'has_sufficient_evidence' => false,
+                'error' => true,
+            ], 200);
         }
-
-        $tData = $transcripts->map(static fn (Transcript $t): array => [
-            'id' => $t->id,
-            'title' => $t->title,
-            'text' => $t->content_text,
-            'speaker' => $t->segments->first()?->speaker_label ?? 'Speaker',
-        ])->all();
-
-        return response()->json($this->ai->answerQuestion(
-            $workspaceId,
-            $validated['question'],
-            $tData,
-            $validated['provider_id'] ?? null,
-            $validated['model'] ?? null
-        ));
     }
 }

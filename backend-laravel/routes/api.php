@@ -48,7 +48,9 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/workspaces/{workspaceId}/ai/connectors/{providerId}/connect', [AiController::class, 'connect']);
         Route::post('/workspaces/{workspaceId}/ai/connectors/{providerId}/test', [AiController::class, 'test']);
         Route::post('/transcripts/{transcriptId}/summary', [AiController::class, 'summary']);
+        Route::post('/workspaces/{workspaceId}/transcripts/{transcriptId}/summary', [AiController::class, 'summary']);
         Route::post('/transcripts/{transcriptId}/action-items', [AiController::class, 'actionItems']);
+        Route::post('/workspaces/{workspaceId}/transcripts/{transcriptId}/action-items', [AiController::class, 'actionItems']);
         Route::post('/workspaces/{workspaceId}/ai/ask', [AiController::class, 'ask']);
 
         // Exports
