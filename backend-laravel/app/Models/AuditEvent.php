@@ -25,7 +25,18 @@ class AuditEvent extends Model
         'resource_id',
         'metadata',
         'created_at',
+        'impersonator_user_id',
     ];
+
+    protected static function booted(): void
+    {
+        // Every audit entry written while a developer is impersonating names the developer too.
+        static::creating(function (AuditEvent $event): void {
+            if ($event->impersonator_user_id === null) {
+                $event->impersonator_user_id = \App\Support\Impersonation::impersonatorId();
+            }
+        });
+    }
 
     protected function casts(): array
     {

@@ -1155,6 +1155,7 @@
   </style>
 </head>
 <body>
+@include('partials.impersonation-banner')
   <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar(false)"></div>
   <div class="app">
     <aside class="sidebar">
@@ -3933,5 +3934,6 @@
     renderWorkspaceSelector();
     loadWorkspaceData();
   </script>
+@include('partials.error-reporter')
 </body>
 </html>

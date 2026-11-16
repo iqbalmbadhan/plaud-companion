@@ -39,6 +39,23 @@ class EnsureWebAuthenticated
             return redirect()->guest(route('login'));
         }
 
+        // Impersonation: end it when time is up or the impersonated account was suspended.
+        if (\App\Support\Impersonation::active() && (\App\Support\Impersonation::expired() || $user->status !== 'active')) {
+            $why = \App\Support\Impersonation::expired() ? 'expired' : 'target_suspended';
+            if (\App\Support\Impersonation::stop($request, $why)) {
+                $notice = $why === 'expired'
+                    ? 'Impersonation ended after ' . \App\Support\Impersonation::MINUTES . ' minutes. You are back in your developer account.'
+                    : 'Impersonation ended because that account is suspended.';
+                if ($request->expectsJson() || $request->is('app/api/*')) {
+                    return response()->json(['detail' => $notice, 'impersonation_ended' => true], 409);
+                }
+
+                return redirect()->route('settings.users')->with('status', $notice);
+            }
+
+            return redirect()->route('login');
+        }
+
         if ($user->status !== 'active') {
             Auth::logout();
             $request->session()->invalidate();

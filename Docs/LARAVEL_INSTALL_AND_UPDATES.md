@@ -104,3 +104,31 @@ All updater failures throw `App\Support\Update\UpdateException` with a machine-r
 | `update_migrate_failed` | `422` | `MigrationRunner` | `php artisan migrate --force` (via `proc_open` or in-process `Artisan::call`) exited non-zero. Automatic rollback is triggered. |
 | `update_no_previous` | `404` / `422` | `Updater` | No `previous/<version>/` backup exists, or its rollback journal is missing/corrupted. |
 | `update_rollback_failed` | `500` | `Updater` | Rollback itself failed after an update error, or manual rollback failed. Site remains in maintenance mode (`rolled_back = false`) for manual recovery. |
+
+---
+
+## 6. Developer Role, Impersonation & Debug Log
+
+The **developer** role sits above super-admin. The account created by the `/install` wizard is a developer. For an existing installation, promote an account once:
+
+```bash
+php artisan migrate --force
+php artisan plaud:make-developer you@example.com
+```
+
+Everything below is on **Settings → Users** (`/settings/users`).
+
+| Capability | Super-admin | Developer |
+| --- | --- | --- |
+| Suspend / reactivate, make admin, sign out everywhere, send password reset | ✓ (not on developer accounts) | ✓ |
+| Updates & backups (`/settings/updates`) | ✓ | ✓ |
+| **Work as** a user (impersonation) | — | ✓ |
+| Delete users, grant/remove developer role | — | ✓ |
+| Workspaces & documents list (titles, dates, counts; never transcript text) | — | ✓ |
+| Debug log (server + browser errors) | — | ✓ |
+
+**Impersonation rules:** requires a reason and the developer's password; ends after 30 minutes (or on *End session* / *Sign out*); a banner is always visible; admin and developer pages and the user's password change are blocked meanwhile; developers and suspended users cannot be impersonated; every audit entry written during the session stores `impersonator_user_id`. The last active developer cannot be suspended, deleted or demoted.
+
+**Debug log:** every unexpected server error gets a reference (`ERR-XXXXXXXX`) returned to the user in the `X-Error-Reference` header (and `reference` in JSON). Signed-in pages also report uncaught browser errors (max 5 per page view, rate-limited). Messages are sanitized (tokens, keys and passwords redacted); SQL errors keep only the SQLSTATE code; request bodies and transcript text are never stored. Entries older than 30 days are pruned automatically.
+
+**Password changes & sign-out everywhere:** changing a password signs out every other browser and invalidates mobile/API tokens; a password reset or *Sign out everywhere* ends all sessions; suspending a user also ends all sessions.

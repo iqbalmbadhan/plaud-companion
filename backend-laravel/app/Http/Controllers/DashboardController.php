@@ -43,14 +43,15 @@ class DashboardController extends Controller
                 'email' => $user->email,
                 'display_name' => $user->display_name,
                 'initials' => $this->initials($user->display_name),
-                'is_super_admin' => $user->is_super_admin === true,
+                // Admin links stay hidden while a developer is working as another user.
+                'is_super_admin' => $user->hasAdminAccess() && !\App\Support\Impersonation::active(),
             ],
             'workspaces' => $userWorkspaces,
             'activeWorkspace' => $activeWorkspace,
             'activeWorkspaceId' => $activeWorkspace['id'],
             'appVersion' => config('app.version', '1.0.0'),
             'currentVersion' => config('app.version', '1.0.0'),
-            'updaterEnabled' => $user->is_super_admin === true ? Package::enabled() : false,
+            'updaterEnabled' => $user->hasAdminAccess() ? Package::enabled() : false,
             'maxZipMb' => (int) config('updater.max_zip_mb', 150),
         ]);
     }

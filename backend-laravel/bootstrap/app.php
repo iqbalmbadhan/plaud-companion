@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AuthenticateApiToken;
+use App\Http\Middleware\EnsureDeveloper;
 use App\Http\Middleware\EnsureNotInstalled;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureWebAuthenticated;
@@ -62,8 +63,28 @@ return Application::configure(basePath: $basePath)
             'web.auth' => EnsureWebAuthenticated::class,
             'not_installed' => EnsureNotInstalled::class,
             'super_admin' => EnsureSuperAdmin::class,
+            'developer' => EnsureDeveloper::class,
         ]);
     })
+    ->withCommands([__DIR__.'/../app/Console/Commands'])
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Developer debug log: every reported (unexpected) exception gets a reference number.
+        $exceptions->report(function (\Throwable $e): void {
+            app(\App\Services\ErrorLogger::class)->recordException($e);
+        });
+
+        // Show that reference to the user so they can quote it to the developer.
+        $exceptions->respond(function (\Symfony\Component\HttpFoundation\Response $response) {
+            $reference = app()->bound('request') ? request()->attributes->get(\App\Services\ErrorLogger::REQUEST_ATTRIBUTE) : null;
+            if ($reference && $response->getStatusCode() >= 500) {
+                $response->headers->set('X-Error-Reference', $reference);
+                if ($response instanceof \Illuminate\Http\JsonResponse) {
+                    $data = (array) $response->getData(true);
+                    $data['reference'] = $reference;
+                    $response->setData($data);
+                }
+            }
+
+            return $response;
+        });
     })->create();

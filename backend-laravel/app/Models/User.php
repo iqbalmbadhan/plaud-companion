@@ -24,6 +24,7 @@ class User extends Authenticatable
         'password_hash',
         'status',
         'is_super_admin',
+        'is_developer',
         'email_verified_at',
         'sessions_valid_after',
     ];
@@ -37,6 +38,7 @@ class User extends Authenticatable
     {
         return [
             'is_super_admin' => 'boolean',
+            'is_developer' => 'boolean',
             'email_verified_at' => 'datetime',
             'sessions_valid_after' => 'datetime',
         ];
@@ -45,6 +47,17 @@ class User extends Authenticatable
     public function getAuthPassword(): string
     {
         return $this->password_hash;
+    }
+
+    /** Developers have every super-admin power plus updates, impersonation and the debug log. */
+    public function isDeveloper(): bool
+    {
+        return $this->is_developer === true;
+    }
+
+    public function hasAdminAccess(): bool
+    {
+        return $this->is_super_admin === true || $this->is_developer === true;
     }
 
     public function memberships(): HasMany

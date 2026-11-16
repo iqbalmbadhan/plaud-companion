@@ -337,6 +337,10 @@
         </div>
     </div>
 
+    @if (session('status'))
+        <div class="card" role="status" style="margin-bottom:16px; border-color:var(--emerald); color:var(--emerald); font-weight:600;">{{ session('status') }}</div>
+    @endif
+
     <!-- METRICS OVERVIEW -->
     <div class="metrics-grid">
         <div class="metric-card">
@@ -389,6 +393,59 @@
             </table>
         </div>
     </div>
+
+    @if ($isDeveloper)
+    <!-- DEVELOPER: WORKSPACE DOCUMENT LISTS (no transcript content) -->
+    <div class="card" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div>
+                <h2 style="margin:0; font-size:16px;">Workspaces &amp; documents</h2>
+                <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">Titles, sources, sizes and dates only. Transcript text is never shown here; use <b>Work as</b> to open someone's documents.</p>
+            </div>
+            <button class="btn btn-promote" data-dev="load-workspaces">&#8635; Refresh</button>
+        </div>
+        <div id="devWorkspaces" style="margin-top:12px; font-size:13px; color:var(--muted);">Loading&hellip;</div>
+    </div>
+
+    <!-- DEVELOPER: DEBUG LOG -->
+    <div class="card" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div>
+                <h2 style="margin:0; font-size:16px;">Debug log</h2>
+                <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">Server and browser errors with the reference shown to the user. Kept 30 days. No transcript text, request bodies or secrets are stored.</p>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <select id="errSource" class="filter-select"><option value="">All</option><option value="server">Server</option><option value="browser">Browser</option></select>
+                <button class="btn btn-promote" data-dev="load-errors">&#8635; Refresh</button>
+                <button class="btn btn-suspend" data-dev="clear-errors">Clear</button>
+            </div>
+        </div>
+        <div id="devErrors" style="margin-top:12px; font-size:13px; color:var(--muted);">Loading&hellip;</div>
+    </div>
+
+    <!-- DEVELOPER: IMPERSONATION CONFIRMATION -->
+    <div id="impersonateModal" class="modal-overlay" data-dev="close-imp-overlay">
+        <div class="modal-card" style="max-width:480px;">
+            <div class="modal-header">
+                <h2>Work as <span id="impName"></span></h2>
+                <button class="modal-close-btn" data-dev="close-imp">&times;</button>
+            </div>
+            <form id="impersonateForm" style="padding:18px; display:flex; flex-direction:column; gap:12px;">
+                <p style="margin:0; font-size:13px; color:var(--muted);">You will use the app as this person, including their documents, for up to 30 minutes. A banner stays on screen, admin pages are locked, and every action is recorded in the audit log with your name.</p>
+                <label style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; font-weight:600;">Reason (saved in the audit log)
+                    <input id="impReason" class="search-input" type="text" required minlength="5" maxlength="200" placeholder="e.g. Preparing the board export at Morgan's request">
+                </label>
+                <label style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; font-weight:600;">Your password
+                    <input id="impPassword" class="search-input" type="password" required autocomplete="current-password">
+                </label>
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button type="button" class="btn btn-promote" data-dev="close-imp">Cancel</button>
+                    <button type="submit" class="btn btn-activate">Start session</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
 
     <footer style="margin-top:16px; padding:16px 20px; border-top:1px solid var(--navy-border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--muted);">
         <div><strong>PLAUD Companion</strong> &bull; On-Device Encryption &amp; Access Control</div>
@@ -463,6 +520,9 @@
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 const USERS_API_BASE = '{{ url('/settings/users/api') }}';
+const DEV_API_BASE = '{{ url('/settings/developer/api') }}';
+const IS_DEVELOPER = @json($isDeveloper);
+let usersById = {};
 let searchTimer = null;
 
 function showToast(msg, isError = false) {
@@ -495,29 +555,36 @@ async function loadUsers() {
 
 function renderUsers(users) {
     const tbody = document.getElementById('userTableBody');
+    usersById = {};
+    users.forEach(u => { usersById[u.id] = u; });
     if (!users.length) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--muted);">No registered users match your criteria.</td></tr>';
         return;
     }
 
+    // Buttons carry only data attributes; user-supplied names are never placed inside inline JavaScript.
+    const btn = (action, id, cls, label) => `<button class="btn ${cls}" data-action="${action}" data-id="${escapeHtml(id)}">${label}</button>`;
     tbody.innerHTML = users.map(u => {
-        const initials = (u.display_name || u.email || 'U').substring(0, 2).toUpperCase();
-        const rolePill = u.is_super_admin ? '<span class="pill admin">Super Admin</span>' : '<span class="pill user">User</span>';
+        const initials = escapeHtml((u.display_name || u.email || 'U').substring(0, 2).toUpperCase());
+        const rolePill = u.is_developer ? '<span class="pill admin">Developer</span>'
+            : (u.is_super_admin ? '<span class="pill admin">Super Admin</span>' : '<span class="pill user">User</span>');
         const statusPill = u.status === 'active' ? '<span class="pill active">Active</span>' : '<span class="pill suspended">Suspended</span>';
-        const profileBtn = `<button class="btn btn-promote" onclick="openUserProfile('${u.id}')">Profile</button>`;
-        
-        let actionBtns = '';
+        const buttons = [btn('profile', u.id, 'btn-promote', 'Profile')];
+
         if (u.is_current_user) {
-            actionBtns = `<div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">${profileBtn} <span style="font-size:12px; color:var(--muted); font-style:italic;">Your Account</span></div>`;
+            buttons.push('<span style="font-size:12px; color:var(--muted); font-style:italic;">Your Account</span>');
+        } else if (u.can_manage) {
+            if (IS_DEVELOPER && !u.is_developer && u.status === 'active') buttons.push(btn('impersonate', u.id, 'btn-activate', 'Work as'));
+            buttons.push(u.status === 'active' ? btn('status', u.id, 'btn-suspend', 'Suspend') : btn('status', u.id, 'btn-activate', 'Reactivate'));
+            if (!u.is_developer) buttons.push(btn('admin', u.id, 'btn-promote', u.is_super_admin ? 'Remove Admin' : 'Make Admin'));
+            buttons.push(btn('signout', u.id, 'btn-promote', 'Sign out everywhere'));
+            if (u.status === 'active') buttons.push(btn('reset', u.id, 'btn-promote', 'Password reset'));
+            if (IS_DEVELOPER) {
+                buttons.push(btn('developer', u.id, 'btn-promote', u.is_developer ? 'Remove Developer' : 'Make Developer'));
+                buttons.push(btn('delete', u.id, 'btn-suspend', 'Delete'));
+            }
         } else {
-            const toggleStatusBtn = u.status === 'active'
-                ? `<button class="btn btn-suspend" onclick="toggleStatus('${u.id}', '${escapeHtml(u.display_name)}')">Suspend</button>`
-                : `<button class="btn btn-activate" onclick="toggleStatus('${u.id}', '${escapeHtml(u.display_name)}')">Reactivate</button>`;
-            
-            const adminLabel = u.is_super_admin ? 'Demote' : 'Make Admin';
-            const toggleAdminBtn = `<button class="btn btn-promote" onclick="toggleAdmin('${u.id}', '${escapeHtml(u.display_name)}')">${adminLabel}</button>`;
-            
-            actionBtns = `<div style="display:flex; gap:8px; justify-content:flex-end;">${profileBtn} ${toggleStatusBtn} ${toggleAdminBtn}</div>`;
+            buttons.push('<span style="font-size:12px; color:var(--muted); font-style:italic;">Developer account</span>');
         }
 
         return `
@@ -533,52 +600,146 @@ function renderUsers(users) {
                 </td>
                 <td>${rolePill}</td>
                 <td>${statusPill}</td>
-                <td>${u.workspaces_count} workspace(s)</td>
-                <td style="color:var(--muted); font-size:12.5px;">${u.created_at}</td>
-                <td style="text-align:right;">${actionBtns}</td>
+                <td>${Number(u.workspaces_count) || 0} workspace(s)</td>
+                <td style="color:var(--muted); font-size:12.5px;">${escapeHtml(u.created_at)}</td>
+                <td style="text-align:right;"><div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">${buttons.join(' ')}</div></td>
             </tr>
         `;
     }).join('');
 }
 
-async function toggleStatus(userId, name) {
-    if (!confirm(`Are you sure you want to change the access status for ${name}?`)) return;
+async function apiCall(url, method = 'POST', body = null) {
+    const res = await fetch(url, {
+        method,
+        headers: Object.assign({ 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }, body ? { 'Content-Type': 'application/json' } : {}),
+        body: body ? JSON.stringify(body) : null,
+        credentials: 'same-origin'
+    });
+    let data = {};
+    try { data = await res.json(); } catch (e) { /* non-JSON response */ }
+    if (!res.ok) {
+        const firstError = data.errors ? Object.values(data.errors)[0][0] : null;
+        throw new Error(data.message || data.detail || firstError || `Request failed (${res.status})`);
+    }
+    return data;
+}
 
+async function runUserAction(action, id) {
+    const u = usersById[id];
+    if (!u) return;
+    if (action === 'profile') return openUserProfile(id);
+    if (action === 'impersonate') return openImpersonate(id);
+    const name = u.display_name || u.email;
+    const confirmText = {
+        status: `${u.status === 'active' ? 'Suspend' : 'Reactivate'} ${name}?` + (u.status === 'active' ? ' They will be signed out everywhere.' : ''),
+        admin: `${u.is_super_admin ? 'Remove admin rights from' : 'Give admin rights to'} ${name}?`,
+        signout: `Sign ${name} out on every browser, phone and app?`,
+        reset: `Send a password reset link to ${u.email}?`,
+        developer: u.is_developer ? `Remove the developer role from ${name}?` : `Make ${name} a developer?`,
+        delete: `Delete ${name}? They are signed out everywhere and can no longer sign in. Their workspaces and history are kept.`
+    }[action];
+    const urls = {
+        status: [`${USERS_API_BASE}/${id}/toggle-status`, 'POST'],
+        admin: [`${USERS_API_BASE}/${id}/toggle-admin`, 'POST'],
+        signout: [`${USERS_API_BASE}/${id}/sign-out-everywhere`, 'POST'],
+        reset: [`${USERS_API_BASE}/${id}/password-reset`, 'POST'],
+        developer: [`${DEV_API_BASE}/users/${id}/toggle-developer`, 'POST'],
+        delete: [`${DEV_API_BASE}/users/${id}`, 'DELETE']
+    }[action];
+    if (!urls || !confirm(confirmText)) return;
     try {
-        const res = await fetch(`${USERS_API_BASE}/${userId}/toggle-status`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': CSRF,
-                'Accept': 'application/json'
-            }
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Action failed');
-        showToast(data.message);
+        const data = await apiCall(urls[0], urls[1]);
+        showToast(data.message || 'Done.');
+        if (data.reset_url) window.prompt('Development mode: copy this password reset link (expires in 60 minutes).', data.reset_url);
         loadUsers();
     } catch (err) {
         showToast(err.message, true);
     }
 }
 
-async function toggleAdmin(userId, name) {
-    if (!confirm(`Are you sure you want to change super-admin privileges for ${name}?`)) return;
+let impersonateId = null;
+function openImpersonate(id) {
+    impersonateId = id;
+    document.getElementById('impName').textContent = usersById[id].display_name || usersById[id].email;
+    document.getElementById('impReason').value = '';
+    document.getElementById('impPassword').value = '';
+    document.getElementById('impersonateModal').style.display = 'flex';
+    document.getElementById('impReason').focus();
+}
+function closeImpersonate() {
+    document.getElementById('impersonateModal').style.display = 'none';
+    document.getElementById('impPassword').value = '';
+}
 
+async function loadWorkspaces() {
+    const box = document.getElementById('devWorkspaces');
     try {
-        const res = await fetch(`${USERS_API_BASE}/${userId}/toggle-admin`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': CSRF,
-                'Accept': 'application/json'
-            }
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Action failed');
-        showToast(data.message);
-        loadUsers();
-    } catch (err) {
-        showToast(err.message, true);
-    }
+        const data = await apiCall(`${DEV_API_BASE}/workspaces`, 'GET');
+        if (!data.workspaces.length) { box.textContent = 'No workspaces yet.'; return; }
+        box.innerHTML = data.workspaces.map(w => `
+            <details style="border:1px solid var(--navy-border); border-radius:10px; padding:10px 12px; margin-bottom:8px;">
+                <summary style="cursor:pointer; color:var(--text);"><b>${escapeHtml(w.name)}</b>
+                    <span style="color:var(--muted);"> &middot; owner ${escapeHtml(w.owner ? w.owner.name : '-')} &middot; ${Number(w.members_count) || 0} member(s) &middot; ${Number(w.documents_count) || 0} document(s)</span></summary>
+                <div style="overflow-x:auto; margin-top:8px;"><table>
+                    <thead><tr><th>Document</th><th>Source</th><th>Status</th><th>Segments</th><th>Created</th></tr></thead>
+                    <tbody>${w.documents.length ? w.documents.map(d => `<tr><td>${escapeHtml(d.title)}</td><td>${escapeHtml(d.source_type)}</td><td>${escapeHtml(d.status)}</td><td>${Number(d.segments_count) || 0}</td><td>${escapeHtml((d.created_at || '').slice(0, 16).replace('T', ' '))}</td></tr>`).join('')
+                        : '<tr><td colspan="5" style="color:var(--muted);">No documents.</td></tr>'}</tbody>
+                </table></div>
+            </details>`).join('');
+    } catch (err) { box.textContent = err.message; }
+}
+
+async function loadErrors() {
+    const box = document.getElementById('devErrors');
+    const source = document.getElementById('errSource').value;
+    try {
+        const data = await apiCall(`${DEV_API_BASE}/errors${source ? '?source=' + encodeURIComponent(source) : ''}`, 'GET');
+        if (!data.errors.length) { box.textContent = 'No errors recorded.'; return; }
+        box.innerHTML = data.errors.map(e => `
+            <details style="border:1px solid var(--navy-border); border-radius:10px; padding:10px 12px; margin-bottom:8px;">
+                <summary style="cursor:pointer; color:var(--text);"><span class="pill ${e.source === 'server' ? 'suspended' : 'admin'}">${escapeHtml(e.source)}</span>
+                    <code>${escapeHtml(e.reference)}</code> ${escapeHtml(String(e.message).slice(0, 140))}
+                    <span style="color:var(--muted);"> &middot; ${escapeHtml((e.created_at || '').slice(0, 19).replace('T', ' '))}</span></summary>
+                <div style="margin-top:8px; display:grid; grid-template-columns:140px 1fr; gap:4px 12px; font-size:12.5px;">
+                    <span>Where</span><span>${escapeHtml(e.location || '-')}</span>
+                    <span>Request</span><span>${escapeHtml((e.method || '') + ' ' + (e.path || ''))}</span>
+                    <span>Type</span><span>${escapeHtml(e.exception_class || '-')}</span>
+                    <span>User</span><span>${escapeHtml(e.user || '-')}${e.impersonated_by ? ' (developer ' + escapeHtml(e.impersonated_by) + ' acting as this user)' : ''}</span>
+                    <span>Browser</span><span>${escapeHtml(e.user_agent || '-')}</span>
+                </div>
+                ${e.context && e.context.stack ? `<pre style="white-space:pre-wrap; font-size:11.5px; margin:8px 0 0; color:var(--muted);">${escapeHtml(e.context.stack)}</pre>` : ''}
+            </details>`).join('');
+    } catch (err) { box.textContent = err.message; }
+}
+
+document.addEventListener('click', (ev) => {
+    const actionBtn = ev.target.closest('[data-action][data-id]');
+    if (actionBtn) { runUserAction(actionBtn.dataset.action, actionBtn.dataset.id); return; }
+    const dev = ev.target.closest('[data-dev]');
+    if (!dev) return;
+    const what = dev.dataset.dev;
+    if (what === 'load-workspaces') loadWorkspaces();
+    else if (what === 'load-errors') loadErrors();
+    else if (what === 'clear-errors') {
+        if (confirm('Delete every entry in the debug log?')) apiCall(`${DEV_API_BASE}/errors`, 'DELETE').then(() => { showToast('Debug log cleared.'); loadErrors(); }).catch(e => showToast(e.message, true));
+    } else if (what === 'close-imp' || (what === 'close-imp-overlay' && ev.target === dev)) closeImpersonate();
+});
+
+if (IS_DEVELOPER) {
+    document.getElementById('errSource').addEventListener('change', loadErrors);
+    document.getElementById('impersonateForm').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        try {
+            const data = await apiCall(`${DEV_API_BASE}/users/${impersonateId}/impersonate`, 'POST', {
+                reason: document.getElementById('impReason').value.trim(),
+                password: document.getElementById('impPassword').value
+            });
+            window.location.href = data.redirect;
+        } catch (err) {
+            showToast(err.message, true);
+        }
+    });
+    document.addEventListener('DOMContentLoaded', () => { loadWorkspaces(); loadErrors(); });
 }
 
 function handleModalOverlayClick(event) {
@@ -682,5 +843,6 @@ function escapeHtml(str) {
 
 document.addEventListener('DOMContentLoaded', loadUsers);
 </script>
+@include('partials.error-reporter')
 </body>
 </html>

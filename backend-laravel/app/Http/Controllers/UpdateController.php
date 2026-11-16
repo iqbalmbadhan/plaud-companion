@@ -18,7 +18,7 @@ class UpdateController extends Controller
 {
     public function show(Request $request): View
     {
-        if ($request->user()?->is_super_admin !== true) {
+        if ($request->user()?->hasAdminAccess() !== true) {
             abort(403, 'Super-admin privileges are required.');
         }
 

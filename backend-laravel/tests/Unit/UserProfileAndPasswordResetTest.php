@@ -97,6 +97,10 @@ class UserProfileAndPasswordResetTest extends TestCase
         $this->assertNotEmpty($files, 'Blade views must be found.');
 
         foreach ($files as $file) {
+            // Partials are fragments included inside full pages that carry the footer.
+            if (str_contains(str_replace('\\', '/', $file), '/views/partials/')) {
+                continue;
+            }
             $rel = str_replace($this->baseDir . DIRECTORY_SEPARATOR, '', $file);
             $content = file_get_contents($file);
             $this->assertNotFalse($content);

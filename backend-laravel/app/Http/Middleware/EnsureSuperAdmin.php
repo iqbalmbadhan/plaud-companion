@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Allows ONLY users with is_super_admin === true.
+ * Allows ONLY super-admins and developers (is_super_admin or is_developer).
  * Workspace admins, editors, reviewers, members, and guests are rejected with 403.
  */
 class EnsureSuperAdmin
@@ -27,7 +27,18 @@ class EnsureSuperAdmin
             return redirect()->guest(route('login'));
         }
 
-        if ($user->is_super_admin !== true) {
+        // Admin areas are closed while a developer is working as another user.
+        if (\App\Support\Impersonation::active()) {
+            $detail = 'End the impersonation session before using admin tools.';
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['error' => 'impersonating', 'detail' => $detail], 403);
+            }
+
+            abort(403, $detail);
+        }
+
+        // Developers have every super-admin power.
+        if (!$user->hasAdminAccess()) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
                     'error' => 'forbidden',

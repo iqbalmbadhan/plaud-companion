@@ -97,8 +97,26 @@ Route::middleware(['web.auth', 'super_admin'])->prefix('settings/users')->group(
         Route::get('/list', [\App\Http\Controllers\UserManagementController::class, 'apiList']);
         Route::post('/{userId}/toggle-status', [\App\Http\Controllers\UserManagementController::class, 'toggleStatus']);
         Route::post('/{userId}/toggle-admin', [\App\Http\Controllers\UserManagementController::class, 'toggleAdmin']);
+        Route::post('/{userId}/sign-out-everywhere', [\App\Http\Controllers\UserManagementController::class, 'signOutEverywhere']);
+        Route::post('/{userId}/password-reset', [\App\Http\Controllers\UserManagementController::class, 'sendPasswordReset'])->middleware('throttle:10,1');
     });
 });
+
+// Developer-only tools (never available while impersonating)
+Route::middleware(['web.auth', 'developer'])->prefix('settings/developer/api')->group(function (): void {
+    Route::post('/users/{userId}/impersonate', [\App\Http\Controllers\DeveloperController::class, 'impersonate'])->middleware('throttle:10,1');
+    Route::post('/users/{userId}/toggle-developer', [\App\Http\Controllers\DeveloperController::class, 'toggleDeveloper']);
+    Route::delete('/users/{userId}', [\App\Http\Controllers\DeveloperController::class, 'deleteUser']);
+    Route::get('/workspaces', [\App\Http\Controllers\DeveloperController::class, 'workspaces']);
+    Route::get('/errors', [\App\Http\Controllers\DeveloperController::class, 'errors']);
+    Route::delete('/errors', [\App\Http\Controllers\DeveloperController::class, 'clearErrors']);
+});
+
+// Ending impersonation is done from the impersonated session itself.
+Route::post('/impersonation/stop', [\App\Http\Controllers\DeveloperController::class, 'stopImpersonation'])->middleware('web.auth')->name('impersonation.stop');
+
+// Browser-side errors from any signed-in page, for the developer debug log.
+Route::post('/app/api/client-errors', [\App\Http\Controllers\DeveloperController::class, 'reportClientError'])->middleware(['web.auth', 'throttle:30,1'])->name('client-errors.store');
 
 // Super-admin-only Settings Update & Backup Panel
 Route::middleware(['web.auth', 'super_admin'])->prefix('settings/updates')->group(function (): void {

@@ -472,5 +472,6 @@ async function createBackup() {
 pollStatus();
 setInterval(pollStatus, 2000);
 </script>
+@include('partials.error-reporter')
 </body>
 </html>

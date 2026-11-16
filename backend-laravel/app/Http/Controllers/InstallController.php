@@ -173,6 +173,7 @@ class InstallController extends Controller
                     'password_hash' => $passwordHash,
                     'status' => 'active',
                     'is_super_admin' => true,
+                    'is_developer' => true, // the installing person runs the platform
                     'email_verified_at' => $now,
                     'created_at' => $now,
                     'updated_at' => $now,

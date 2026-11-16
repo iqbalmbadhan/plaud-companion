@@ -327,6 +327,7 @@
     </style>
 </head>
 <body>
+@include('partials.impersonation-banner')
 
 <header>
     <div class="header-brand">
@@ -493,5 +494,6 @@
     </div>
 </footer>
 
+@include('partials.error-reporter')
 </body>
 </html>

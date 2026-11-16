@@ -96,6 +96,16 @@ class ProfileController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
+        // A developer working as this user must not change their password.
+        if (\App\Support\Impersonation::active()) {
+            $msg = 'Passwords cannot be changed while working as another user.';
+            if ($request->expectsJson() || $request->is('*/api/*')) {
+                return response()->json(['error' => 'impersonating', 'message' => $msg], 403);
+            }
+
+            return back()->withErrors(['current_password' => $msg]);
+        }
+
         $validated = $request->validate([
             'current_password' => 'required|string',
             'password' => 'required|string|min:8|max:255|confirmed',

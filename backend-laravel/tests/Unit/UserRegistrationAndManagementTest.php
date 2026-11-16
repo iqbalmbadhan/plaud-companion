@@ -66,8 +66,10 @@ class UserRegistrationAndManagementTest extends TestCase
         $this->assertFileExists($viewPath, 'users.blade.php must exist.');
 
         $content = file_get_contents($viewPath);
-        $this->assertStringContainsString('toggleStatus', $content);
-        $this->assertStringContainsString('toggleAdmin', $content);
+        // Actions use data attributes + one handler (no user names inside inline JavaScript).
+        $this->assertStringContainsString('runUserAction', $content);
+        $this->assertStringContainsString('/toggle-status', $content);
+        $this->assertStringContainsString('/toggle-admin', $content);
         $this->assertStringContainsString('Total Accounts', $content);
         $this->assertStringContainsString('Suspended Accounts', $content);
         $this->assertStringContainsString('profileModal', $content);

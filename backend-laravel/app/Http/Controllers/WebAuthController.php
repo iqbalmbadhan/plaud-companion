@@ -6,6 +6,7 @@ use App\Models\AuditEvent;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceMember;
+use App\Services\PasswordResetService;
 use App\Services\TokenService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -184,6 +185,11 @@ class WebAuthController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        // "Sign out" while working as another user returns to the developer's own account.
+        if (\App\Support\Impersonation::active() && \App\Support\Impersonation::stop($request, 'signed_out')) {
+            return redirect()->route('settings.users')->with('status', 'Impersonation ended. You are back in your developer account.');
+        }
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -216,38 +222,13 @@ class WebAuthController extends Controller
         }
 
         if ($user !== null) {
-            $plainToken = Str::random(64);
-            $hashedToken = hash('sha256', $plainToken);
-
-            DB::table('password_reset_tokens')->where('email', $email)->delete();
-
-            DB::table('password_reset_tokens')->insert([
-                'email' => $email,
-                'token' => $hashedToken,
-                'created_at' => now(),
-            ]);
-
-            $resetUrl = route('password.reset', ['token' => $plainToken, 'email' => $email]);
-
-            $mailer = strtolower((string) (config('mail.default') ?? env('MAIL_MAILER', 'log')));
-            $isDevOrLocal = !app()->environment('production');
-            $isLogOrArray = in_array($mailer, ['log', 'array'], true);
-
-            if ($isDevOrLocal && $isLogOrArray) {
+            $issued = app(PasswordResetService::class)->issue($user);
+            if ($issued['show_link']) {
                 return back()->with([
                     'status' => 'A password reset link has been generated. Use the link below to set a new password.',
-                    'dev_reset_url' => $resetUrl,
-                    'reset_url' => $resetUrl,
+                    'dev_reset_url' => $issued['url'],
+                    'reset_url' => $issued['url'],
                 ]);
-            }
-
-            try {
-                Mail::raw("You recently requested to reset your password for PLAUD Companion. Click the link below to set a new password:\n\n{$resetUrl}\n\nThis password reset link will expire in 60 minutes.\nIf you did not request a password reset, no further action is required.", function ($message) use ($user): void {
-                    $message->to($user->email, $user->display_name ?: $user->email)
-                        ->subject('Reset Your PLAUD Companion Password');
-                });
-            } catch (\Throwable $e) {
-                report($e);
             }
         }
 
