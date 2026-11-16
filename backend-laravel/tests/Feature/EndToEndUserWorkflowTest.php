@@ -1774,14 +1774,17 @@ class EndToEndUserWorkflowTest extends TestCase
             ], 200),
         ]);
 
-        // Request summary using openai -> should gracefully fall back to builtin engine without user crash
+        // Request summary using openai -> provider failure must be reported, never
+        // silently replaced with substitute output from another engine.
         $summary = $this->postJson("/app/api/transcripts/{$transcript->id}/summary", [
             'provider_id' => 'openai',
         ]);
 
-        $summary->assertStatus(200);
-        $this->assertNotEmpty($summary->json('summary_text'));
-        $this->assertNotEmpty($summary->json('bullet_points'));
+        $summary->assertStatus(502);
+        $summary->assertJsonPath('error_code', 'ai_provider_failed');
+        $summary->assertJsonPath('provider_id', 'openai');
+        $this->assertArrayNotHasKey('summary_text', $summary->json());
+        $this->assertStringNotContainsString('sk-openai-key', $summary->getContent());
     }
 
     // =========================================================================
@@ -1798,7 +1801,9 @@ class EndToEndUserWorkflowTest extends TestCase
         ]);
         $this->actingAsWebUser($user);
 
-        // Simulate failing provider or unconfigured key
+        $this->createProviderConnection($workspace, $user, 'openai', ['api_key_encrypted' => 'sk-openai-key']);
+
+        // Simulate failing provider
         Http::fake([
             '*' => Http::response(['error' => 'API Unavailable'], 503),
         ]);
@@ -1809,9 +1814,12 @@ class EndToEndUserWorkflowTest extends TestCase
             'provider_id' => 'openai',
         ]);
 
-        // Must NEVER return 500 Internal Server Error
+        // Must NEVER return 500; the failure is reported as a sanitized upstream error.
         $this->assertNotSame(500, $response->status());
-        $response->assertJsonStructure(['answer']);
+        $response->assertStatus(502);
+        $response->assertJsonPath('error_code', 'ai_provider_failed');
+        $response->assertJsonStructure(['detail']);
+        $this->assertStringNotContainsString('sk-openai-key', $response->getContent());
     }
 
     public function test_followup_gemini_connection_test_model_handling_never_404(): void

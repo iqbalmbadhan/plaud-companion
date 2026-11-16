@@ -96,3 +96,15 @@ Never label a partial export as fully completed.
 - Test partial failures.
 - Test unauthorized export and download.
 - Test expired link and cleanup.
+
+## Laravel implementation notes (backend-laravel)
+
+- Summary and action-item sections are **opt-in** (`include_ai_summary`, `include_action_items`,
+  default `false`) or implied by the `meeting_minutes`, `executive_summary` and
+  `transcript_with_actions` templates. They are generated per transcript by the workspace's AI
+  provider and shared by the DOCX and PDF outputs.
+- If generation fails, the document states that the section is unavailable and `manifest.json`
+  lists the failure under `ai_warnings`. Placeholder content is never inserted.
+- Known limitations: exports run synchronously in the request, `expires_at` is not yet enforced
+  on download, the PDF is a single page truncated to 75 transcript lines with non-ASCII
+  characters replaced, and transcripts with identical titles collide inside the ZIP.

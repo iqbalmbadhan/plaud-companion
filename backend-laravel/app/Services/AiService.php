@@ -292,18 +292,7 @@ class AiService
             mb_substr($transcript->content_text, 0, 60000)
         );
 
-        try {
-            $raw = $this->complete($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
-        } catch (\Throwable $e) {
-            if ($pid !== 'builtin') {
-                \Illuminate\Support\Facades\Log::warning("AI Provider [{$pid}] failed during summary, falling back to builtin engine: " . $e->getMessage());
-                $raw = $this->runBuiltinEngine($systemPrompt, $userPrompt);
-                $pid = 'builtin';
-                $usedModel = 'neural-synthesis-v2';
-            } else {
-                throw $e;
-            }
-        }
+        $raw = $this->completeOrFail($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
         $parsed = $this->decodeJsonPayload($raw);
 
         return [
@@ -333,18 +322,7 @@ class AiService
             mb_substr($transcript->content_text, 0, 60000)
         );
 
-        try {
-            $raw = $this->complete($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
-        } catch (\Throwable $e) {
-            if ($pid !== 'builtin') {
-                \Illuminate\Support\Facades\Log::warning("AI Provider [{$pid}] failed during action items, falling back to builtin engine: " . $e->getMessage());
-                $raw = $this->runBuiltinEngine($systemPrompt, $userPrompt);
-                $pid = 'builtin';
-                $usedModel = 'neural-synthesis-v2';
-            } else {
-                throw $e;
-            }
-        }
+        $raw = $this->completeOrFail($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
         $parsed = $this->decodeJsonPayload($raw);
         $items = [];
         foreach ((array) ($parsed['action_items'] ?? []) as $item) {
@@ -397,18 +375,7 @@ class AiService
             implode("\n\n", $contextBlocks)
         );
 
-        try {
-            $raw = $this->complete($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
-        } catch (\Throwable $e) {
-            if ($pid !== 'builtin') {
-                \Illuminate\Support\Facades\Log::warning("AI Provider [{$pid}] failed during answerQuestion, falling back to builtin engine: " . $e->getMessage());
-                $raw = $this->runBuiltinEngine($systemPrompt, $userPrompt);
-                $pid = 'builtin';
-                $usedModel = 'neural-synthesis-v2';
-            } else {
-                throw $e;
-            }
-        }
+        $raw = $this->completeOrFail($pid, $apiKey, $usedModel, $systemPrompt, $userPrompt);
         $parsed = $this->decodeJsonPayload($raw);
 
         return [
@@ -416,7 +383,8 @@ class AiService
             'citations' => array_values((array) ($parsed['citations'] ?? [])),
             'provider_used' => $pid,
             'model_used' => $usedModel,
-            'has_sufficient_evidence' => (bool) ($parsed['has_sufficient_evidence'] ?? true),
+            // Only claim evidence when the model says so, or at least returned citations.
+            'has_sufficient_evidence' => (bool) ($parsed['has_sufficient_evidence'] ?? !empty($parsed['citations'])),
         ];
     }
 
@@ -497,11 +465,7 @@ class AiService
             ];
         } catch (\Throwable $e) {
             $rawMsg = $e->getMessage();
-            $sanitized = $apiKey !== '' ? str_replace($apiKey, '[REDACTED]', $rawMsg) : $rawMsg;
-            $sanitized = preg_replace('/(key=)[^&\s]+/i', '$1[REDACTED]', $sanitized);
-            $sanitized = preg_replace('/(Bearer\s+)[A-Za-z0-9_\-\.]+/i', '$1[REDACTED]', $sanitized);
-            $sanitized = preg_replace('/(x-(?:goog-)?api-key:\s*)[^\s]+/i', '$1[REDACTED]', $sanitized);
-            $sanitized = preg_replace('/sk-[a-zA-Z0-9_\-]{10,}/i', '[REDACTED]', $sanitized);
+            $sanitized = $this->sanitizeProviderError($rawMsg, $apiKey);
 
             if (str_contains($rawMsg, '401') || str_contains($rawMsg, '403') || str_contains($rawMsg, 'Unauthorized') || str_contains($rawMsg, 'API_KEY_INVALID')) {
                 $cleanMsg = 'Authentication failed. Please verify that your API key is correct and active.';
@@ -524,6 +488,44 @@ class AiService
         }
     }
 
+    /**
+     * Calls the selected provider. A provider failure is surfaced to the caller as a
+     * 502 error; it is never silently replaced with output from another engine,
+     * because users must be able to tell real AI output from a failure.
+     */
+    private function completeOrFail(
+        string $providerId,
+        string $apiKey,
+        string $model,
+        string $systemPrompt,
+        string $userPrompt
+    ): string {
+        try {
+            return $this->complete($providerId, $apiKey, $model, $systemPrompt, $userPrompt);
+        } catch (HttpResponseException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            $safeMessage = $this->sanitizeProviderError($e->getMessage(), $apiKey);
+            \Illuminate\Support\Facades\Log::warning("AI provider [{$providerId}] request failed: {$safeMessage}");
+
+            throw new HttpResponseException(response()->json([
+                'detail' => 'The AI provider request failed: ' . Str::limit($safeMessage, 160),
+                'error_code' => 'ai_provider_failed',
+                'provider_id' => $providerId,
+            ], 502));
+        }
+    }
+
+    private function sanitizeProviderError(string $message, string $apiKey = ''): string
+    {
+        $sanitized = $apiKey !== '' ? str_replace($apiKey, '[REDACTED]', $message) : $message;
+        $sanitized = preg_replace('/(key=)[^&\s]+/i', '$1[REDACTED]', $sanitized) ?? $sanitized;
+        $sanitized = preg_replace('/(Bearer\s+)[A-Za-z0-9_\-\.]+/i', '$1[REDACTED]', $sanitized) ?? $sanitized;
+        $sanitized = preg_replace('/(x-(?:goog-)?api-key:\s*)[^\s]+/i', '$1[REDACTED]', $sanitized) ?? $sanitized;
+
+        return preg_replace('/sk-[a-zA-Z0-9_\-]{10,}/i', '[REDACTED]', $sanitized) ?? $sanitized;
+    }
+
     private function complete(
         string $providerId,
         string $apiKey,
@@ -544,9 +546,13 @@ class AiService
         };
     }
 
+    /**
+     * Local, non-AI extractive engine. Everything it returns is copied or derived
+     * from the transcript text itself: it never invents summaries, owners or dates.
+     * When nothing relevant can be extracted, it returns empty results.
+     */
     private function runBuiltinEngine(string $systemPrompt, string $userPrompt): string
     {
-        // Extract untrusted transcript data block
         $transcriptText = '';
         if (preg_match('/<untrusted_transcript_data>\s*(.*?)\s*<\/untrusted_transcript_data>/s', $userPrompt, $m)) {
             $transcriptText = trim($m[1]);
@@ -554,87 +560,129 @@ class AiService
             $transcriptText = trim($userPrompt);
         }
 
-        // Branch 1: Summary generation
-        if (str_contains($systemPrompt, 'summary_text')) {
-            $lines = array_filter(array_map('trim', explode("\n", $transcriptText)));
-            $cleanLines = array_values(array_filter($lines, fn ($l) => !str_starts_with($l, '---') && !empty($l)));
-            $sample = array_slice($cleanLines, 0, 8);
+        $lines = $this->builtinContentLines($transcriptText);
 
-            $bullets = [];
-            foreach (array_slice($cleanLines, 0, 5) as $cl) {
-                $stripped = preg_replace('/^\[\d{2}:\d{2}\]\s*[^:]+:\s*/', '', $cl);
-                if (strlen($stripped) > 15) {
-                    $bullets[] = $stripped;
-                }
-            }
-            if (empty($bullets)) {
-                $bullets = [
-                    'Reviewed cross-platform transcript ingestion and hardware synchronization architecture.',
-                    'Confirmed speaker diarization and audio segment playback alignment.',
-                    'Aligned on automated Word (DOCX) and PDF export pipeline for executive reporting.'
-                ];
-            }
+        // Branch 1: Summary (extractive: leading substantive utterances)
+        if (str_contains($systemPrompt, 'summary_text')) {
+            $substantive = array_values(array_filter(
+                $lines,
+                static fn (array $l): bool => mb_strlen($l['text']) > 15
+            ));
+            $bullets = array_map(static fn (array $l): string => $l['text'], array_slice($substantive, 0, 5));
+            $summary = $bullets === []
+                ? ''
+                : 'Extractive overview (no AI model used): ' . Str::limit(implode(' ', array_slice($bullets, 0, 3)), 600);
 
             return json_encode([
-                'summary_text' => 'Executive synthesis: The discussion focused on transcript processing, hardware bridge integration for PLAUD recording devices, grounded action item tracking, and production delivery milestones. Key technical and product requirements were finalized with high stakeholder alignment.',
+                'summary_text' => $summary,
                 'bullet_points' => $bullets,
-            ], JSON_UNESCAPED_SLASHES);
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         }
 
-        // Branch 2: Action items extraction
+        // Branch 2: Action items (utterances containing commitment language)
         if (str_contains($systemPrompt, 'action_items')) {
             $items = [];
-            $lines = explode("\n", $transcriptText);
-            foreach ($lines as $line) {
-                if (preg_match('/\[(\d{2}:\d{2})\]\s*([^:]+):\s*(.*)/', $line, $lm)) {
-                    $speaker = trim($lm[2]);
-                    $content = trim($lm[3]);
-                    if (preg_match('/\b(will|need to|must|should|finalize|submit|deliver|review|prepare|implement|test)\b/i', $content)) {
-                        $items[] = [
-                            'task' => $content,
-                            'assignee' => $speaker,
-                            'due_date' => 'Within 48h',
-                            'status' => 'pending',
-                        ];
-                    }
+            foreach ($lines as $l) {
+                if (preg_match('/\b(will|need to|needs to|must|should|finalize|submit|deliver|review|prepare|implement|follow up)\b/i', $l['text'])) {
+                    $items[] = [
+                        'task' => $l['text'],
+                        'assignee' => $l['speaker'],
+                        'due_date' => null,
+                        'status' => 'pending',
+                    ];
                 }
             }
 
-            if (empty($items)) {
-                $items = [
-                    ['task' => 'Verify PLAUD Note Bluetooth Low Energy pairing and GATT audio sync in workspace', 'assignee' => 'Engineering Lead', 'due_date' => 'Next Sprint', 'status' => 'pending'],
-                    ['task' => 'Finalize executive Word (DOCX) and PDF bulk export packages with diarization stamps', 'assignee' => 'Product Team', 'due_date' => 'Friday EOD', 'status' => 'pending'],
-                    ['task' => 'Review multi-file semantic Q&A and AI provider connection configurations', 'assignee' => 'Project Lead', 'due_date' => 'Monday 10:00 AM', 'status' => 'pending'],
-                ];
-            }
-
-            return json_encode(['action_items' => array_slice($items, 0, 6)], JSON_UNESCAPED_SLASHES);
+            return json_encode(['action_items' => array_slice($items, 0, 10)], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         }
 
-        // Branch 3: Q&A across transcripts
+        // Branch 3: Q&A (keyword overlap between question and utterances)
         $question = '';
         if (preg_match('/Question:\s*(.*?)\s*<untrusted_transcript_data>/s', $userPrompt, $qm)) {
             $question = trim($qm[1]);
         }
+        $terms = array_values(array_unique(array_filter(
+            preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($question)) ?: [],
+            static fn (string $w): bool => mb_strlen($w) > 3
+        )));
 
-        // Find relevant snippet
-        $excerpt = 'Direct discussion on meeting action items, hardware synchronization, and transcript productivity.';
+        $scored = [];
+        foreach ($lines as $l) {
+            $haystack = mb_strtolower($l['text']);
+            $score = 0;
+            foreach ($terms as $term) {
+                if (str_contains($haystack, $term)) {
+                    $score++;
+                }
+            }
+            if ($score > 0) {
+                $scored[] = ['score' => $score, 'line' => $l];
+            }
+        }
+        usort($scored, static fn (array $a, array $b): int => $b['score'] <=> $a['score']);
+
         $citations = [];
-        if (preg_match('/--- TRANSCRIPT id=([^\s]+) title=([^\n]+) ---\s*\[(\d{2}:\d{2})\]\s*([^:]+):\s*([^\n]+)/', $transcriptText, $cm)) {
+        foreach (array_slice($scored, 0, 3) as $hit) {
             $citations[] = [
-                'transcript_id' => $cm[1],
-                'transcript_title' => trim($cm[2]),
-                'speaker' => trim($cm[4]),
-                'excerpt' => trim($cm[5]),
+                'transcript_id' => $hit['line']['transcript_id'],
+                'transcript_title' => $hit['line']['transcript_title'],
+                'speaker' => $hit['line']['speaker'],
+                'excerpt' => $hit['line']['text'],
             ];
-            $excerpt = trim($cm[5]);
         }
 
+        $answer = $citations === []
+            ? 'No passage in the selected transcripts matched this question. (Built-in keyword search; no AI model was used.)'
+            : 'Most relevant passages (built-in keyword search; no AI model was used): '
+                . implode(' | ', array_map(static fn (array $c): string => '"' . $c['excerpt'] . '"', $citations));
+
         return json_encode([
-            'answer' => "Based on the meeting records, the discussion specifically addressed: \"{$excerpt}\". The team aligned on concrete deliverables and production execution.",
-            'has_sufficient_evidence' => true,
+            'answer' => $answer,
+            'has_sufficient_evidence' => $citations !== [],
             'citations' => $citations,
-        ], JSON_UNESCAPED_SLASHES);
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Splits prompt transcript data into utterances, tracking the speaker and the
+     * transcript header (used by multi-transcript Q&A) for each line.
+     *
+     * @return list<array{text: string, speaker: ?string, transcript_id: ?string, transcript_title: ?string}>
+     */
+    private function builtinContentLines(string $transcriptText): array
+    {
+        $out = [];
+        $currentId = null;
+        $currentTitle = null;
+
+        foreach (preg_split('/\R/', $transcriptText) ?: [] as $raw) {
+            $line = trim($raw);
+            if ($line === '') {
+                continue;
+            }
+            if (preg_match('/^--- TRANSCRIPT id=(\S+) title=(.*) ---$/', $line, $hm)) {
+                $currentId = $hm[1];
+                $currentTitle = trim($hm[2]);
+                continue;
+            }
+
+            $speaker = null;
+            $text = $line;
+            if (preg_match('/^\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s*([^:]{1,50}):\s*(.+)$/u', $line, $sm)
+                || preg_match('/^([^:\[\]]{1,50}):\s*(.+)$/u', $line, $sm)) {
+                $speaker = trim($sm[1]);
+                $text = trim($sm[2]);
+            }
+
+            $out[] = [
+                'text' => $text,
+                'speaker' => $speaker,
+                'transcript_id' => $currentId,
+                'transcript_title' => $currentTitle,
+            ];
+        }
+
+        return $out;
     }
 
     /**

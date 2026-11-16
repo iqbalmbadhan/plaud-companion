@@ -73,7 +73,12 @@ Route::get('/reset-password/{token}', [WebAuthController::class, 'showResetPassw
 Route::post('/reset-password', [WebAuthController::class, 'resetPassword'])->middleware('throttle:6,1')->name('password.update');
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 Route::match(['GET', 'POST'], '/auth/logout', [WebAuthController::class, 'logout'])->name('auth.logout');
-Route::get('/demo', static fn () => view('auth.demo'))->name('demo');
+Route::get('/demo', static function () {
+    // Disabled by default: the page exposes demo credentials (see config/app.php).
+    abort_unless((bool) config('app.demo_login_enabled'), 404);
+
+    return view('auth.demo');
+})->name('demo');
 
 // 1-Click Installer routes (blocked with 404 once storage/app/installed.lock exists)
 Route::prefix('install')->middleware('not_installed')->group(function (): void {

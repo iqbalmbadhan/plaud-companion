@@ -18,6 +18,9 @@ return [
     ],
     'version' => is_file(base_path('VERSION')) ? trim((string) file_get_contents(base_path('VERSION'))) : '0.1.0',
     'jwt_secret' => env('JWT_SECRET_KEY', ''),
+    // The /demo page publishes seeded account credentials (including a super-admin).
+    // It must stay disabled on any internet-facing deployment.
+    'demo_login_enabled' => (bool) env('DEMO_LOGIN_ENABLED', false),
     'access_token_ttl_minutes' => (int) env('ACCESS_TOKEN_EXPIRE_MINUTES', 60),
     'refresh_token_ttl_minutes' => (int) env('REFRESH_TOKEN_EXPIRE_MINUTES', 10080),
     'maintenance' => [

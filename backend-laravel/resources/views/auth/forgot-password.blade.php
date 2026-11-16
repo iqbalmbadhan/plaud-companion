@@ -167,8 +167,10 @@
             <span><a href="{{ route('login') }}" style="color: var(--emerald); text-decoration: none; font-weight: 600;">&larr; Back to Sign In</a></span>
             <span style="opacity: 0.4;">&bull;</span>
             <a href="{{ route('register') }}" style="color: var(--muted); text-decoration: none;">Create account</a>
+            @if (config('app.demo_login_enabled'))
             <span style="opacity: 0.4;">&bull;</span>
             <a href="{{ route('demo') }}" style="color: var(--muted); text-decoration: none;">Demo</a>
+            @endif
         </div>
     </div>
 

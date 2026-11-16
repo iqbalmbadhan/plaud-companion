@@ -2958,14 +2958,17 @@
           method: 'POST',
           body: {
             question,
-            provider,
+            provider_id: provider,
             transcript_ids: Array.from(state.selectedTranscriptIds)
           }
         });
         let answerText = res.answer || 'No answer returned.';
         if (res.citations && res.citations.length > 0) {
-          const cites = res.citations.slice(0, 3).map(c => `[${c.speaker_label || 'Speaker'}] "${c.quote}"`).join('\n');
-          answerText += `\n\nGrounded Sources (${res.provider}/${res.model}):\n${cites}`;
+          const cites = res.citations.slice(0, 3).map(c => `[${c.speaker || 'Speaker'}] "${c.excerpt || ''}"`).join('\n');
+          answerText += `\n\nGrounded Sources (${res.provider_used}/${res.model_used}):\n${cites}`;
+        }
+        if (res.has_sufficient_evidence === false) {
+          answerText += '\n\n(The selected transcripts do not contain enough evidence to answer this reliably.)';
         }
         appendChatMessage('ai', answerText);
       } catch (e) {

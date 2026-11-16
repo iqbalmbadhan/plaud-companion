@@ -163,8 +163,10 @@
 
         <div class="auth-switch">
             Already have an account? <a href="{{ route('login') }}">Sign In</a>
+            @if (config('app.demo_login_enabled'))
             <span style="opacity:0.4; margin:0 6px;">&bull;</span>
             <a href="{{ route('demo') }}">Demo Accounts</a>
+            @endif
         </div>
     </div>
 

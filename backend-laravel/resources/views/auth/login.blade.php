@@ -238,8 +238,10 @@
 
         <div style="margin-top:20px; text-align:center; font-size:13px; color:var(--muted); display:flex; justify-content:center; gap:10px; align-items:center; flex-wrap:wrap;">
             <span>Don't have an account? <a href="{{ route('register') }}" style="color:var(--emerald); text-decoration:none; font-weight:600;">Create an account</a></span>
+            @if (config('app.demo_login_enabled'))
             <span style="opacity:0.4;">&bull;</span>
             <a href="{{ route('demo') }}" style="color:var(--muted); text-decoration:none; font-weight:500;">Demo Accounts</a>
+            @endif
         </div>
     </div>
 

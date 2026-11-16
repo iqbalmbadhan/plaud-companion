@@ -74,7 +74,7 @@ Today, it is a production-grade, privacy-first, cross-platform productivity ecos
   * **OpenAI**: GPT-4o, GPT-4o-mini
   * **Anthropic Claude**: Claude 3.5 Sonnet, Claude 3.5 Haiku
   * **OpenRouter**: Unified access to 100+ open and proprietary models
-  * **PLAUD Neural Engine**: Built-in offline synthesis with **0ms latency** for air-gapped environments.
+  * **Built-in extractive mode** (`builtin`): a local, non-AI fallback that only quotes or extracts lines from the transcript itself (no generated summaries). It is used only when selected or when no provider is configured; a failing AI provider is reported as an error, never silently replaced.
 * **Live Latency Benchmarking**: One-click ping diagnostic tests connection speed in real-time milliseconds (e.g., `🟢 42ms`).
 * **Executive Action Presets**: Instantly generate structured deliverables:
   * 📋 *Executive Meeting Minutes & Executive Summary*

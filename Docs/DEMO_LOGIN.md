@@ -18,6 +18,11 @@ Welcome to **PLAUD Companion**, the production-oriented transcript management an
 
 ## 🔑 Demo Login Accounts
 
+> [!WARNING]
+> The `/demo` page publishes these credentials and is **disabled by default** (returns 404).
+> Enable it only on isolated local/demo environments with `DEMO_LOGIN_ENABLED=true` in `backend-laravel/.env`.
+> Never enable it, or create these accounts with these passwords, on an internet-facing server.
+
 Three preconfigured accounts are seeded in the local MySQL database (`plaud_companion_local`):
 
 ### 1. Super-Admin (Workspace Owner)

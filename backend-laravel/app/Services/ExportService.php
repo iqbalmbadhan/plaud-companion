@@ -16,8 +16,10 @@ use ZipArchive;
 
 class ExportService
 {
-    public function __construct(private readonly WorkspaceService $workspaces)
-    {
+    public function __construct(
+        private readonly WorkspaceService $workspaces,
+        private readonly AiService $ai
+    ) {
     }
 
     /**
@@ -61,8 +63,8 @@ class ExportService
                 'title' => $options['title'] ?? null,
                 'organization_name' => $options['organization_name'] ?? null,
                 'include_metadata' => (bool) ($options['include_metadata'] ?? true),
-                'include_ai_summary' => (bool) ($options['include_ai_summary'] ?? true),
-                'include_action_items' => (bool) ($options['include_action_items'] ?? true),
+                'include_ai_summary' => $this->wantsSummary($options),
+                'include_action_items' => $this->wantsActionItems($options),
             ],
             'total_items' => count($transcriptIds),
             'completed_items' => 0,
@@ -85,6 +87,7 @@ class ExportService
         $failed = 0;
         $manifestItems = [];
         $itemResponses = [];
+        $aiWarnings = [];
 
         try {
             foreach ($transcriptIds as $tid) {
@@ -116,11 +119,16 @@ class ExportService
                 $formatsToBuild = $format === 'both' ? ['docx', 'pdf'] : [$format];
                 $lastFilename = null;
 
+                $aiSections = $this->buildAiSections($transcript, $options);
+                if ($aiSections['warnings'] !== []) {
+                    $aiWarnings[] = ['transcript_id' => $transcript->id, 'warnings' => $aiSections['warnings']];
+                }
+
                 foreach ($formatsToBuild as $fmt) {
                     $filename = "{$safeSlug}.{$fmt}";
                     $bytes = $fmt === 'docx'
-                        ? $this->buildDocxBytes($transcript, $options)
-                        : $this->buildPdfBytes($transcript, $options);
+                        ? $this->buildDocxBytes($transcript, $options, $aiSections)
+                        : $this->buildPdfBytes($transcript, $options, $aiSections);
                     $zip->addFromString($filename, $bytes);
                     $lastFilename = $filename;
                 }
@@ -159,6 +167,7 @@ class ExportService
                 'format' => $format,
                 'generated_at' => now()->toIso8601String(),
                 'items' => $manifestItems,
+                'ai_warnings' => $aiWarnings,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
             $zip->addFromString('manifest.json', $manifestJson);
@@ -373,7 +382,7 @@ class ExportService
      *
      * @param array<string, mixed> $options
      */
-    private function buildDocxBytes(Transcript $transcript, array $options): string
+    private function buildDocxBytes(Transcript $transcript, array $options, array $aiSections): string
     {
         $tmpPath = tempnam(sys_get_temp_dir(), 'docx_out_');
         if ($tmpPath === false) {
@@ -393,7 +402,6 @@ class ExportService
             .'</Relationships>';
 
         $paragraphs = [];
-        $template = (string) ($options['template'] ?? 'clean_transcript');
         $orgName = !empty($options['organization_name']) ? (string) $options['organization_name'] : 'PLAUD Companion Workspace';
 
         // 1. Header & Title Block
@@ -402,35 +410,30 @@ class ExportService
         $paragraphs[] = $this->docxMeta($metaLine);
         $paragraphs[] = $this->docxDivider();
 
-        // 2. Executive Summary Section (if requested or in executive templates)
-        $includeSummary = (bool) ($options['include_ai_summary'] ?? true) || in_array($template, ['meeting_minutes', 'executive_summary', 'transcript_with_actions'], true);
-        if ($includeSummary) {
+        // 2. AI Summary Section (generated from this transcript, never placeholder text)
+        if ($aiSections['summary'] !== null) {
             $paragraphs[] = $this->docxHeading('1. Executive Summary & Synthesis', 26, '18A879');
-            $summaryText = 'Core meeting overview: Cross-functional discussion on product architecture, transcript synchronization, and operational deliverables. Key objectives were reviewed and assigned.';
-            $paragraphs[] = $this->docxParagraph($summaryText, false, '334155');
-
-            $bullets = [
-                'Ingested and validated diarized audio segments with speaker timestamps.',
-                'Confirmed hardware synchronization status across active workspace endpoints.',
-                'Approved production document package for offline and client distribution.',
-            ];
-            foreach ($bullets as $b) {
+            $summary = $aiSections['summary'];
+            if ($summary['text'] !== '') {
+                $paragraphs[] = $this->docxParagraph($summary['text'], false, '334155');
+            }
+            foreach ($summary['bullets'] as $b) {
                 $paragraphs[] = $this->docxBullet($b);
+            }
+            if ($summary['note'] !== null) {
+                $paragraphs[] = $this->docxParagraph($summary['note'], false, '64748B');
             }
             $paragraphs[] = $this->docxDivider();
         }
 
-        // 3. Grounded Action Items (if requested or in meeting templates)
-        $includeActions = (bool) ($options['include_action_items'] ?? true) || in_array($template, ['meeting_minutes', 'transcript_with_actions'], true);
-        if ($includeActions) {
+        // 3. Action Items Section (generated from this transcript)
+        if ($aiSections['actions'] !== null) {
             $paragraphs[] = $this->docxHeading('2. Action Items & Assignments', 26, '18A879');
-            $actions = [
-                ['task' => 'Verify Bluetooth Low Energy device discovery & GATT packet sync', 'owner' => 'Engineering Lead', 'due' => 'Sprint 4'],
-                ['task' => 'Review executive export templates and Word/PDF format fidelity', 'owner' => 'Product Director', 'due' => 'Friday EOD'],
-                ['task' => 'Deploy multi-model AI operator connectors for client workspaces', 'owner' => 'DevOps', 'due' => 'Next Monday'],
-            ];
-            foreach ($actions as $act) {
+            foreach ($aiSections['actions']['items'] as $act) {
                 $paragraphs[] = $this->docxActionItem($act['task'], $act['owner'], $act['due']);
+            }
+            if ($aiSections['actions']['note'] !== null) {
+                $paragraphs[] = $this->docxParagraph($aiSections['actions']['note'], false, '64748B');
             }
             $paragraphs[] = $this->docxDivider();
         }
@@ -529,11 +532,11 @@ class ExportService
      * Production-grade valid PDF-1.4 generator with multi-section layout.
      *
      * @param array<string, mixed> $options
+     * @param array<string, mixed> $aiSections
      */
-    private function buildPdfBytes(Transcript $transcript, array $options): string
+    private function buildPdfBytes(Transcript $transcript, array $options, array $aiSections): string
     {
         $lines = [];
-        $template = (string) ($options['template'] ?? 'clean_transcript');
         $org = !empty($options['organization_name']) ? (string) $options['organization_name'] : 'PLAUD Companion';
 
         $lines[] = strtoupper($org);
@@ -542,20 +545,33 @@ class ExportService
         $lines[] = "================================================================================";
         $lines[] = "";
 
-        // Summary
-        if ((bool) ($options['include_ai_summary'] ?? true)) {
+        // Summary (generated from this transcript, never placeholder text)
+        if ($aiSections['summary'] !== null) {
+            $summary = $aiSections['summary'];
             $lines[] = "[1. EXECUTIVE SUMMARY & KEY TAKEAWAYS]";
-            $lines[] = "- Cross-platform audio ingest and speaker diarization verified.";
-            $lines[] = "- Hardware bridge established for direct PLAUD Note / NotePin sync.";
-            $lines[] = "- Export deliverables generated with full OpenXML and PDF fidelity.";
+            if ($summary['text'] !== '') {
+                foreach (str_split($summary['text'], 84) as $chunk) {
+                    $lines[] = $chunk;
+                }
+            }
+            foreach ($summary['bullets'] as $b) {
+                $lines[] = '- ' . $b;
+            }
+            if ($summary['note'] !== null) {
+                $lines[] = $summary['note'];
+            }
             $lines[] = "";
         }
 
         // Action Items
-        if ((bool) ($options['include_action_items'] ?? true)) {
-            $lines[] = "[2. GROUNDED ACTION ITEMS]";
-            $lines[] = "[ ] Verify BLE GATT sync across target workspace nodes (Owner: Team Lead)";
-            $lines[] = "[ ] Distribute signed Word and PDF export packages to stakeholders";
+        if ($aiSections['actions'] !== null) {
+            $lines[] = "[2. ACTION ITEMS]";
+            foreach ($aiSections['actions']['items'] as $act) {
+                $lines[] = sprintf('[ ] %s (Owner: %s, Due: %s)', $act['task'], $act['owner'], $act['due']);
+            }
+            if ($aiSections['actions']['note'] !== null) {
+                $lines[] = $aiSections['actions']['note'];
+            }
             $lines[] = "";
         }
 
@@ -605,6 +621,88 @@ class ExportService
         $pdf .= "startxref\n{$xrefOffset}\n%%EOF\n";
 
         return $pdf;
+    }
+
+    /** @param array<string, mixed> $options */
+    private function wantsSummary(array $options): bool
+    {
+        // AI sections are opt-in because they may call a paid external provider.
+        return (bool) ($options['include_ai_summary'] ?? false)
+            || in_array((string) ($options['template'] ?? ''), ['meeting_minutes', 'executive_summary', 'transcript_with_actions'], true);
+    }
+
+    /** @param array<string, mixed> $options */
+    private function wantsActionItems(array $options): bool
+    {
+        return (bool) ($options['include_action_items'] ?? false)
+            || in_array((string) ($options['template'] ?? ''), ['meeting_minutes', 'transcript_with_actions'], true);
+    }
+
+    /**
+     * Builds the optional summary / action-item sections for one transcript from the
+     * workspace's configured AI provider. Generated once and shared by DOCX and PDF.
+     * On provider failure the section states that it is unavailable; the export never
+     * substitutes invented content.
+     *
+     * @param array<string, mixed> $options
+     * @return array{summary: ?array{text: string, bullets: list<string>, note: ?string}, actions: ?array{items: list<array{task: string, owner: string, due: string}>, note: ?string}, warnings: list<string>}
+     */
+    private function buildAiSections(Transcript $transcript, array $options): array
+    {
+        $result = ['summary' => null, 'actions' => null, 'warnings' => []];
+
+        if ($this->wantsSummary($options)) {
+            try {
+                $s = $this->ai->generateSummary($transcript, 'executive');
+                $bullets = array_values(array_filter(array_map('trim', $s['bullet_points'] ?? []), static fn (string $b): bool => $b !== ''));
+                $text = trim((string) ($s['summary_text'] ?? ''));
+                $result['summary'] = [
+                    'text' => $text,
+                    'bullets' => $bullets,
+                    'note' => ($text === '' && $bullets === []) ? 'No summary could be extracted from this transcript.' : null,
+                ];
+            } catch (\Throwable $e) {
+                $reason = $this->aiFailureReason($e);
+                $result['summary'] = ['text' => '', 'bullets' => [], 'note' => "AI summary unavailable: {$reason}"];
+                $result['warnings'][] = "summary: {$reason}";
+            }
+        }
+
+        if ($this->wantsActionItems($options)) {
+            try {
+                $a = $this->ai->extractActionItems($transcript);
+                $items = [];
+                foreach ($a['action_items'] ?? [] as $item) {
+                    $items[] = [
+                        'task' => (string) $item['task'],
+                        'owner' => (string) ($item['assignee'] ?? '') !== '' ? (string) $item['assignee'] : 'Unassigned',
+                        'due' => (string) ($item['due_date'] ?? '') !== '' ? (string) $item['due_date'] : 'Not specified',
+                    ];
+                }
+                $result['actions'] = [
+                    'items' => $items,
+                    'note' => $items === [] ? 'No action items were identified in this transcript.' : null,
+                ];
+            } catch (\Throwable $e) {
+                $reason = $this->aiFailureReason($e);
+                $result['actions'] = ['items' => [], 'note' => "AI action items unavailable: {$reason}"];
+                $result['warnings'][] = "action_items: {$reason}";
+            }
+        }
+
+        return $result;
+    }
+
+    private function aiFailureReason(\Throwable $e): string
+    {
+        if ($e instanceof HttpResponseException) {
+            $detail = data_get($e->getResponse()->getData(true), 'detail');
+            if (is_string($detail) && $detail !== '') {
+                return Str::limit($detail, 200);
+            }
+        }
+
+        return 'the AI provider request failed.';
     }
 
     private function slugifyFilename(string $title): string

@@ -94,3 +94,14 @@ Do not store hidden chain-of-thought. Store user-visible responses and source re
 ## 10. Consent and privacy
 
 Before first use of an external AI provider in a workspace, explain that selected transcript content will be sent to that provider for processing. Record consent according to product policy. Provide provider-specific settings and a way to disable AI processing.
+
+## Laravel implementation notes (backend-laravel)
+
+- **No silent fallback.** If the selected/configured provider fails, summary, action-item and
+  ask endpoints return HTTP 502 with `error_code: "ai_provider_failed"` and a sanitized `detail`.
+  Output from another engine is never substituted.
+- **`builtin` provider** is a local, non-AI extractive mode. Summaries are leading transcript
+  lines, action items are lines containing commitment language (speaker as assignee, no invented
+  due dates), and Q&A is keyword matching with citations. It returns empty results and
+  `has_sufficient_evidence: false` when nothing matches; it never emits canned text.
+- Provider resolution order: workspace connection → server `.env` keys → `builtin`.
