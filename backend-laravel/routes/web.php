@@ -15,6 +15,12 @@ use Illuminate\Support\Facades\Route;
 
 // Main PLAUD Companion Web Application (redirects to /install if not installed, or /login if unauthenticated)
 Route::middleware(['web.auth'])->group(function (): void {
+    // Connect my Plaud account (OAuth + import)
+    Route::get('/integrations/plaud/connect', [\App\Http\Controllers\PlaudAccountController::class, 'connect'])->name('plaud.account.connect');
+    Route::get('/integrations/plaud/callback', [\App\Http\Controllers\PlaudAccountController::class, 'callback'])->name('plaud.account.callback');
+    Route::get('/integrations/plaud/status', [\App\Http\Controllers\PlaudAccountController::class, 'status'])->name('plaud.account.status');
+    Route::post('/integrations/plaud/sync', [\App\Http\Controllers\PlaudAccountController::class, 'sync'])->middleware('throttle:12,1')->name('plaud.account.sync');
+    Route::post('/integrations/plaud/disconnect', [\App\Http\Controllers\PlaudAccountController::class, 'disconnect'])->name('plaud.account.disconnect');
     Route::get('/', [DashboardController::class, 'index'])->name('app.home');
     Route::get('/app', [DashboardController::class, 'index'])->name('app.dashboard');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');

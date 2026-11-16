@@ -175,6 +175,8 @@ class TranscriptController extends Controller
             'project_id' => $t->project_id,
             'title' => $t->title,
             'description' => $t->description,
+            'summary_markdown' => $t->summary_markdown,
+            'source' => $t->external_source,
             'source_type' => $t->source_type,
             'recorded_at' => $t->recorded_at?->toIso8601String(),
             'language' => $t->language,

@@ -2773,8 +2773,13 @@
           `).join('');
         }
 
-        document.getElementById('detailSummaryBox').textContent =
-          'Click "✨ Generate" to synthesize an executive AI summary for "' + detail.title + '".';
+        const summaryBox = document.getElementById('detailSummaryBox');
+        summaryBox.style.whiteSpace = detail.summary_markdown ? 'pre-wrap' : '';
+        summaryBox.textContent = detail.summary_markdown
+          ? 'Summary from Plaud:
+
+' + detail.summary_markdown
+          : 'Click "✨ Generate" to synthesize an executive AI summary for "' + detail.title + '".';
         document.getElementById('detailActionsBox').innerHTML =
           '<p style="font-size:13px; color:var(--muted); margin:0;">Click "⚡ Extract Actions" to extract tasks and owners from "' + escapeHtml(detail.title) + '".</p>';
 
@@ -3934,6 +3939,7 @@
     renderWorkspaceSelector();
     loadWorkspaceData();
   </script>
+@include('partials.plaud-auto-sync')
 @include('partials.error-reporter')
 </body>
 </html>

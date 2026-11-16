@@ -30,6 +30,9 @@ class Transcript extends Model
         'status',
         'content_text',
         'content_hash',
+        'external_source',
+        'external_id',
+        'summary_markdown',
     ];
 
     protected function casts(): array

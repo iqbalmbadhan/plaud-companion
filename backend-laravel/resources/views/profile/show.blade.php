@@ -454,6 +454,8 @@
                 </form>
             </div>
 
+            @include('partials.plaud-account-card')
+
             <!-- Change Password -->
             <div class="card">
                 <div class="section-title">
