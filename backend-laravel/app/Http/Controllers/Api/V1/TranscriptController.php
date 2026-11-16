@@ -151,6 +151,90 @@ class TranscriptController extends Controller
         return response()->json($this->formatDetail($transcript));
     }
 
+    /**
+     * Returns a short-lived URL the browser can play, if this recording has audio.
+     * Plaud-imported recordings: a fresh ~24h link fetched on demand (nothing stored).
+     * Imported audio files: a signed, expiring download URL from private storage.
+     * Otherwise { available: false } — e.g. text imports and sample recordings.
+     */
+    public function audio(Request $request, string $transcriptId, \App\Services\PlaudAccountService $plaud): JsonResponse
+    {
+        $transcript = Transcript::query()->find($transcriptId);
+        if (!$transcript) {
+            return response()->json(['detail' => 'Transcript not found.'], 404);
+        }
+        $this->workspaces->requireMembership($transcript->workspace_id, $request->user()->id);
+
+        if ($transcript->external_source === 'plaud' && $transcript->external_id) {
+            $link = \App\Models\PlaudAccountLink::query()
+                ->where('workspace_id', $transcript->workspace_id)
+                ->where('status', 'connected')
+                ->orderByRaw('CASE WHEN user_id = ? THEN 0 ELSE 1 END', [$transcript->created_by_user_id])
+                ->first();
+            if ($link === null) {
+                return response()->json(['available' => false, 'reason' => 'reconnect', 'message' => 'Connect the Plaud account again to play this recording.']);
+            }
+            try {
+                $audio = $plaud->audioUrl($link, $transcript->external_id);
+            } catch (\App\Services\PlaudReconnectRequired) {
+                return response()->json(['available' => false, 'reason' => 'reconnect', 'message' => 'Connect the Plaud account again to play this recording.']);
+            } catch (\RuntimeException $e) {
+                report($e);
+
+                return response()->json(['available' => false, 'reason' => 'unavailable', 'message' => 'Audio is not reachable right now.'], 502);
+            }
+            if ($audio === null) {
+                return response()->json(['available' => false, 'reason' => 'none', 'message' => 'No audio is available for this recording.']);
+            }
+
+            return response()->json(['available' => true, 'url' => $audio['url'], 'expires_at' => $audio['expires_at']])
+                ->header('Cache-Control', 'no-store');
+        }
+
+        $file = \App\Models\TranscriptFile::query()
+            ->where('transcript_id', $transcript->id)
+            ->where('file_role', 'audio')
+            ->orderByDesc('created_at')
+            ->first();
+        if ($file !== null && str_starts_with((string) $file->mime_type, 'audio/')) {
+            $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+                'app.api.transcripts.audio.stream',
+                now()->addMinutes(30),
+                ['transcriptId' => $transcript->id, 'fileId' => $file->id],
+            );
+
+            return response()->json(['available' => true, 'url' => $url, 'expires_at' => now()->addMinutes(30)->toIso8601String()]);
+        }
+
+        return response()->json(['available' => false, 'reason' => 'none', 'message' => 'No audio is available for this recording.']);
+    }
+
+    /** Streams a stored audio file. Guarded by a signed URL from audio() and workspace membership. */
+    public function streamAudio(Request $request, string $transcriptId, string $fileId): \Symfony\Component\HttpFoundation\Response
+    {
+        if (!$request->hasValidSignature()) {
+            abort(403);
+        }
+        $file = \App\Models\TranscriptFile::query()
+            ->where('id', $fileId)
+            ->where('transcript_id', $transcriptId)
+            ->where('file_role', 'audio')
+            ->first();
+        if ($file === null) {
+            abort(404);
+        }
+        $this->workspaces->requireMembership($file->workspace_id, $request->user()->id);
+        if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($file->storage_key)) {
+            abort(404);
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('local')->response(
+            $file->storage_key,
+            $file->original_filename,
+            ['Content-Type' => $file->mime_type, 'Cache-Control' => 'no-store'],
+        );
+    }
+
     public function destroy(Request $request, string $transcriptId): JsonResponse
     {
         $transcript = Transcript::query()->find($transcriptId);

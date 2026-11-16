@@ -1425,6 +1425,16 @@
           </div>
         </div>
 
+        <div class="card" id="detailAudioCard" style="display:none; margin-top:14px;">
+          <div class="section-head" style="margin-bottom:10px;">
+            <div>
+              <h3 style="margin:0;">🔊 Recording audio</h3>
+              <span id="detailAudioHint" style="font-size:12.5px; color:var(--muted);"></span>
+            </div>
+          </div>
+          <audio id="detailAudio" controls preload="none" style="width:100%;"></audio>
+        </div>
+
         <div class="split-detail">
           <div class="card">
             <div class="section-head">
@@ -2783,9 +2793,29 @@
         document.getElementById('detailActionsBox').innerHTML =
           '<p style="font-size:13px; color:var(--muted); margin:0;">Click "⚡ Extract Actions" to extract tasks and owners from "' + escapeHtml(detail.title) + '".</p>';
 
+        loadTranscriptAudio(detail.id);
+
         if (navigate) switchView('detail');
       } catch (e) {
         showToast('Could not load transcript detail: ' + e.message, true);
+      }
+    }
+
+    // Shows the audio player only when the recording has playable audio (e.g. Plaud imports).
+    async function loadTranscriptAudio(transcriptId) {
+      const card = document.getElementById('detailAudioCard');
+      const audio = document.getElementById('detailAudio');
+      const hint = document.getElementById('detailAudioHint');
+      card.style.display = 'none';
+      audio.removeAttribute('src'); audio.load();
+      try {
+        const data = await apiFetch(`/app/api/transcripts/${transcriptId}/audio`);
+        if (!data || !data.available) return;
+        audio.src = data.url;
+        hint.textContent = 'Streamed securely from your connected Plaud account. The link refreshes each time you open this recording.';
+        card.style.display = 'block';
+      } catch (e) {
+        // No audio, or not reachable: leave the player hidden rather than show an error.
       }
     }
 

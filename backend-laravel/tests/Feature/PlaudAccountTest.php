@@ -165,4 +165,43 @@ class PlaudAccountTest extends TestCase
         $this->get('/integrations/plaud/connect')->assertRedirect();
         $this->postJson('/integrations/plaud/sync')->assertStatus(401);
     }
+
+    public function test_audio_endpoint_returns_fresh_presigned_url_for_plaud_recording(): void
+    {
+        [$user, $wsId] = $this->signedIn();
+        \App\Models\PlaudAccountLink::create(['id' => 'la', 'user_id' => $user->id, 'workspace_id' => $wsId, 'access_token' => 'at', 'status' => 'connected', 'expires_at' => now()->addHour()]);
+        $t = \App\Models\Transcript::create([
+            'id' => 'tr1', 'workspace_id' => $wsId, 'created_by_user_id' => $user->id, 'title' => 'Rec',
+            'source_type' => 'plaud_account', 'status' => 'processed', 'content_text' => 'x', 'content_hash' => hash('sha256', 'x'),
+            'external_source' => 'plaud', 'external_id' => 'f1',
+        ]);
+        Http::fake(function (\Illuminate\Http\Client\Request $req) {
+            if (str_contains($req->url(), 'mcp')) {
+                $body = $req->data();
+                $result = ($body['method'] ?? '') === 'tools/call'
+                    ? ['content' => [['type' => 'text', 'text' => json_encode(['id' => 'f1', 'presigned_url' => 'https://s3.example/audio.mp3?sig=abc'])]]]
+                    : ['protocolVersion' => '2025-06-18', 'capabilities' => []];
+                return Http::response(json_encode(['jsonrpc' => '2.0', 'id' => $body['id'] ?? 1, 'result' => $result]), 200, ['Content-Type' => 'application/json', 'Mcp-Session-Id' => 's']);
+            }
+
+            return Http::response(['access_token' => 'at']);
+        });
+
+        $this->getJson("/app/api/transcripts/{$t->id}/audio")
+            ->assertOk()
+            ->assertJson(['available' => true, 'url' => 'https://s3.example/audio.mp3?sig=abc'])
+            ->assertHeader('Cache-Control', 'no-store, private');
+    }
+
+    public function test_audio_endpoint_reports_unavailable_for_non_plaud_transcript(): void
+    {
+        [$user, $wsId] = $this->signedIn();
+        $t = \App\Models\Transcript::create([
+            'id' => 'tr2', 'workspace_id' => $wsId, 'created_by_user_id' => $user->id, 'title' => 'Text import',
+            'source_type' => 'docx_import', 'status' => 'processed', 'content_text' => 'x', 'content_hash' => hash('sha256', 'y'),
+        ]);
+
+        $this->getJson("/app/api/transcripts/{$t->id}/audio")
+            ->assertOk()->assertJson(['available' => false, 'reason' => 'none']);
+    }
 }

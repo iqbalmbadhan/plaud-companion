@@ -193,6 +193,26 @@ class PlaudAccountService
         }
     }
 
+    /**
+     * A fresh short-lived audio URL for one imported recording (Plaud get_file -> presigned_url,
+     * valid ~24h). Fetched on demand and never stored, because it expires.
+     * @return array{url: string, expires_at: string|null}|null  null when Plaud has no audio for it.
+     */
+    public function audioUrl(PlaudAccountLink $link, string $externalId): ?array
+    {
+        $mcp = new PlaudMcpSession(config('plaud.mcp_url'), $this->freshAccessToken($link));
+        $file = $mcp->callJson('get_file', ['file_id' => $externalId], allowText: true);
+        if (!is_array($file)) {
+            return null;
+        }
+        $url = $file['presigned_url'] ?? $file['audio_url'] ?? null;
+        if (!is_string($url) || $url === '') {
+            return null;
+        }
+
+        return ['url' => $url, 'expires_at' => now()->addHours(24)->toIso8601String()];
+    }
+
     /** @return list<array<string, mixed>> newest recordings first */
     private function listFiles(PlaudMcpSession $mcp): array
     {

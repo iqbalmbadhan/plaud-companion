@@ -44,6 +44,8 @@ Route::middleware(['web.auth'])->group(function (): void {
         Route::get('/workspaces/{workspaceId}/transcripts', [TranscriptController::class, 'index']);
         Route::post('/workspaces/{workspaceId}/transcripts', [TranscriptController::class, 'store']);
         Route::get('/transcripts/{transcriptId}', [TranscriptController::class, 'show']);
+        Route::get('/transcripts/{transcriptId}/audio', [TranscriptController::class, 'audio'])->name('app.api.transcripts.audio');
+        Route::get('/transcripts/{transcriptId}/audio/{fileId}', [TranscriptController::class, 'streamAudio'])->name('app.api.transcripts.audio.stream');
         Route::delete('/transcripts/{transcriptId}', [TranscriptController::class, 'destroy']);
         Route::post('/workspaces/{workspaceId}/imports', [ImportController::class, 'store']);
 
