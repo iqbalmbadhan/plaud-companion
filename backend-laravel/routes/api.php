@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ExportController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ImportController;
+use App\Http\Controllers\Api\V1\PlaudController;
 use App\Http\Controllers\Api\V1\ProjectController;
 use App\Http\Controllers\Api\V1\TranscriptController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
@@ -23,6 +24,7 @@ Route::prefix('v1')->group(function (): void {
     // Authenticated API routes
     Route::middleware('auth.token')->group(function (): void {
         Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::post('/plaud/user-token', [PlaudController::class, 'userToken'])->middleware('throttle:20,1');
 
         // Workspaces & RBAC
         Route::get('/workspaces', [WorkspaceController::class, 'index']);

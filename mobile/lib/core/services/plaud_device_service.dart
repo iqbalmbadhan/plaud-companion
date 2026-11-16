@@ -1,137 +1,120 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import '../models/app_models.dart';
 
+/// PLAUD hardware over Bluetooth Low Energy, through the official PLAUD Embedded SDK.
+///
+/// The SDK (iOS xcframework / Android aar) is only available to approved PLAUD
+/// partners, so the native side of [channel] is registered once the SDK is added.
+/// Until then every call reports "not available" — this service never invents
+/// devices, battery levels or recordings.
+///
+/// Flow (docs.plaud.ai/plaud-embedded): the backend exchanges our partner
+/// credentials for a 24h PLAUD user token (POST /api/v1/plaud/user-token);
+/// the app passes it to `initSDK`, then scans, binds and syncs over BLE.
 class PlaudDeviceService extends ChangeNotifier {
   static final PlaudDeviceService instance = PlaudDeviceService._();
   PlaudDeviceService._();
 
+  static const MethodChannel channel = MethodChannel('com.plaudcompanion.app/plaud_sdk');
+
+  static const String notInstalledMessage =
+      'PLAUD device connection is not available yet. It is switched on once the '
+      'PLAUD Embedded SDK and partner credentials are added to this build.';
+
   bool _isScanning = false;
+  bool _sdkReady = false;
+  String? _statusMessage;
   PlaudDevice? _connectedDevice;
   final List<PlaudDevice> _discoveredDevices = [];
 
   bool get isScanning => _isScanning;
+  bool get sdkReady => _sdkReady;
+  String? get statusMessage => _statusMessage;
   PlaudDevice? get connectedDevice => _connectedDevice;
   List<PlaudDevice> get discoveredDevices => List.unmodifiable(_discoveredDevices);
 
-  /// Scan for nearby PLAUD Note, NotePin, and BLE GATT audio recorders
-  Future<void> startScan({Duration duration = const Duration(seconds: 4)}) async {
+  /// Initialise the native SDK with a PLAUD user token issued by our backend.
+  Future<bool> initialize({required String plaudUserToken, String domain = 'platform-us.plaud.ai'}) async {
+    final ok = await _invoke<bool>('initSDK', {'userAccessToken': plaudUserToken, 'customDomain': domain});
+    _sdkReady = ok == true;
+    notifyListeners();
+    return _sdkReady;
+  }
+
+  Future<void> startScan({Duration duration = const Duration(seconds: 8)}) async {
     if (_isScanning) return;
     _isScanning = true;
     _discoveredDevices.clear();
     notifyListeners();
-
-    // Emulate BLE GATT advertisement scanning
-    await Future.delayed(const Duration(milliseconds: 600));
-    _discoveredDevices.add(const PlaudDevice(
-      id: 'PLAUD-NOTE-84B2',
-      name: 'PLAUD Note (84B2)',
-      model: 'PLAUD Note (MagSafe / Dual-Mic)',
-      batteryLevel: 94,
-      rssi: -52,
-    ));
-    notifyListeners();
-
-    await Future.delayed(const Duration(milliseconds: 700));
-    _discoveredDevices.add(const PlaudDevice(
-      id: 'PLAUD-NOTEPIN-10A1',
-      name: 'PLAUD NotePin (10A1)',
-      model: 'PLAUD NotePin (Wearable AI)',
-      batteryLevel: 88,
-      rssi: -66,
-    ));
-    notifyListeners();
-
-    await Future.delayed(const Duration(milliseconds: 800));
-    _isScanning = false;
-    notifyListeners();
-  }
-
-  /// Pair and connect to a PLAUD device over BLE
-  Future<bool> connect(PlaudDevice device) async {
-    // Simulate GATT connection handshake
-    await Future.delayed(const Duration(milliseconds: 500));
-    _connectedDevice = device.copyWith(isConnected: true);
-    notifyListeners();
-    return true;
-  }
-
-  /// Disconnect device
-  Future<void> disconnect() async {
-    if (_connectedDevice != null) {
-      _connectedDevice = _connectedDevice!.copyWith(isConnected: false);
-      _connectedDevice = null;
+    try {
+      final raw = await _invoke<List<dynamic>>('startScan', {'timeoutMs': duration.inMilliseconds});
+      for (final item in raw ?? const []) {
+        _discoveredDevices.add(_deviceFromMap(Map<String, dynamic>.from(item as Map)));
+      }
+    } finally {
+      _isScanning = false;
       notifyListeners();
     }
   }
 
-  /// Ingests a new recording from the connected PLAUD device into the workspace
-  Future<Transcript> syncLatestSession() async {
-    if (_connectedDevice == null) {
-      throw StateError('No PLAUD device currently connected.');
+  Future<bool> connect(PlaudDevice device) async {
+    final ok = await _invoke<bool>('connectDevice', {'deviceId': device.id});
+    if (ok == true) {
+      _connectedDevice = device.copyWith(isConnected: true);
+      _statusMessage = null;
     }
-
-    await Future.delayed(const Duration(milliseconds: 800)); // Transfer simulation
-    final now = DateTime.now();
-
-    final segments = [
-      const TranscriptSegment(
-        id: 'seg-1',
-        speaker: 'Sarah (Product Director)',
-        startMs: 0,
-        endMs: 12000,
-        text: 'Welcome team. Today we are signing off on the PLAUD Companion mobile app for iOS and Android.',
-      ),
-      const TranscriptSegment(
-        id: 'seg-2',
-        speaker: 'David (Lead Architect)',
-        startMs: 13000,
-        endMs: 29000,
-        text: 'The BLE bridge connects directly to PLAUD Note and NotePin hardware via GATT service 0000fee7, extracting telemetry and audio packets.',
-      ),
-      const TranscriptSegment(
-        id: 'seg-3',
-        speaker: 'Elena (AI Lead)',
-        startMs: 30000,
-        endMs: 48000,
-        text: 'All four major neural operators—OpenAI, Gemini, Anthropic, and OpenRouter—are integrated alongside our embedded local neural engine.',
-      ),
-      const TranscriptSegment(
-        id: 'seg-4',
-        speaker: 'Sarah (Product Director)',
-        startMs: 49000,
-        endMs: 62000,
-        text: 'Our document exporter builds full-fidelity Word DOCX and PDF packages with zero external CLI dependencies.',
-      ),
-      const TranscriptSegment(
-        id: 'seg-5',
-        speaker: 'Marcus (QA Lead)',
-        startMs: 63000,
-        endMs: 78000,
-        text: 'Every feature has been tested for offline and online workflows. Ready for immediate deployment.',
-      ),
-    ];
-
-    final transcript = Transcript(
-      id: 'plaud-rec-${now.millisecondsSinceEpoch}',
-      title: 'PLAUD Note — Sync (${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')})',
-      project: 'Hardware Sync',
-      sourceFormat: 'PLAUD BLE GATT',
-      durationSeconds: 78,
-      recordedAt: now,
-      status: 'Ready',
-      contentText: segments.map((s) => '[${s.timeFormatted}] ${s.speaker}: ${s.text}').join('\n'),
-      segments: segments,
-      aiSummary: 'Real-time synchronization from ${_connectedDevice!.name}.\n'
-          '• Hardware verified: ${_connectedDevice!.model} at ${_connectedDevice!.batteryLevel}% battery.\n'
-          '• Complete speaker diarization and audio timestamp extraction performed.\n'
-          '• Ready for immediate Word DOCX and PDF distribution.',
-      actionItems: [
-        ActionItem(task: 'Distribute signed Word (.docx) and PDF export packages to stakeholders', assignee: 'Sarah', dueDate: 'Today'),
-        ActionItem(task: 'Verify BLE GATT audio transfer on customer devices', assignee: 'David', dueDate: 'Sprint 4'),
-      ],
-    );
-
-    return transcript;
+    notifyListeners();
+    return ok == true;
   }
+
+  Future<void> disconnect() async {
+    final device = _connectedDevice;
+    if (device == null) return;
+    await _invoke<bool>('disconnectDevice', {'deviceId': device.id});
+    _connectedDevice = null;
+    notifyListeners();
+  }
+
+  /// Pulls the newest recording from the device. The audio is transcribed by the
+  /// PLAUD Transcription API on the server, so no transcript is returned here.
+  Future<Transcript> syncLatestSession() async {
+    final device = _connectedDevice;
+    if (device == null) {
+      throw StateError('No PLAUD device is connected.');
+    }
+    final result = await _invoke<Map<dynamic, dynamic>>('syncLatestRecording', {'deviceId': device.id});
+    if (result == null) {
+      throw StateError(_statusMessage ?? notInstalledMessage);
+    }
+    throw UnimplementedError(
+      'Recording synced from the device; server-side transcription import is the next integration step.',
+    );
+  }
+
+  /// Calls the native SDK. Returns null (and sets [statusMessage]) when the SDK
+  /// is missing or the call fails, so the UI can show an honest message.
+  Future<T?> _invoke<T>(String method, [Map<String, dynamic>? args]) async {
+    try {
+      final value = await channel.invokeMethod<T>(method, args);
+      _statusMessage = null;
+      return value;
+    } on MissingPluginException {
+      _statusMessage = notInstalledMessage;
+    } on PlatformException catch (e) {
+      _statusMessage = 'PLAUD device error: ${e.message ?? e.code}';
+    }
+    notifyListeners();
+    return null;
+  }
+
+  static PlaudDevice _deviceFromMap(Map<String, dynamic> m) => PlaudDevice(
+        id: (m['id'] ?? m['deviceId'] ?? '').toString(),
+        name: (m['name'] ?? 'PLAUD device').toString(),
+        model: (m['model'] ?? 'PLAUD').toString(),
+        batteryLevel: (m['batteryLevel'] as num?)?.toInt() ?? 0,
+        rssi: (m['rssi'] as num?)?.toInt() ?? 0,
+        firmwareVersion: (m['firmwareVersion'] ?? '').toString(),
+      );
 }

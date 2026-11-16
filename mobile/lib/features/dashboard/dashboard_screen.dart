@@ -247,10 +247,17 @@ class DashboardScreen extends StatelessWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Syncing recordings from connected PLAUD device...')),
                           );
-                          await AppState.instance.syncFromPlaudDevice();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Synced recording successfully! Diarization ready.')),
-                          );
+                          final messenger = ScaffoldMessenger.of(context);
+                          try {
+                            await AppState.instance.syncFromPlaudDevice();
+                            messenger.showSnackBar(
+                              const SnackBar(content: Text('Recording synced.')),
+                            );
+                          } catch (e) {
+                            messenger.showSnackBar(
+                              SnackBar(content: Text(e.toString().replaceFirst(RegExp(r'^(Bad state|UnimplementedError): '), ''))),
+                            );
+                          }
                         },
                         icon: const Icon(Icons.sync, size: 18),
                         label: const Text('⚡ Sync Recordings'),

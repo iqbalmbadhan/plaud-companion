@@ -64,9 +64,15 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                     child: Center(child: Text('Listening for BLE GATT advertisements...')),
                   )
                 else if (devices.isEmpty && !isScanning)
-                  const Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Center(child: Text('No devices found nearby. Ensure your PLAUD Note is powered on.')),
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Center(
+                      child: Text(
+                        PlaudDeviceService.instance.statusMessage ??
+                            'No devices found nearby. Make sure your PLAUD device is on and Bluetooth is enabled.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   )
                 else
                   ...devices.map((d) {
