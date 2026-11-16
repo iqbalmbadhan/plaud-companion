@@ -227,6 +227,40 @@
         </div>
     </div>
 
+    <!-- Encrypted client-data backup -->
+    <div class="card">
+        <h2>🔒 Encrypted Client-Data Backup</h2>
+        <p class="sub">A password-protected copy of all client data — documents, transcripts, files and settings. The file is unreadable without its passphrase, so it is safe to keep off-site. You can restore it here or on a new server.</p>
+
+        <div style="display:grid; gap:10px; max-width:460px;">
+            <label for="bk-pass" style="font-size:12px; color:var(--muted);">Backup passphrase (at least 10 characters — write it down; it cannot be recovered)</label>
+            <input id="bk-pass" type="password" placeholder="Choose a passphrase" autocomplete="new-password">
+            <div class="row-actions">
+                <button type="button" class="btn btn-primary" onclick="createDataBackup()">Create &amp; Download Backup</button>
+            </div>
+        </div>
+
+        <div id="data-backups-list" style="margin-top:16px;"></div>
+
+        <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--navy-border);">
+            <h3 style="margin:0 0 8px; font-size:14px;">Restore from a backup file</h3>
+            <p class="sub" style="margin-top:0;">This replaces all current data with the backup's contents. Everyone will be signed out.</p>
+            <div style="display:grid; gap:10px; max-width:460px;">
+                <input id="rs-file" type="file" accept=".plaudbackup">
+                <input id="rs-pass" type="password" placeholder="The backup's passphrase" autocomplete="off">
+                <label style="font-size:12px; color:var(--muted); display:flex; gap:8px; align-items:flex-start;">
+                    <input id="rs-appkey" type="checkbox" style="margin-top:3px;">
+                    <span>This backup is from a <b>different server</b>. Also restore its security key (needed to read connected Plaud sign-ins).</span>
+                </label>
+                <label for="rs-confirm" style="font-size:12px; color:var(--muted);">Type <code>RESTORE</code> to confirm:</label>
+                <input id="rs-confirm" type="text" placeholder="RESTORE">
+                <div class="row-actions">
+                    <button type="button" id="btn-restore" class="btn btn-danger" onclick="restoreDataBackup()">Restore Backup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Upload & Apply -->
     <div class="card">
         <h2>Upload &amp; Apply Signed Release</h2>
@@ -469,6 +503,84 @@ async function createBackup() {
         showAlert(e.message, 'error');
     }
 }
+
+// ---------------- Encrypted client-data backup ----------------
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+async function loadDataBackups() {
+    const box = document.getElementById('data-backups-list');
+    try {
+        const res = await fetch(`${UPDATES_API_BASE}/data-backups`, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+        const data = await res.json();
+        const items = data.backups || [];
+        if (items.length === 0) { box.innerHTML = '<p class="sub" style="margin:0;">No encrypted backups yet.</p>'; return; }
+        box.innerHTML = '<div class="kv">' + items.map(b => {
+            const when = b.created_at ? new Date(b.created_at).toLocaleString() : '';
+            const mb = (b.size_bytes / 1048576).toFixed(2);
+            return `<div class="kv-row"><span>${esc(b.filename)}<br><small style="color:var(--muted);">${esc(when)} · ${mb} MB · ${esc(b.tables||0)} tables · ${esc(b.files||0)} files</small></span>
+                <span style="display:flex; gap:8px;">
+                    <a class="btn btn-secondary" href="${UPDATES_API_BASE}/data-backups/${encodeURIComponent(b.filename)}/download">Download</a>
+                    <button type="button" class="btn btn-danger" onclick="deleteDataBackup('${esc(b.filename)}')">Delete</button>
+                </span></div>`;
+        }).join('') + '</div>';
+    } catch (e) { box.innerHTML = '<p class="sub">Could not load backups.</p>'; }
+}
+
+async function createDataBackup() {
+    const passphrase = document.getElementById('bk-pass').value;
+    if (passphrase.length < 10) { showAlert('The passphrase must be at least 10 characters.', 'error'); return; }
+    try {
+        const res = await fetch(`${UPDATES_API_BASE}/data-backups`, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+            credentials: 'same-origin',
+            body: JSON.stringify({ passphrase })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Backup failed');
+        showAlert(data.message, 'success');
+        document.getElementById('bk-pass').value = '';
+        await loadDataBackups();
+        // Offer the download straight away.
+        window.location.href = `${UPDATES_API_BASE}/data-backups/${encodeURIComponent(data.filename)}/download`;
+    } catch (e) { showAlert(e.message, 'error'); }
+}
+
+async function deleteDataBackup(filename) {
+    if (!confirm('Delete this backup file from the server? Keep your downloaded copy.')) return;
+    try {
+        const res = await fetch(`${UPDATES_API_BASE}/data-backups/${encodeURIComponent(filename)}`, {
+            method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }, credentials: 'same-origin'
+        });
+        if (!res.ok) throw new Error('Delete failed');
+        await loadDataBackups();
+    } catch (e) { showAlert(e.message, 'error'); }
+}
+
+async function restoreDataBackup() {
+    const file = document.getElementById('rs-file').files[0];
+    const passphrase = document.getElementById('rs-pass').value;
+    if (document.getElementById('rs-confirm').value !== 'RESTORE') { showAlert('Type RESTORE to confirm.', 'error'); return; }
+    if (!file) { showAlert('Choose a backup file.', 'error'); return; }
+    if (!confirm('This replaces ALL current data with the backup. Continue?')) return;
+    const fd = new FormData();
+    fd.append('backup', file);
+    fd.append('passphrase', passphrase);
+    fd.append('restore_app_key', document.getElementById('rs-appkey').checked ? '1' : '0');
+    const btn = document.getElementById('btn-restore');
+    btn.disabled = true; btn.textContent = 'Restoring…';
+    try {
+        const res = await fetch(`${UPDATES_API_BASE}/data-backups/restore`, {
+            method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }, credentials: 'same-origin', body: fd
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Restore failed');
+        showAlert(data.message, 'success');
+    } catch (e) { showAlert(e.message, 'error'); }
+    finally { btn.disabled = false; btn.textContent = 'Restore Backup'; }
+}
+
+loadDataBackups();
 
 pollStatus();
 setInterval(pollStatus, 2000);

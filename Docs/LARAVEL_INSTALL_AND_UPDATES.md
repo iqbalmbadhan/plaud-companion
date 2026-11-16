@@ -132,3 +132,15 @@ Everything below is on **Settings → Users** (`/settings/users`).
 **Debug log:** every unexpected server error gets a reference (`ERR-XXXXXXXX`) returned to the user in the `X-Error-Reference` header (and `reference` in JSON). Signed-in pages also report uncaught browser errors (max 5 per page view, rate-limited). Messages are sanitized (tokens, keys and passwords redacted); SQL errors keep only the SQLSTATE code; request bodies and transcript text are never stored. Entries older than 30 days are pruned automatically.
 
 **Password changes & sign-out everywhere:** changing a password signs out every other browser and invalidates mobile/API tokens; a password reset or *Sign out everywhere* ends all sessions; suspending a user also ends all sessions.
+
+## 7. Encrypted Client-Data Backups
+
+Super-admins can create a passphrase-protected backup of all client data from **Settings → Updates → Encrypted Client-Data Backup**.
+
+- The backup contains every database table (except transient session/cache/job tables), all private files, and the app's encryption key, packed and sealed with **AES-256-GCM**. The key is derived from the passphrase with **PBKDF2-SHA256 (200,000 iterations)**. Without the passphrase the file is unreadable, so it is safe to keep off-site.
+- The passphrase is never stored or logged. If it is lost, the backup cannot be recovered.
+- Backups are engine-neutral (row-level), so a MySQL backup restores onto a fresh install and vice-versa.
+- **Restore** replaces all current data with the backup's contents (everyone is signed out). On the form, tick *"This backup is from a different server"* to also restore the backup's encryption key — required so encrypted data (such as connected Plaud sign-ins) stays readable on the new server.
+- Backup files live in `storage/app/private/backups/` (`*.plaudbackup`); downloading is served through the authenticated super-admin route, never a public URL.
+
+This is separate from the updater's rollback snapshot (Section 5), which backs up code/state for the release process.

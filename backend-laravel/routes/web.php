@@ -137,5 +137,12 @@ Route::middleware(['web.auth', 'super_admin'])->prefix('settings/updates')->grou
         Route::post('/rollback', [UpdateController::class, 'rollback']);
         Route::post('/backup', [UpdateController::class, 'backup']);
         Route::delete('/upload', [UpdateController::class, 'deleteUpload']);
+
+        // Encrypted client-data backups (passphrase-protected; portable across installs).
+        Route::get('/data-backups', [\App\Http\Controllers\DataBackupController::class, 'index']);
+        Route::post('/data-backups', [\App\Http\Controllers\DataBackupController::class, 'create'])->middleware('throttle:6,1');
+        Route::get('/data-backups/{filename}/download', [\App\Http\Controllers\DataBackupController::class, 'download']);
+        Route::post('/data-backups/restore', [\App\Http\Controllers\DataBackupController::class, 'restore'])->middleware('throttle:6,1');
+        Route::delete('/data-backups/{filename}', [\App\Http\Controllers\DataBackupController::class, 'destroy']);
     });
 });
