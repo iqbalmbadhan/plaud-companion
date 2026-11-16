@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="classic">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- The demo never contacts any server: every network request is blocked by this policy. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="theme-color" content="#101B33">
+<title>PLAUD Companion — Interactive Demo</title>
+<style>
+/* ===================================================================== */
+/* Design tokens: two shipped designs, switched with <html data-theme>   */
+/* ===================================================================== */
+:root, [data-theme="classic"] {
+  --bg:#F6F8FB; --surface:#FFFFFF; --surface-2:#EDF2F8; --text:#101B33; --text-2:#2D3F57; --muted:#64748B;
+  --line:#DCE3EE; --accent:#18A879; --accent-2:#11855E; --accent-soft:#E8F8F2; --accent-text:#FFFFFF;
+  --nav-bg:#101B33; --nav-text:#CBD5E1; --nav-active-bg:rgba(24,168,121,.16); --nav-active-text:#FFFFFF;
+  --blue:#2563EB; --blue-soft:#EAF1FF; --amber:#B45309; --amber-soft:#FFF7ED; --danger:#DC2626; --danger-soft:#FEF2F2;
+  --radius:12px; --radius-sm:8px; --shadow:0 1px 2px rgba(16,27,51,.06),0 4px 14px rgba(16,27,51,.05);
+  --font:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif; --sidebar-w:240px; --banner-bg:#101B33; --banner-text:#E2E8F0;
+}
+[data-theme="modern"] {
+  --bg:#0B1020; --surface:#121A2E; --surface-2:#1A2440; --text:#E6ECF5; --text-2:#C3CEE0; --muted:#94A3B8;
+  --line:#26324F; --accent:#2DD4BF; --accent-2:#14B8A6; --accent-soft:rgba(45,212,191,.12); --accent-text:#04201C;
+  --nav-bg:#0E1528; --nav-text:#94A3B8; --nav-active-bg:linear-gradient(135deg,rgba(45,212,191,.22),rgba(129,140,248,.22)); --nav-active-text:#FFFFFF;
+  --blue:#818CF8; --blue-soft:rgba(129,140,248,.14); --amber:#FBBF24; --amber-soft:rgba(251,191,36,.12); --danger:#F87171; --danger-soft:rgba(248,113,113,.12);
+  --radius:18px; --radius-sm:12px; --shadow:0 0 0 1px rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.35);
+  --font:Inter,"Segoe UI Variable","Segoe UI",system-ui,-apple-system,Roboto,sans-serif; --sidebar-w:92px; --banner-bg:linear-gradient(90deg,#134E4A,#312E81); --banner-text:#E0F2F1;
+}
+* { box-sizing:border-box; }
+html,body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:var(--font); font-size:14px; line-height:1.5; }
+a { color:var(--accent); }
+button, input, select, textarea { font:inherit; color:inherit; }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+
+/* ---- banners ---- */
+.demo-banner { background:var(--banner-bg); color:var(--banner-text); font-size:12.5px; padding:7px 14px; display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; justify-content:center; text-align:center; }
+.demo-banner strong { letter-spacing:.06em; }
+.demo-banner button { background:transparent; border:1px solid rgba(255,255,255,.35); color:inherit; border-radius:999px; padding:2px 10px; cursor:pointer; font-size:12px; }
+.imp-bar { background:var(--amber-soft); color:var(--amber); border-bottom:1px solid var(--line); padding:8px 14px; display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; font-weight:600; font-size:13px; }
+.imp-bar .btn { padding:4px 12px; }
+
+/* ---- shell ---- */
+.app { display:flex; min-height:calc(100vh - 34px); }
+.sidebar { width:var(--sidebar-w); flex:0 0 var(--sidebar-w); background:var(--nav-bg); color:var(--nav-text); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; z-index:20; }
+.brand { display:flex; align-items:center; gap:10px; padding:18px 18px 14px; color:#fff; font-weight:700; font-size:15px; }
+.brand-mark { width:32px; height:32px; border-radius:10px; background:linear-gradient(135deg,var(--accent),#38BDF8); display:grid; place-items:center; color:#fff; font-weight:800; flex:0 0 32px; }
+.nav { display:flex; flex-direction:column; gap:2px; padding:6px 10px; }
+.nav button { all:unset; cursor:pointer; display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); color:var(--nav-text); font-size:13.5px; }
+.nav button:hover { background:rgba(255,255,255,.06); color:#fff; }
+.nav button.active { background:var(--nav-active-bg); color:var(--nav-active-text); font-weight:600; }
+.nav .ico { width:20px; text-align:center; font-size:15px; }
+.nav-sep { height:1px; background:rgba(255,255,255,.08); margin:8px 12px; }
+.nav-note { margin-top:auto; padding:14px 18px; font-size:11.5px; color:var(--nav-text); opacity:.8; }
+[data-theme="modern"] .brand { flex-direction:column; padding:16px 6px 10px; font-size:11px; text-align:center; }
+[data-theme="modern"] .brand-text { display:none; }
+[data-theme="modern"] .nav { padding:6px 8px; gap:4px; }
+[data-theme="modern"] .nav button { flex-direction:column; gap:3px; padding:10px 4px; font-size:10.5px; text-align:center; justify-content:center; }
+[data-theme="modern"] .nav .ico { font-size:18px; width:auto; }
+[data-theme="modern"] .nav-note { display:none; }
+.main-col { flex:1; min-width:0; display:flex; flex-direction:column; }
+.topbar { display:flex; align-items:center; gap:12px; padding:12px 22px; background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:15; }
+[data-theme="modern"] .topbar { background:rgba(18,26,46,.85); backdrop-filter:blur(10px); }
+.topbar h1 { font-size:17px; margin:0; font-weight:700; }
+.topbar .spacer { flex:1; }
+.ws-select { max-width:260px; }
+.user-chip { display:flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--line); border-radius:999px; padding:4px 12px 4px 4px; cursor:pointer; }
+.avatar { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:700; color:#fff; background:linear-gradient(135deg,var(--accent),var(--blue)); flex:0 0 30px; }
+.avatar.lg { width:56px; height:56px; font-size:20px; flex-basis:56px; }
+main#view { padding:22px; flex:1; max-width:1280px; width:100%; }
+.footer { padding:18px 22px 90px; text-align:center; font-size:12px; color:var(--muted); border-top:1px solid var(--line); }
+.footer a { text-decoration:none; font-weight:600; }
+.bottom-nav { display:none; }
+
+/* ---- components ---- */
+.card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; }
+.card h2, .card h3 { margin:0 0 10px; }
+.card h2 { font-size:16px; } .card h3 { font-size:14.5px; }
+.grid { display:grid; gap:16px; }
+.g2 { grid-template-columns:repeat(2,minmax(0,1fr)); } .g3 { grid-template-columns:repeat(3,minmax(0,1fr)); } .g4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.g-detail { grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); }
+.stack { display:flex; flex-direction:column; gap:16px; }
+.row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.between { justify-content:space-between; }
+.muted { color:var(--muted); } .small { font-size:12.5px; } .tiny { font-size:11.5px; }
+.stat .num { font-size:26px; font-weight:800; letter-spacing:-.02em; }
+.stat .lbl { color:var(--muted); font-size:12.5px; }
+.btn { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--surface); color:var(--text); padding:8px 14px; border-radius:var(--radius-sm); cursor:pointer; font-weight:600; font-size:13px; text-decoration:none; white-space:nowrap; }
+.btn:hover { border-color:var(--accent); }
+.btn.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-text); }
+[data-theme="modern"] .btn.primary { background:linear-gradient(135deg,var(--accent),#818CF8); border:0; }
+.btn.primary:hover { filter:brightness(1.05); }
+.btn.danger { color:var(--danger); border-color:var(--danger); background:transparent; }
+.btn.ghost { background:transparent; }
+.btn.sm { padding:5px 10px; font-size:12px; }
+.btn:disabled, .btn[aria-disabled="true"] { opacity:.45; cursor:not-allowed; }
+input[type=text], input[type=email], input[type=search], select, textarea { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm); padding:8px 10px; width:100%; }
+[data-theme="modern"] input[type=text], [data-theme="modern"] input[type=email], [data-theme="modern"] input[type=search], [data-theme="modern"] select, [data-theme="modern"] textarea { background:var(--surface-2); }
+textarea { min-height:120px; resize:vertical; }
+label.fld { display:flex; flex-direction:column; gap:4px; font-size:12.5px; font-weight:600; color:var(--text-2); }
+.tag { display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:600; padding:2px 8px; border-radius:999px; background:var(--surface-2); color:var(--text-2); border:1px solid var(--line); }
+.tag.green { background:var(--accent-soft); color:var(--accent-2); border-color:transparent; }
+[data-theme="modern"] .tag.green { color:var(--accent); }
+.tag.blue { background:var(--blue-soft); color:var(--blue); border-color:transparent; }
+.tag.amber { background:var(--amber-soft); color:var(--amber); border-color:transparent; }
+.tag.red { background:var(--danger-soft); color:var(--danger); border-color:transparent; }
+.notice { border-radius:var(--radius-sm); padding:10px 12px; font-size:13px; background:var(--blue-soft); color:var(--text-2); border:1px solid var(--line); }
+.notice.amber { background:var(--amber-soft); } .notice.red { background:var(--danger-soft); } .notice.green { background:var(--accent-soft); }
+table.tbl { width:100%; border-collapse:collapse; font-size:13px; }
+.tbl th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); }
+.tbl td { padding:10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+.tbl tr:last-child td { border-bottom:0; }
+.table-wrap { overflow-x:auto; }
+.list-item { display:flex; align-items:center; gap:12px; padding:10px 4px; border-bottom:1px solid var(--line); }
+.list-item:last-child { border-bottom:0; }
+.list-item .grow { flex:1; min-width:0; }
+.list-item .title { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.clickable { cursor:pointer; } .clickable:hover .title { color:var(--accent); }
+.icon-box { width:38px; height:38px; border-radius:10px; background:var(--accent-soft); color:var(--accent-2); display:grid; place-items:center; font-size:11px; font-weight:800; flex:0 0 38px; }
+[data-theme="modern"] .icon-box { color:var(--accent); }
+.seg { display:flex; gap:12px; padding:10px 0; border-bottom:1px dashed var(--line); }
+.seg:last-child { border-bottom:0; }
+.seg .who { flex:0 0 130px; }
+.seg .spk { font-weight:700; font-size:12.5px; }
+.seg .time { font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.seg p { margin:0; flex:1; }
+.spk-0 { color:#0F766E; } .spk-1 { color:#1D4ED8; } .spk-2 { color:#9333EA; } .spk-3 { color:#B45309; } .spk-4 { color:#BE123C; }
+[data-theme="modern"] .spk-0 { color:#2DD4BF; } [data-theme="modern"] .spk-1 { color:#93C5FD; } [data-theme="modern"] .spk-2 { color:#C4B5FD; } [data-theme="modern"] .spk-3 { color:#FCD34D; } [data-theme="modern"] .spk-4 { color:#FDA4AF; }
+.engine-note { font-size:11.5px; color:var(--muted); margin-top:8px; border-top:1px dashed var(--line); padding-top:6px; }
+.chat { display:flex; flex-direction:column; gap:10px; max-height:420px; overflow-y:auto; padding:4px; }
+.msg { padding:10px 12px; border-radius:var(--radius-sm); max-width:92%; white-space:pre-wrap; }
+.msg.user { align-self:flex-end; background:var(--accent); color:var(--accent-text); }
+.msg.ai { align-self:flex-start; background:var(--surface-2); }
+.msg.err { align-self:flex-start; background:var(--danger-soft); color:var(--danger); }
+.dropzone { border:2px dashed var(--line); border-radius:var(--radius); padding:28px; text-align:center; background:var(--surface-2); cursor:pointer; }
+.dropzone.over { border-color:var(--accent); background:var(--accent-soft); }
+.tabs { display:flex; gap:6px; flex-wrap:wrap; border-bottom:1px solid var(--line); margin-bottom:16px; }
+.tabs button { all:unset; cursor:pointer; padding:9px 14px; font-weight:600; font-size:13px; color:var(--muted); border-bottom:2px solid transparent; }
+.tabs button.active { color:var(--text); border-bottom-color:var(--accent); }
+.steps { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px; }
+.steps li { display:flex; gap:8px; align-items:center; font-size:13px; }
+.dot { width:10px; height:10px; border-radius:50%; background:var(--line); flex:0 0 10px; }
+.dot.ok { background:var(--accent); } .dot.run { background:var(--amber); } .dot.fail { background:var(--danger); }
+.progress { height:8px; background:var(--surface-2); border-radius:999px; overflow:hidden; }
+.progress > div { height:100%; background:var(--accent); width:0; transition:width .3s; }
+.check-row { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--line); }
+.check-row:last-child { border-bottom:0; }
+.check-row.done .txt { text-decoration:line-through; color:var(--muted); }
+.theme-card { border:2px solid var(--line); border-radius:var(--radius); padding:12px; cursor:pointer; background:var(--surface); }
+.theme-card.active { border-color:var(--accent); }
+.theme-prev { height:70px; border-radius:10px; display:flex; overflow:hidden; margin-bottom:8px; }
+.empty { text-align:center; color:var(--muted); padding:28px 10px; }
+.kv { display:grid; grid-template-columns:140px 1fr; gap:6px 12px; font-size:13px; }
+.kv dt { color:var(--muted); } .kv dd { margin:0; }
+pre.code { background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px; overflow-x:auto; font-size:12px; white-space:pre-wrap; word-break:break-word; margin:6px 0 0; }
+
+/* ---- login (persona picker) ---- */
+.login-wrap { max-width:980px; margin:0 auto; padding:36px 18px; }
+.login-head { text-align:center; margin-bottom:22px; }
+.login-head h1 { margin:10px 0 6px; font-size:26px; }
+.persona { display:flex; flex-direction:column; gap:10px; text-align:left; cursor:pointer; transition:transform .12s, border-color .12s; }
+.persona:hover { transform:translateY(-2px); border-color:var(--accent); }
+.persona[aria-disabled="true"] { opacity:.5; cursor:not-allowed; transform:none; }
+
+/* ---- modal & toast ---- */
+.modal-back { position:fixed; inset:0; background:rgba(2,6,23,.55); display:grid; place-items:center; z-index:100; padding:16px; }
+.modal { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); width:min(560px,100%); max-height:90vh; overflow-y:auto; padding:20px; box-shadow:0 20px 50px rgba(0,0,0,.35); }
+.modal h2 { margin:0 0 12px; font-size:17px; }
+.toasts { position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:8px; z-index:200; }
+.toast { background:var(--text); color:var(--bg); padding:10px 14px; border-radius:var(--radius-sm); font-size:13px; box-shadow:var(--shadow); max-width:360px; }
+.toast.err { background:var(--danger); color:#fff; }
+
+/* ---- responsive (phones: Apple & Android) ---- */
+@media (max-width: 980px) {
+  .g4 { grid-template-columns:repeat(2,minmax(0,1fr)); } .g3, .g-detail { grid-template-columns:1fr; }
+}
+@media (max-width: 760px) {
+  .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); transition:transform .2s; width:250px; }
+  [data-theme="modern"] .sidebar { width:250px; }
+  [data-theme="modern"] .nav button { flex-direction:row; font-size:13.5px; padding:10px 12px; justify-content:flex-start; }
+  body.nav-open .sidebar { transform:none; box-shadow:0 0 40px rgba(0,0,0,.4); }
+  .g2, .g4 { grid-template-columns:1fr; }
+  main#view { padding:14px; }
+  .topbar { padding:10px 12px; gap:8px; }
+  .topbar h1 { font-size:15px; }
+  .ws-select { max-width:150px; }
+  .user-chip .nm { display:none; }
+  .seg { flex-direction:column; gap:2px; } .seg .who { flex-basis:auto; display:flex; gap:8px; }
+  .bottom-nav { display:flex; position:fixed; left:0; right:0; bottom:0; background:var(--surface); border-top:1px solid var(--line); z-index:30; padding:6px 4px calc(6px + env(safe-area-inset-bottom)); }
+  .bottom-nav button { all:unset; flex:1; text-align:center; font-size:10.5px; color:var(--muted); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .bottom-nav button .ico { font-size:18px; }
+  .bottom-nav button.active { color:var(--accent); font-weight:700; }
+  .kv { grid-template-columns:1fr; }
+  .hide-sm { display:none; }
+}
+@media (min-width: 761px) { .show-sm { display:none !important; } }
+@media print { .sidebar, .topbar, .demo-banner, .bottom-nav, .footer { display:none; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<!-- ===================================================================== -->
+<!-- Core logic: pure functions, no DOM. Unit-tested by tests/demo.test.mjs -->
+<!-- ===================================================================== -->
+<script id="demo-core">
+(function (root) {
+'use strict';
+var PD = {};
+PD.STATE_VERSION = 3;
+PD.APP_VERSION = '2026.11.15.0449';
+
+/* ---------- text helpers ---------- */
+PD.esc = function (s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+};
+PD.xmlEsc = function (s) {
+  return PD.esc(String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, ''));
+};
+PD.fmtMs = function (ms) {
+  ms = Math.max(0, Math.round(Number(ms) || 0));
+  var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  var mm = String(m).padStart(2, '0'), ss = String(sec).padStart(2, '0');
+  return h > 0 ? h + ':' + mm + ':' + ss : mm + ':' + ss;
+};
+PD.fmtDuration = function (ms) {
+  var min = Math.round((Number(ms) || 0) / 60000);
+  if (min < 60) return min + ' min';
+  return Math.floor(min / 60) + ' h ' + (min % 60) + ' min';
+};
+PD.slug = function (title) {
+  var s = String(title || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+  return (s || 'transcript').slice(0, 80);
+};
+PD.hash = function (str) { // FNV-1a, used only for duplicate detection
+  var h = 0x811c9dc5;
+  for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return ('00000000' + h.toString(16)).slice(-8);
+};
+PD.initials = function (name) {
+  var p = String(name || '?').trim().split(/\s+/);
+  return ((p[0] || '?')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+};
+
+/* ---------- permissions ---------- */
+PD.ROLES = ['owner', 'admin', 'editor', 'viewer'];
+PD.ROLE_LABEL = { owner: 'Owner', admin: 'Admin', editor: 'Editor', viewer: 'Viewer' };
+PD.PERMS = {
+  'transcript.view':   ['owner', 'admin', 'editor', 'viewer'],
+  'transcript.create': ['owner', 'admin', 'editor'],
+  'transcript.delete': ['owner', 'admin', 'editor'],
+  'project.create':    ['owner', 'admin', 'editor'],
+  'ai.run':            ['owner', 'admin', 'editor'],
+  'ai.connect':        ['owner', 'admin'],
+  'export.create':     ['owner', 'admin', 'editor'],
+  'device.manage':     ['owner', 'admin', 'editor'],
+  'team.invite':       ['owner', 'admin'],
+  'team.manage':       ['owner', 'admin']
+};
+PD.can = function (role, perm) { return !!role && (PD.PERMS[perm] || []).indexOf(role) !== -1; };
+
+/* ---------- transcript parsing (all input is untrusted text) ---------- */
+PD.MAX_SEGMENTS = 3000;
+PD.parseClock = function (str) {
+  var m = String(str).trim().match(/^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})(?:[.,](\d{1,3}))?$/);
+  if (!m) return null;
+  var ms = ((Number(m[1] || 0) * 3600) + Number(m[2]) * 60 + Number(m[3])) * 1000;
+  if (m[4]) ms += Number((m[4] + '00').slice(0, 3));
+  return ms;
+};
+function estimateMs(text) { return Math.max(2000, Math.round(String(text).split(/\s+/).length / 2.6 * 1000)); }
+function finishTimes(segs) {
+  for (var i = 0; i < segs.length; i++) {
+    if (segs[i].end == null) segs[i].end = (i + 1 < segs.length && segs[i + 1].start > segs[i].start) ? segs[i + 1].start : segs[i].start + estimateMs(segs[i].text);
+  }
+  return segs;
+}
+PD.parseText = function (text) {
+  var lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
+  var segs = [], cursor = 0;
+  for (var i = 0; i < lines.length && segs.length < PD.MAX_SEGMENTS; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    var start = null, speaker = null, body = line, m;
+    m = line.match(/^\[?((?:\d{1,2}:)?\d{1,2}:\d{2}(?:[.,]\d{1,3})?)\]?\s*[-–]?\s*(.*)$/);
+    if (m) { start = PD.parseClock(m[1]); body = m[2]; }
+    m = body.match(/^([^:\[\]]{1,50}):\s+(.+)$/);
+    if (m && !/^https?$/i.test(m[1])) { speaker = m[1].trim(); body = m[2].trim(); }
+    if (!body) continue;
+    if (start == null) start = cursor;
+    segs.push({ speaker: speaker, start: start, end: null, text: body });
+    cursor = start + estimateMs(body);
+  }
+  return finishTimes(segs);
+};
+PD.parseSrt = function (text) { // SRT and WebVTT
+  var blocks = String(text || '').replace(/\r\n?/g, '\n').replace(/^WEBVTT[^\n]*\n/, '').split(/\n\s*\n/);
+  var segs = [];
+  blocks.forEach(function (b) {
+    if (segs.length >= PD.MAX_SEGMENTS) return;
+    var lines = b.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+    var ti = lines.findIndex(function (l) { return l.indexOf('-->') !== -1; });
+    if (ti === -1) return;
+    var parts = lines[ti].split('-->');
+    var start = PD.parseClock(parts[0].trim()), end = PD.parseClock(parts[1].trim().split(/\s+/)[0]);
+    var body = lines.slice(ti + 1).join(' ').replace(/<\/?[^>]+>/g, function (tag) { return /^<v\s/i.test(tag) ? tag : ''; });
+    var speaker = null, m = body.match(/^<v\s+([^>]{1,50})>\s*(.*)$/i);
+    if (m) { speaker = m[1].trim(); body = m[2]; }
+    body = body.replace(/<\/?[^>]+>/g, '').trim();
+    m = body.match(/^([^:\[\]]{1,50}):\s+(.+)$/);
+    if (!speaker && m) { speaker = m[1].trim(); body = m[2].trim(); }
+    if (start == null || !body) return;
+    segs.push({ speaker: speaker, start: start, end: end, text: body });
+  });
+  return finishTimes(segs);
+};
+PD.parseJson = function (text) {
+  var data = JSON.parse(text);
+  var title = null, list = null;
+  if (Array.isArray(data)) list = data;
+  else if (data && typeof data === 'object') {
+    title = typeof data.title === 'string' ? data.title : null;
+    list = data.segments || data.utterances || data.transcript_segments || null;
+    if (!list && typeof data.transcript === 'string') return { title: title, segments: PD.parseText(data.transcript) };
+    if (!list && typeof data.text === 'string') return { title: title, segments: PD.parseText(data.text) };
+  }
+  if (!Array.isArray(list)) throw new Error('JSON has no segments, utterances or transcript text.');
+  var segs = [];
+  list.slice(0, PD.MAX_SEGMENTS).forEach(function (s) {
+    if (!s || typeof s !== 'object') return;
+    var t = String(s.text || s.content || '').trim();
+    if (!t) return;
+    var start = s.start_ms != null ? Number(s.start_ms) : (s.start != null ? Number(s.start) * (Number(s.start) < 36000 ? 1000 : 1) : null);
+    var end = s.end_ms != null ? Number(s.end_ms) : (s.end != null ? Number(s.end) * (Number(s.end) < 36000 ? 1000 : 1) : null);
+    segs.push({ speaker: (s.speaker_label || s.speaker || s.name || null), start: isFinite(start) ? start : null, end: isFinite(end) ? end : null, text: t });
+  });
+  var cursor = 0;
+  segs.forEach(function (s) { if (s.start == null) s.start = cursor; cursor = s.start + estimateMs(s.text); });
+  return { title: title, segments: finishTimes(segs) };
+};
+PD.docxXmlToText = function (xml) {
+  var out = [];
+  String(xml).split(/<\/w:p>/).forEach(function (p) {
+    var re = /<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g, m, line = '';
+    while ((m = re.exec(p))) line += m[1];
+    line = line.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#39;/g, "'").replace(/&amp;/g, '&').trim();
+    if (line) out.push(line);
+  });
+  return out.join('\n');
+};
+PD.segmentsToText = function (segs) {
+  return segs.map(function (s) { return '[' + PD.fmtMs(s.start) + '] ' + (s.speaker ? s.speaker + ': ' : '') + s.text; }).join('\n');
+};
+
+/* ---------- demo engine: extractive only, never invents content ---------- */
+PD.ENGINE_LABEL = 'Demo engine — extracted from this transcript only, no AI model was used';
+PD.engine = {
+  summary: function (t) {
+    var subst = t.segments.filter(function (s) { return s.text.length > 25; });
+    var bullets = subst.slice(0, 5).map(function (s) { return (s.speaker ? s.speaker + ': ' : '') + s.text; });
+    var text = subst.length ? 'Opening points of "' + t.title + '": ' + subst.slice(0, 2).map(function (s) { return s.text; }).join(' ') : '';
+    return { text: text.slice(0, 700), bullets: bullets, engine: PD.ENGINE_LABEL };
+  },
+  actions: function (t) {
+    var re = /\b(I will|I'll|we will|we'll|will send|will share|need to|needs to|must|should|follow up|action item|please|can you|let's)\b/i;
+    var dueRe = /\b(by (?:end of day|EOD|tomorrow|today|next week|(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day|(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2})|next week|tomorrow|today|this week)\b/i;
+    var items = [];
+    t.segments.forEach(function (s, i) {
+      if (!re.test(s.text)) return;
+      var due = (s.text.match(dueRe) || [null])[0];
+      items.push({ id: 'ai' + i, task: s.text, owner: s.speaker || null, due: due, done: false, sourceStart: s.start });
+    });
+    return items.slice(0, 12);
+  },
+  ask: function (question, transcripts) {
+    var terms = String(question || '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(function (w) { return w.length > 3; });
+    terms = terms.filter(function (w, i) { return terms.indexOf(w) === i; });
+    var hits = [];
+    transcripts.forEach(function (t) {
+      t.segments.forEach(function (s) {
+        var hay = s.text.toLowerCase(), score = 0;
+        terms.forEach(function (w) { if (hay.indexOf(w) !== -1) score++; });
+        if (score > 0) hits.push({ score: score, transcriptId: t.id, transcriptTitle: t.title, speaker: s.speaker, start: s.start, excerpt: s.text });
+      });
+    });
+    hits.sort(function (a, b) { return b.score - a.score || a.start - b.start; });
+    var cites = hits.slice(0, 3);
+    return {
+      answer: cites.length
+        ? 'Most relevant passages: ' + cites.map(function (c) { return '"' + c.excerpt + '"'; }).join(' | ')
+        : 'No passage in the selected transcripts matched this question.',
+      citations: cites, sufficient: cites.length > 0, engine: PD.ENGINE_LABEL
+    };
+  }
+};
+
+/* ---------- ZIP (store), CRC32, reader ---------- */
+var CRC = (function () { var t = new Uint32Array(256); for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+PD.crc32 = function (u8) { var c = 0xFFFFFFFF; for (var i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+PD.utf8 = function (s) { return new TextEncoder().encode(String(s)); };
+PD.zip = function (files, date) {
+  date = date || new Date();
+  var dosTime = (date.getHours() << 11) | (date.getMinutes() << 5) | (date.getSeconds() >> 1);
+  var dosDate = ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
+  var locals = [], centrals = [], offset = 0;
+  files.forEach(function (f) {
+    var name = PD.utf8(f.name), data = typeof f.data === 'string' ? PD.utf8(f.data) : f.data, crc = PD.crc32(data);
+    var lh = new Uint8Array(30 + name.length), dv = new DataView(lh.buffer);
+    dv.setUint32(0, 0x04034b50, true); dv.setUint16(4, 20, true); dv.setUint16(6, 0x0800, true); dv.setUint16(8, 0, true);
+    dv.setUint16(10, dosTime, true); dv.setUint16(12, dosDate, true); dv.setUint32(14, crc, true);
+    dv.setUint32(18, data.length, true); dv.setUint32(22, data.length, true); dv.setUint16(26, name.length, true); dv.setUint16(28, 0, true);
+    lh.set(name, 30);
+    var ch = new Uint8Array(46 + name.length), cv = new DataView(ch.buffer);
+    cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x0800, true); cv.setUint16(10, 0, true);
+    cv.setUint16(12, dosTime, true); cv.setUint16(14, dosDate, true); cv.setUint32(16, crc, true); cv.setUint32(20, data.length, true);
+    cv.setUint32(24, data.length, true); cv.setUint16(28, name.length, true); cv.setUint32(42, offset, true);
+    ch.set(name, 46);
+    locals.push(lh, data); centrals.push(ch);
+    offset += lh.length + data.length;
+  });
+  var cdSize = centrals.reduce(function (a, c) { return a + c.length; }, 0);
+  var end = new Uint8Array(22), ev = new DataView(end.buffer);
+  ev.setUint32(0, 0x06054b50, true); ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cdSize, true); ev.setUint32(16, offset, true);
+  var parts = locals.concat(centrals, [end]), total = parts.reduce(function (a, p) { return a + p.length; }, 0);
+  var out = new Uint8Array(total), pos = 0;
+  parts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+  return out;
+};
+PD.readZip = async function (u8) {
+  var dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength), eocd = -1;
+  for (var i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) { if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; } }
+  if (eocd < 0) throw new Error('Not a valid ZIP/DOCX file.');
+  var count = dv.getUint16(eocd + 10, true), p = dv.getUint32(eocd + 16, true), out = {};
+  if (count > 2000) throw new Error('Archive has too many entries.');
+  for (var n = 0; n < count; n++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('Corrupt ZIP directory.');
+    var method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), usize = dv.getUint32(p + 24, true);
+    var nlen = dv.getUint16(p + 28, true), elen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true), lo = dv.getUint32(p + 42, true);
+    var name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nlen));
+    var dataStart = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true);
+    out[name] = { method: method, csize: csize, usize: usize, raw: u8.subarray(dataStart, dataStart + csize) };
+    p += 46 + nlen + elen + clen;
+  }
+  return out;
+};
+PD.zipEntryBytes = async function (entry, maxBytes) {
+  if (entry.usize > (maxBytes || 20e6)) throw new Error('Archive entry is too large.');
+  if (entry.method === 0) return entry.raw;
+  if (entry.method !== 8 || typeof DecompressionStream === 'undefined') throw new Error('Unsupported compression in this browser.');
+  var stream = new Blob([entry.raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+};
+
+/* ---------- documents ---------- */
+function para(text, o) {
+  o = o || {};
+  var rpr = (o.bold ? '<w:b/>' : '') + (o.color ? '<w:color w:val="' + o.color + '"/>' : '') + (o.size ? '<w:sz w:val="' + o.size + '"/>' : '');
+  var ppr = '<w:pPr><w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after == null ? 100 : o.after) + '"/>' + (o.indent ? '<w:ind w:left="360"/>' : '') + '</w:pPr>';
+  var runs = (o.runs || [{ text: text, rpr: rpr }]).map(function (r) {
+    return '<w:r>' + (r.rpr ? '<w:rPr>' + r.rpr + '</w:rPr>' : '') + '<w:t xml:space="preserve">' + PD.xmlEsc(r.text) + '</w:t></w:r>';
+  }).join('');
+  return '<w:p>' + ppr + runs + '</w:p>';
+}
+PD.buildDocx = function (t, opts, ai) {
+  opts = opts || {}; ai = ai || {};
+  var P = [];
+  P.push(para(t.title, { bold: true, size: 36, color: '101B33', after: 60 }));
+  P.push(para((opts.org || 'PLAUD Companion') + ' | Source: ' + t.source + ' | Recorded: ' + (t.recordedAt || '').slice(0, 10) + ' | Duration: ' + PD.fmtDuration(t.durationMs), { color: '64748B', size: 18, after: 200 }));
+  if (ai.summary) {
+    P.push(para('Summary', { bold: true, size: 26, color: '18A879', before: 120 }));
+    if (ai.summary.text) P.push(para(ai.summary.text));
+    ai.summary.bullets.forEach(function (b) { P.push(para('• ' + b, { indent: true, after: 60 })); });
+    P.push(para(ai.summary.engine, { color: '64748B', size: 16 }));
+  }
+  if (ai.actions) {
+    P.push(para('Action items', { bold: true, size: 26, color: '18A879', before: 120 }));
+    if (!ai.actions.items.length) P.push(para('No action items were identified in this transcript.', { color: '64748B' }));
+    ai.actions.items.forEach(function (a) {
+      P.push(para('', { indent: true, after: 60, runs: [{ text: (a.done ? '[x] ' : '[ ] ') + a.task, rpr: '' }, { text: '  — Owner: ' + (a.owner || 'Unassigned') + ', Due: ' + (a.due || 'Not specified'), rpr: '<w:color w:val="64748B"/>' }] }));
+    });
+    P.push(para(ai.actions.engine, { color: '64748B', size: 16 }));
+  }
+  P.push(para('Transcript', { bold: true, size: 26, color: '18A879', before: 120 }));
+  t.segments.forEach(function (s) {
+    P.push(para('', { runs: [{ text: '[' + PD.fmtMs(s.start) + '] ', rpr: '<w:color w:val="64748B"/>' }, { text: (s.speaker || 'Speaker') + ': ', rpr: '<w:b/>' }, { text: s.text, rpr: '' }] }));
+  });
+  var doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + P.join('') + '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>';
+  return PD.zip([
+    { name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>' },
+    { name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>' },
+    { name: 'word/document.xml', data: doc }
+  ]);
+};
+var ASCII_MAP = { '‘': "'", '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', '…': '...', '•': '-', ' ': ' ' };
+function pdfText(s) { return String(s).replace(/[‘’“”–—…• ]/g, function (c) { return ASCII_MAP[c]; }).replace(/[^\x20-\x7E]/g, '?').replace(/([\\()])/g, '\\$1'); }
+function wrap(text, width) {
+  var words = String(text).split(/\s+/), lines = [], cur = '';
+  words.forEach(function (w) {
+    while (w.length > width) { if (cur) { lines.push(cur); cur = ''; } lines.push(w.slice(0, width)); w = w.slice(width); }
+    if ((cur + ' ' + w).trim().length > width) { lines.push(cur); cur = w; } else cur = (cur + ' ' + w).trim();
+  });
+  if (cur) lines.push(cur);
+  return lines.length ? lines : [''];
+}
+PD.buildPdf = function (t, opts, ai) {
+  opts = opts || {}; ai = ai || {};
+  var L = [];
+  function add(text, size, bold, gap, width) { wrap(text, width || Math.floor(95 * 10 / size)).forEach(function (l, i) { L.push({ t: l, s: size, b: !!bold, g: i === 0 ? (gap || 0) : 0 }); }); }
+  add(t.title, 18, true);
+  add((opts.org || 'PLAUD Companion') + ' | Source: ' + t.source + ' | Duration: ' + PD.fmtDuration(t.durationMs), 9, false, 4);
+  if (ai.summary) {
+    add('Summary', 13, true, 14);
+    if (ai.summary.text) add(ai.summary.text, 10, false, 4);
+    ai.summary.bullets.forEach(function (b) { add('- ' + b, 10, false, 2); });
+    add(ai.summary.engine, 8, false, 4);
+  }
+  if (ai.actions) {
+    add('Action items', 13, true, 14);
+    if (!ai.actions.items.length) add('No action items were identified in this transcript.', 10, false, 4);
+    ai.actions.items.forEach(function (a) { add((a.done ? '[x] ' : '[ ] ') + a.task + ' (Owner: ' + (a.owner || 'Unassigned') + ', Due: ' + (a.due || 'Not specified') + ')', 10, false, 2); });
+    add(ai.actions.engine, 8, false, 4);
+  }
+  add('Transcript', 13, true, 14);
+  t.segments.forEach(function (s) { add('[' + PD.fmtMs(s.start) + '] ' + (s.speaker || 'Speaker') + ': ' + s.text, 10, false, 3); });
+
+  var pages = [], ops = [], y = 752;
+  L.forEach(function (l) {
+    var h = l.s * 1.35 + l.g;
+    if (y - h < 54) { pages.push(ops); ops = []; y = 752; }
+    y -= h;
+    ops.push('BT /' + (l.b ? 'F2' : 'F1') + ' ' + l.s + ' Tf 54 ' + y.toFixed(1) + ' Td (' + pdfText(l.t) + ') Tj ET');
+  });
+  if (ops.length || !pages.length) pages.push(ops);
+  var objs = [], kids = [];
+  objs[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+  objs[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+  objs[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+  pages.forEach(function (p, i) {
+    var pageNo = 5 + i * 2, contNo = pageNo + 1;
+    var footer = 'BT /F1 8 Tf 54 30 Td (' + pdfText(t.title.slice(0, 60) + ' - page ' + (i + 1) + ' of ' + pages.length) + ') Tj ET';
+    var stream = p.concat([footer]).join('\n');
+    objs[pageNo] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + contNo + ' 0 R >>';
+    objs[contNo] = '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream';
+    kids.push(pageNo + ' 0 R');
+  });
+  objs[2] = '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + pages.length + ' >>';
+  var pdf = '%PDF-1.4\n', offsets = [];
+  for (var n = 1; n < objs.length; n++) { offsets[n] = pdf.length; pdf += n + ' 0 obj\n' + objs[n] + '\nendobj\n'; }
+  var xref = pdf.length;
+  pdf += 'xref\n0 ' + objs.length + '\n0000000000 65535 f \n';
+  for (n = 1; n < objs.length; n++) pdf += String(offsets[n]).padStart(10, '0') + ' 00000 n \n';
+  pdf += 'trailer\n<< /Size ' + objs.length + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n';
+  return PD.utf8(pdf); // ASCII only, so byte offsets equal string offsets
+};
+PD.buildExport = function (transcripts, opts) {
+  opts = opts || {};
+  var files = [], used = {}, manifest = { generated_at: new Date().toISOString(), format: opts.format, template: opts.template, demo: true, items: [] };
+  transcripts.forEach(function (t) {
+    var base = PD.slug(t.title), name = base, k = 2;
+    while (used[name]) name = base + '-' + (k++);
+    used[name] = true;
+    var ai = {};
+    if (opts.summary) ai.summary = t.summary || PD.engine.summary(t);
+    if (opts.actions) ai.actions = { items: t.actions || PD.engine.actions(t), engine: (t.actionsEngine || PD.ENGINE_LABEL) };
+    var made = [];
+    if (opts.format !== 'pdf') { files.push({ name: name + '.docx', data: PD.buildDocx(t, opts, ai) }); made.push(name + '.docx'); }
+    if (opts.format !== 'docx') { files.push({ name: name + '.pdf', data: PD.buildPdf(t, opts, ai) }); made.push(name + '.pdf'); }
+    manifest.items.push({ transcript_id: t.id, title: t.title, files: made, segments: t.segments.length });
+  });
+  files.push({ name: 'manifest.json', data: JSON.stringify(manifest, null, 2) });
+  return { bytes: PD.zip(files), manifest: manifest };
+};
+
+/* ---------- seed data (fictional people and organisations) ---------- */
+function T(lines) {
+  return lines.map(function (l) { return { speaker: l[1], start: PD.parseClock(l[0]), end: null, text: l[2] }; });
+}
+PD.SAMPLE_RECORDINGS = [
+  { title: 'Site Visit Debrief — Riverside Warehouse', project: 'p_ops', segments: T([
+    ['00:00', 'Morgan Ellis', 'Quick debrief from the Riverside site visit before we lose the details.'],
+    ['00:09', 'Daniel Cho', 'The loading dock needs new safety rails. The quote came in at forty thousand.'],
+    ['00:21', 'Morgan Ellis', 'That is higher than budgeted. Daniel, please get a second quote by next week.'],
+    ['00:33', 'Daniel Cho', 'I will call two other contractors tomorrow and share the numbers.'],
+    ['00:47', 'Morgan Ellis', 'Also the lighting in aisle four is out again. We should log it with facilities today.']]) },
+  { title: 'Coaching Session — New Account Leads', project: 'p_client', segments: T([
+    ['00:00', 'Priya Raman', 'Thanks for joining. Today is about running better discovery calls.'],
+    ['00:12', 'Leo Martins', 'My calls keep running long and I never get to pricing.'],
+    ['00:24', 'Priya Raman', 'Set an agenda in the first two minutes and confirm the decision maker early.'],
+    ['00:39', 'Leo Martins', 'I will try the agenda template on my Thursday call with Harbor Logistics.'],
+    ['00:52', 'Priya Raman', 'Good. Send me your notes after the call and we can review them on Friday.']]) }
+];
+PD.seed = function () {
+  var now = Date.now(), day = 86400000;
+  var iso = function (d) { return new Date(now - d * day).toISOString(); };
+  var transcripts = [
+    { id: 't_lead', ws: 'w_exec', project: 'p_ops', title: 'Weekly Leadership Sync', source: 'PLAUD Note', recordedAt: iso(1), segments: T([
+      ['00:00', 'Morgan Ellis', "Good morning everyone. Let's start with the Q4 hiring plan and then the office lease."],
+      ['00:11', 'Daniel Cho', 'Hiring is on track. We approved two senior consultants, and the budget holds if we pause the third role until January.'],
+      ['00:29', 'Priya Raman', 'I will send the updated hiring timeline to the board by Friday.'],
+      ['00:38', 'Morgan Ellis', 'Good. On the lease, the landlord wants a decision before March 1.'],
+      ['00:49', 'Daniel Cho', 'We should negotiate a two-year term instead of five. I need to review the break clause first.'],
+      ['01:04', 'Morgan Ellis', 'Agreed. Daniel, please review the break clause and share a recommendation next week.'],
+      ['01:17', 'Priya Raman', 'One more item: the client satisfaction survey closes on Thursday. The response rate is 62 percent.'],
+      ['01:31', 'Morgan Ellis', "Let's push for 75 percent. Priya, can you follow up with the account leads?"],
+      ['01:40', 'Priya Raman', 'Yes, I will follow up with the account leads today.']]) },
+    { id: 't_harbor', ws: 'w_exec', project: 'p_client', title: 'Client Discovery — Harbor Logistics', source: 'SRT import', recordedAt: iso(3), segments: T([
+      ['00:00', 'Priya Raman', 'Thanks for making time, Alex. We would like to understand what slows your dispatch team down.'],
+      ['00:12', 'Alex Rivera', 'Mostly handoffs. Drivers report delays by phone and nobody writes them down.'],
+      ['00:26', 'Morgan Ellis', 'How many delay reports do you get in a typical week?'],
+      ['00:31', 'Alex Rivera', 'Around one hundred and twenty, and about a third of them are lost.'],
+      ['00:45', 'Morgan Ellis', 'That is the problem we can solve first. We will send a short proposal by next week.'],
+      ['00:58', 'Alex Rivera', 'Please include a pilot for the night shift. That is where most delays happen.'],
+      ['01:10', 'Priya Raman', 'Noted. I will schedule a follow-up with your night shift supervisor.']]) },
+    { id: 't_board', ws: 'w_exec', project: 'p_board', title: 'Board Prep: Q4 Investor Update', source: 'DOCX import', recordedAt: iso(6), segments: T([
+      ['00:00', 'Morgan Ellis', 'The board meets on the twelfth. I want the update to lead with retention, not revenue.'],
+      ['00:13', 'Daniel Cho', 'Retention is up to 91 percent. Revenue grew 18 percent, slightly under plan.'],
+      ['00:27', 'Morgan Ellis', 'Then we explain the gap honestly. The new office cost us one quarter of growth.'],
+      ['00:41', 'Daniel Cho', 'I will prepare a one-page bridge from plan to actual by Monday.'],
+      ['00:52', 'Priya Raman', 'I should draft the narrative section once Daniel shares the numbers.'],
+      ['01:03', 'Morgan Ellis', 'Good. Keep the deck under twelve slides.']]) },
+    { id: 't_roadmap', ws: 'w_exec', project: 'p_product', title: 'Product Roadmap Review', source: 'TXT import', recordedAt: iso(9), segments: T([
+      ['00:00', 'Nina Park', 'Three things are competing for next quarter: the mobile app, reporting, and the partner portal.'],
+      ['00:14', 'Morgan Ellis', 'Which one do clients ask for most often?'],
+      ['00:18', 'Nina Park', 'Reporting, by far. Eight of our top ten accounts asked for it this year.'],
+      ['00:31', 'Daniel Cho', 'Reporting is also the cheapest to build. The partner portal needs a security review first.'],
+      ['00:45', 'Morgan Ellis', "Then reporting goes first. Nina, let's have a scoped plan by the end of the month."],
+      ['00:57', 'Nina Park', 'I will bring a draft scope to next Tuesday\'s meeting.']]) },
+    { id: 't_vendor', ws: 'w_exec', project: 'p_ops', title: 'Vendor Security Review', source: 'PLAUD NotePin', recordedAt: iso(12), segments: T([
+      ['00:00', 'Daniel Cho', 'Our payroll vendor sent their new security questionnaire answers.'],
+      ['00:10', 'Priya Raman', 'Do they encrypt data at rest now? Last year they did not.'],
+      ['00:17', 'Daniel Cho', 'Yes, and they added two-factor authentication for all admin accounts.'],
+      ['00:28', 'Morgan Ellis', 'Good. We still need their incident response plan before we renew.'],
+      ['00:38', 'Daniel Cho', 'I will request the incident response plan this week.']]) },
+    { id: 't_sandbox', ws: 'w_dev', project: null, title: 'Release Checklist Walkthrough', source: 'Paste', recordedAt: iso(2), segments: T([
+      ['00:00', 'Demo Developer', 'Checklist for the next release: run tests, build the signed package, take a backup.'],
+      ['00:12', 'Demo Developer', 'I need to verify the rollback on the staging copy before publishing.']]) }
+  ];
+  transcripts.forEach(function (t) {
+    finishTimes(t.segments);
+    var last = t.segments[t.segments.length - 1];
+    t.durationMs = last ? last.end : 0;
+    t.status = 'ready'; t.createdAt = t.recordedAt; t.hash = PD.hash(PD.segmentsToText(t.segments));
+    t.createdBy = t.ws === 'w_dev' ? 'u_dev' : 'u_priya';
+  });
+  return {
+    v: PD.STATE_VERSION, theme: 'classic', session: null, seededAt: now,
+    users: [
+      { id: 'u_dev', name: 'Demo Developer', email: 'developer@example.com', title: 'Platform Developer', developer: true, status: 'active', joined: iso(400) },
+      { id: 'u_morgan', name: 'Morgan Ellis', email: 'morgan@northwind.example', title: 'Executive Director', developer: false, status: 'active', joined: iso(380) },
+      { id: 'u_priya', name: 'Priya Raman', email: 'priya@northwind.example', title: 'Chief of Staff', developer: false, status: 'active', joined: iso(300) },
+      { id: 'u_sam', name: 'Sam Ortiz', email: 'sam@northwind.example', title: 'Board Observer', developer: false, status: 'active', joined: iso(120) },
+      { id: 'u_jordan', name: 'Jordan Blake', email: 'jordan@northwind.example', title: 'Former Analyst', developer: false, status: 'suspended', joined: iso(250) }
+    ],
+    workspaces: [
+      { id: 'w_exec', name: 'Northwind — Executive Office', type: 'team', owner: 'u_morgan', created: iso(380) },
+      { id: 'w_dev', name: 'Developer Sandbox', type: 'personal', owner: 'u_dev', created: iso(400) }
+    ],
+    members: [
+      { ws: 'w_exec', user: 'u_morgan', role: 'owner', status: 'active' },
+      { ws: 'w_exec', user: 'u_priya', role: 'editor', status: 'active' },
+      { ws: 'w_exec', user: 'u_sam', role: 'viewer', status: 'active' },
+      { ws: 'w_exec', user: 'u_jordan', role: 'editor', status: 'active' },
+      { ws: 'w_dev', user: 'u_dev', role: 'owner', status: 'active' }
+    ],
+    invites: [],
+    projects: [
+      { id: 'p_ops', ws: 'w_exec', name: 'Operations', description: 'Leadership syncs, facilities and vendors.' },
+      { id: 'p_client', ws: 'w_exec', name: 'Client Discussions', description: 'Discovery calls and account reviews.' },
+      { id: 'p_board', ws: 'w_exec', name: 'Board & Investors', description: 'Board preparation and investor updates.' },
+      { id: 'p_product', ws: 'w_exec', name: 'Product', description: 'Roadmap and product decisions.' }
+    ],
+    transcripts: transcripts,
+    exports: [],
+    providers: {
+      w_exec: { active: 'openrouter', connected: { openrouter: { mode: 'managed', at: iso(30), by: 'u_dev' } } },
+      w_dev: { active: 'demo', connected: {} }
+    },
+    device: { paired: false, name: null, battery: null, firmware: null, nextSample: 0 },
+    system: { version: PD.APP_VERSION, previous: null, maintenance: false, history: [{ at: iso(2), action: 'update', from: '2026.11.13.2210', to: PD.APP_VERSION, by: 'u_dev', ok: true }] },
+    backups: [{ id: 'b1', at: iso(1), size: 4820113, encrypted: true, by: 'system (nightly)' }],
+    debug: { outage: false },
+    audit: [], errors: [], chat: {}
+  };
+};
+
+root.PD = PD;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+<!-- ===================================================================== -->
+<!-- User interface                                                         -->
+<!-- ===================================================================== -->
+<script id="demo-ui">
+(function () {
+'use strict';
+var PD = window.PD, esc = PD.esc;
+var KEY = 'plaud_companion_demo_v' + PD.STATE_VERSION;
+var IMPERSONATION_MIN = 30;
+var S, timer = null, ui = { devTab: 'overview', selected: {}, tFilter: { q: '', project: '' } };
+
+/* ---------- state ---------- */
+function load() {
+  try { var raw = localStorage.getItem(KEY); if (raw) { var s = JSON.parse(raw); if (s && s.v === PD.STATE_VERSION) return s; } } catch (e) { /* fall through to seed */ }
+  return PD.seed();
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); return true; }
+  catch (e) { toast('Browser storage is full. Delete some transcripts or reset the demo.', true); return false; }
+}
+function uid(p) { return p + '_' + Math.random().toString(36).slice(2, 10); }
+function user(id) { return S.users.find(function (u) { return u.id === id; }) || null; }
+function me() { return S.session ? user(S.session.userId) : null; }
+function realActor() { return S.session ? user(S.session.impersonatorId || S.session.userId) : null; }
+function impersonating() { return !!(S.session && S.session.impersonatorId); }
+function isDeveloperConsoleAllowed() { var u = me(); return !!(u && u.developer && !impersonating()); }
+function myMemberships() {
+  var u = me(); if (!u) return [];
+  return S.members.filter(function (m) { return m.user === u.id && m.status === 'active'; })
+    .map(function (m) { return { ws: S.workspaces.find(function (w) { return w.id === m.ws; }), role: m.role }; })
+    .filter(function (x) { return x.ws; });
+}
+function activeWs() {
+  var list = myMemberships(), cur = list.find(function (x) { return x.ws.id === S.session.ws; });
+  if (!cur && list.length) { cur = list[0]; S.session.ws = cur.ws.id; }
+  return cur || null;
+}
+function role() { var a = activeWs(); return a ? a.role : null; }
+function can(p) { return PD.can(role(), p); }
+function wsTranscripts(wsId) { return S.transcripts.filter(function (t) { return t.ws === (wsId || S.session.ws); }); }
+function wsProjects(wsId) { return S.projects.filter(function (p) { return p.ws === (wsId || S.session.ws); }); }
+function project(id) { return S.projects.find(function (p) { return p.id === id; }) || null; }
+function transcript(id) { return S.transcripts.find(function (t) { return t.id === id && t.ws === S.session.ws; }) || null; }
+function providerState() {
+  if (!S.providers[S.session.ws]) S.providers[S.session.ws] = { active: 'demo', connected: {} };
+  return S.providers[S.session.ws];
+}
+
+/* ---------- audit & debug ---------- */
+function audit(action, detail) {
+  var a = realActor();
+  S.audit.unshift({ id: uid('a'), at: Date.now(), actor: a ? a.id : null, as: impersonating() ? S.session.userId : null, ws: S.session ? S.session.ws : null, action: action, detail: detail || '' });
+  if (S.audit.length > 500) S.audit.length = 500;
+}
+function logError(source, message, ctx) {
+  var e = { id: 'req_' + Math.random().toString(16).slice(2, 10), at: Date.now(), source: source, message: String(message).slice(0, 500), view: location.hash || '#/', user: S && S.session ? S.session.userId : null, actingAs: S && impersonating() ? S.session.userId : null, ctx: ctx || null };
+  if (S) { S.errors.unshift(e); if (S.errors.length > 200) S.errors.length = 200; save(); }
+  return e;
+}
+window.addEventListener('error', function (ev) { logError('javascript', ev.message + ' (' + (ev.filename || 'inline') + ':' + (ev.lineno || '?') + ')'); });
+window.addEventListener('unhandledrejection', function (ev) { logError('promise', (ev.reason && ev.reason.message) || String(ev.reason)); });
+
+/* ---------- small UI helpers ---------- */
+function toast(msg, isErr) {
+  var el = document.createElement('div'); el.className = 'toast' + (isErr ? ' err' : ''); el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(function () { el.remove(); }, isErr ? 6000 : 3200);
+}
+function modal(html, onMount) {
+  closeModal();
+  var back = document.createElement('div'); back.className = 'modal-back'; back.id = 'modal';
+  back.innerHTML = '<div class="modal" role="dialog" aria-modal="true">' + html + '</div>';
+  back.addEventListener('click', function (e) { if (e.target === back) closeModal(); });
+  document.body.appendChild(back);
+  var first = back.querySelector('input, select, textarea, button'); if (first) first.focus();
+  if (onMount) onMount(back);
+}
+function closeModal() { var m = document.getElementById('modal'); if (m) m.remove(); }
+function ago(ts) {
+  var d = (Date.now() - new Date(ts).getTime()) / 1000;
+  if (d < 60) return 'just now'; if (d < 3600) return Math.floor(d / 60) + ' min ago';
+  if (d < 86400) return Math.floor(d / 3600) + ' h ago'; return Math.floor(d / 86400) + ' d ago';
+}
+function dt(ts) { return new Date(ts).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); }
+function download(bytes, name, type) {
+  var url = URL.createObjectURL(new Blob([bytes], { type: type || 'application/octet-stream' }));
+  var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+}
+function speakerIndex(t) { var map = {}, n = 0; t.segments.forEach(function (s) { var k = s.speaker || 'Speaker'; if (!(k in map)) map[k] = n++ % 5; }); return map; }
+function denied(what) { toast('Your role (' + (PD.ROLE_LABEL[role()] || 'none') + ') cannot ' + what + ' in this workspace.', true); }
+function srcTag(src) { return esc(String(src || 'TXT').replace(/ import$/, '').slice(0, 4).toUpperCase()); }
+
+/* ---------- navigation ---------- */
+var NAV = [
+  { id: 'dashboard', ico: '◧', label: 'Dashboard' },
+  { id: 'transcripts', ico: '☰', label: 'Transcripts' },
+  { id: 'import', ico: '⇪', label: 'Import' },
+  { id: 'projects', ico: '▤', label: 'Projects' },
+  { id: 'ai', ico: '✦', label: 'AI Studio' },
+  { id: 'exports', ico: '⬇', label: 'Exports' },
+  { id: 'device', ico: '◉', label: 'PLAUD Device' },
+  { id: 'team', ico: '☺', label: 'Team' },
+  { sep: true },
+  { id: 'dev', ico: '⚒', label: 'Developer', dev: true },
+  { id: 'settings', ico: '⚙', label: 'Settings' }
+];
+var TITLES = { dashboard: 'Dashboard', transcripts: 'Transcripts', t: 'Transcript', import: 'Import', projects: 'Projects', ai: 'AI Studio', exports: 'Exports', device: 'PLAUD Device', team: 'Team', dev: 'Developer Console', settings: 'Settings', profile: 'My Profile' };
+function parseRoute() { var h = (location.hash || '#/dashboard').replace(/^#\/?/, ''); var p = h.split('/'); return { view: p[0] || 'dashboard', arg: p[1] ? decodeURIComponent(p[1]) : null }; }
+function go(view, arg) { location.hash = '#/' + view + (arg ? '/' + encodeURIComponent(arg) : ''); }
+
+/* ---------- render ---------- */
+function applyTheme() { document.documentElement.setAttribute('data-theme', S.theme); document.querySelector('meta[name=theme-color]').setAttribute('content', S.theme === 'modern' ? '#0B1020' : '#101B33'); }
+function banner() {
+  return '<div class="demo-banner"><span><strong>DEMO</strong> · Sample data · Runs only in this browser · Nothing is sent to any server · AI answers come from a demo engine</span><button data-act="reset-demo">Reset demo</button></div>';
+}
+function render() {
+  applyTheme();
+  var root = document.getElementById('root');
+  if (!S.session || !me() || me().status !== 'active') { S.session = null; root.innerHTML = banner() + renderLogin(); return; }
+  var r = parseRoute();
+  if (r.view === 'dev' && !isDeveloperConsoleAllowed()) r.view = 'dashboard';
+  if (!activeWs() && r.view !== 'dev' && r.view !== 'profile' && r.view !== 'settings') r.view = isDeveloperConsoleAllowed() ? 'dev' : 'profile';
+  var u = me(), a = activeWs();
+  var nav = NAV.filter(function (n) { return !n.dev || isDeveloperConsoleAllowed(); }).map(function (n) {
+    if (n.sep) return '<div class="nav-sep"></div>';
+    var active = r.view === n.id || (r.view === 't' && n.id === 'transcripts');
+    return '<button data-go="' + n.id + '" class="' + (active ? 'active' : '') + '" aria-current="' + (active ? 'page' : 'false') + '"><span class="ico" aria-hidden="true">' + n.ico + '</span><span>' + n.label + '</span></button>';
+  }).join('');
+  var wsOptions = myMemberships().map(function (m) { return '<option value="' + esc(m.ws.id) + '"' + (a && m.ws.id === a.ws.id ? ' selected' : '') + '>' + esc(m.ws.name) + ' · ' + PD.ROLE_LABEL[m.role] + '</option>'; }).join('');
+  var impBar = '';
+  if (impersonating()) {
+    var dev = user(S.session.impersonatorId);
+    impBar = '<div class="imp-bar" role="alert">⚠ ' + esc(dev.name) + ' is working as <u>' + esc(u.name) + '</u> · full access · every action is audited · <span id="imp-left">' + impLeft() + '</span> left <button class="btn sm" data-act="end-imp">End session</button></div>';
+  }
+  var bottom = ['dashboard', 'transcripts', 'import', 'ai'].map(function (id) {
+    var n = NAV.find(function (x) { return x.id === id; });
+    return '<button data-go="' + id + '" class="' + (r.view === id ? 'active' : '') + '"><span class="ico">' + n.ico + '</span>' + n.label + '</button>';
+  }).join('') + '<button data-act="open-nav"><span class="ico">≡</span>More</button>';
+  root.innerHTML = banner() + impBar +
+    '<div class="app"><aside class="sidebar" aria-label="Main navigation"><div class="brand"><div class="brand-mark">P</div><span class="brand-text">PLAUD Companion</span></div><nav class="nav">' + nav + '</nav>' +
+    '<div class="nav-note">Signed-in role: <b>' + (a ? PD.ROLE_LABEL[a.role] : '—') + '</b>' + (u.developer ? ' · Developer' : '') + '</div></aside>' +
+    '<div class="main-col"><header class="topbar"><button class="btn sm ghost show-sm" data-act="open-nav" aria-label="Open menu">≡</button><h1>' + (TITLES[r.view] || '') + '</h1><div class="spacer"></div>' +
+    (wsOptions ? '<select class="ws-select" data-act="switch-ws" aria-label="Workspace">' + wsOptions + '</select>' : '') +
+    '<button class="btn sm ghost hide-sm" data-act="toggle-theme" title="Switch design">' + (S.theme === 'modern' ? '☀ Classic' : '☾ Modern') + '</button>' +
+    '<div class="user-chip" data-go="profile" title="My profile"><div class="avatar">' + esc(PD.initials(u.name)) + '</div><span class="nm small">' + esc(u.name) + '</span></div></header>' +
+    '<main id="view" tabindex="-1">' + renderView(r) + '</main>' +
+    '<footer class="footer"><div>PLAUD Companion · Interactive demo · v' + esc(S.system.version) + '</div><div style="margin-top:6px">Developed by <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer">Md. Iqbal Mahmud</a> · Technical Advisor: <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer">Dawn C Simmons</a> · Brought to you by <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer">AI Infos</a></div></footer></div></div>' +
+    '<nav class="bottom-nav" aria-label="Quick navigation">' + bottom + '</nav>';
+  document.body.classList.remove('nav-open');
+  afterRender(r);
+}
+function renderView(r) {
+  try {
+    switch (r.view) {
+      case 'dashboard': return vDashboard();
+      case 'transcripts': return vTranscripts();
+      case 't': return vTranscript(r.arg);
+      case 'import': return vImport();
+      case 'projects': return vProjects();
+      case 'ai': return vAi();
+      case 'exports': return vExports();
+      case 'device': return vDevice();
+      case 'team': return vTeam();
+      case 'dev': return vDev();
+      case 'settings': return vSettings();
+      case 'profile': return vProfile();
+      default: return vDashboard();
+    }
+  } catch (e) {
+    var err = logError('render:' + r.view, e.message, { stack: String(e.stack || '').slice(0, 600) });
+    return '<div class="card"><h2>Something went wrong</h2><p class="muted">This page could not be displayed. The error was recorded for the developer.</p><p class="small">Reference: <code>' + esc(err.id) + '</code></p><button class="btn" data-go="dashboard">Back to dashboard</button></div>';
+  }
+}
+
+/* ---------- login: choose a demo persona (no passwords) ---------- */
+function renderLogin() {
+  var personas = [
+    { id: 'u_morgan', blurb: 'Workspace owner. The executive whose meetings are recorded. Full access to everything in the workspace.' },
+    { id: 'u_priya', blurb: 'Editor. Imports recordings, runs AI summaries and builds export packages.' },
+    { id: 'u_sam', blurb: 'Viewer. Read-only: can read transcripts and ask questions, cannot change anything.' },
+    { id: 'u_dev', blurb: 'Developer (above super-admin). Manages users, updates and backups, sees document lists and debug info, can work as any user.' },
+    { id: 'u_jordan', blurb: 'Suspended by the developer. Shows how a suspended account is locked out.' }
+  ];
+  var cards = personas.map(function (p) {
+    var u = user(p.id); if (!u) return '';
+    var off = u.status !== 'active';
+    return '<div class="card persona" role="button" tabindex="0" data-act="login" data-id="' + u.id + '" aria-disabled="' + off + '">' +
+      '<div class="row"><div class="avatar lg">' + esc(PD.initials(u.name)) + '</div><div><div style="font-weight:700;font-size:15px">' + esc(u.name) + '</div><div class="muted small">' + esc(u.title) + '</div></div></div>' +
+      '<div class="row">' + (u.developer ? '<span class="tag blue">Developer</span>' : '') + (off ? '<span class="tag red">Suspended</span>' : '<span class="tag green">Active</span>') + '</div>' +
+      '<div class="small muted">' + esc(p.blurb) + '</div>' +
+      '<button class="btn ' + (off ? '' : 'primary') + '" ' + (off ? 'disabled' : '') + ' tabindex="-1">' + (off ? 'Account suspended' : 'Continue as ' + esc(u.name.split(' ')[0])) + '</button></div>';
+  }).join('');
+  return '<div class="login-wrap"><div class="login-head"><div class="brand-mark" style="margin:0 auto;width:48px;height:48px;font-size:22px">P</div>' +
+    '<h1>PLAUD Companion</h1><p class="muted">Turn PLAUD Note and NotePin recordings into searchable transcripts, AI summaries, action items and Word/PDF packages.</p>' +
+    '<p class="small muted">Pick a person to try the app as. No password needed in the demo.</p>' +
+    '<div class="row" style="justify-content:center"><button class="btn sm" data-act="set-theme" data-theme-id="classic">Classic design</button><button class="btn sm" data-act="set-theme" data-theme-id="modern">Modern design</button></div></div>' +
+    '<div class="grid g3">' + cards + '</div>' +
+    '<div class="card" style="margin-top:18px"><h3>What is real in this demo, and what is simulated</h3><div class="grid g2 small">' +
+    '<div><b>Works for real (in your browser):</b> importing TXT, SRT, VTT, JSON and DOCX files; search; projects; roles and permissions; action-item tracking; real Word (.docx), PDF and ZIP downloads; both designs; the developer audit and debug logs.</div>' +
+    '<div><b>Simulated:</b> sign-in, the PLAUD Bluetooth device, AI providers (answers come from an extractive demo engine, not an AI model), signed updates and server backups. In the full app these run on the server.</div></div></div>' +
+    '<footer class="footer" style="border:0;padding-bottom:20px">Developed by <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer">Md. Iqbal Mahmud</a> · Technical Advisor: <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer">Dawn C Simmons</a> · Brought to you by <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer">AI Infos</a></footer></div>';
+}
+
+/* ---------- views ---------- */
+function vDashboard() {
+  var ts = wsTranscripts(), a = activeWs();
+  var totalMs = ts.reduce(function (s, t) { return s + (t.durationMs || 0); }, 0);
+  var openActions = ts.reduce(function (s, t) { return s + (t.actions || []).filter(function (x) { return !x.done; }).length; }, 0);
+  var recent = ts.slice().sort(function (x, y) { return new Date(y.recordedAt) - new Date(x.recordedAt); }).slice(0, 5);
+  var d = S.device;
+  return '<div class="stack">' +
+    '<div class="card"><div class="row between"><div><h2 style="margin:0">' + esc(a.ws.name) + '</h2><div class="muted small">You are ' + PD.ROLE_LABEL[a.role] + ' in this workspace</div></div>' +
+    '<div class="row">' + (can('transcript.create') ? '<button class="btn primary" data-go="import">⇪ Import recording</button>' : '') + '<button class="btn" data-go="ai">✦ Ask AI</button></div></div></div>' +
+    '<div class="grid g4">' +
+      stat(ts.length, 'Transcripts') + stat(PD.fmtDuration(totalMs), 'Recorded time') + stat(wsProjects().length, 'Projects') + stat(openActions, 'Open action items') +
+    '</div><div class="grid g-detail"><div class="card"><div class="row between"><h2>Recent recordings</h2><button class="btn sm ghost" data-go="transcripts">View all</button></div>' +
+    (recent.length ? recent.map(tItem).join('') : '<div class="empty">No transcripts yet.' + (can('transcript.create') ? ' <a href="#/import">Import your first recording</a>.' : '') + '</div>') +
+    '</div><div class="stack"><div class="card"><h2>PLAUD device</h2>' +
+    (d.paired ? '<div class="row"><span class="tag green">● Connected</span><span class="small">' + esc(d.name) + '</span></div><div class="small muted" style="margin:8px 0">Battery ' + d.battery + '% · Firmware ' + esc(d.firmware) + '</div><button class="btn sm" data-go="device">Sync recordings</button>'
+      : '<p class="small muted">No device paired.</p><button class="btn sm" data-go="device">Pair PLAUD Note</button>') +
+    '</div><div class="card"><h2>AI provider</h2>' + providerSummary() + '</div></div></div></div>';
+}
+function stat(n, l) { return '<div class="card stat"><div class="num">' + esc(n) + '</div><div class="lbl">' + esc(l) + '</div></div>'; }
+function tItem(t) {
+  var p = project(t.project);
+  return '<div class="list-item clickable" data-go="t" data-arg="' + esc(t.id) + '"><div class="icon-box">' + srcTag(t.source) + '</div><div class="grow"><div class="title">' + esc(t.title) + '</div>' +
+    '<div class="tiny muted">' + (p ? esc(p.name) + ' · ' : '') + PD.fmtDuration(t.durationMs) + ' · ' + t.segments.length + ' segments · ' + ago(t.recordedAt) + '</div></div>' +
+    (t.status !== 'ready' ? '<span class="tag amber">' + esc(t.status) + '</span>' : (t.summary ? '<span class="tag green">Summarized</span>' : '')) + '</div>';
+}
+function providerSummary() {
+  var ps = providerState(), names = providerNames();
+  var label = ps.active === 'demo' ? 'Demo engine' : (names[ps.active] || ps.active);
+  return '<div class="row"><span class="tag ' + (S.debug.outage && ps.active !== 'demo' ? 'red' : 'green') + '">' + esc(label) + '</span>' + (ps.connected[ps.active] && ps.connected[ps.active].mode === 'managed' ? '<span class="tag blue">Managed by developer</span>' : '') + '</div>' +
+    '<p class="tiny muted" style="margin:8px 0 0">In this demo every provider is simulated; answers come from the extractive demo engine.</p>';
+}
+function vTranscripts() {
+  var f = ui.tFilter, q = f.q.toLowerCase();
+  var list = wsTranscripts().filter(function (t) {
+    if (f.project && t.project !== f.project) return false;
+    if (!q) return true;
+    return t.title.toLowerCase().indexOf(q) !== -1 || t.segments.some(function (s) { return s.text.toLowerCase().indexOf(q) !== -1 || String(s.speaker || '').toLowerCase().indexOf(q) !== -1; });
+  }).sort(function (x, y) { return new Date(y.recordedAt) - new Date(x.recordedAt); });
+  var opts = '<option value="">All projects</option>' + wsProjects().map(function (p) { return '<option value="' + esc(p.id) + '"' + (f.project === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('');
+  return '<div class="card"><div class="row" style="margin-bottom:12px"><input type="search" id="t-q" placeholder="Search titles, speakers and words…" value="' + esc(f.q) + '" style="flex:2;min-width:200px">' +
+    '<select id="t-proj" style="flex:1;min-width:150px">' + opts + '</select>' + (can('transcript.create') ? '<button class="btn primary" data-go="import">⇪ Import</button>' : '') + '</div>' +
+    '<div class="small muted" style="margin-bottom:6px">' + list.length + ' transcript' + (list.length === 1 ? '' : 's') + '</div>' +
+    (list.length ? list.map(tItem).join('') : '<div class="empty">No transcripts match.</div>') + '</div>';
+}
+function vTranscript(id) {
+  var t = transcript(id);
+  if (!t) return '<div class="card empty">Transcript not found in this workspace. <a href="#/transcripts">Back to transcripts</a></div>';
+  var p = project(t.project), sp = speakerIndex(t), speakers = Object.keys(sp);
+  var segs = t.segments.map(function (s) { return '<div class="seg"><div class="who"><div class="spk spk-' + sp[s.speaker || 'Speaker'] + '">' + esc(s.speaker || 'Speaker') + '</div><div class="time">' + PD.fmtMs(s.start) + '</div></div><p>' + esc(s.text) + '</p></div>'; }).join('');
+  var sum = t.summary ? '<p style="margin-top:0">' + esc(t.summary.text) + '</p><ul style="padding-left:18px;margin:0">' + t.summary.bullets.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul><div class="engine-note">' + esc(t.summary.engine) + ' · ' + esc(t.summary.provider || '') + ' · ' + ago(t.summary.at) + '</div>' : '<p class="small muted">No summary yet.</p>';
+  var acts = t.actions ? (t.actions.length ? t.actions.map(function (x) {
+    return '<label class="check-row' + (x.done ? ' done' : '') + '"><input type="checkbox" data-act="toggle-action" data-id="' + esc(x.id) + '"' + (x.done ? ' checked' : '') + (can('ai.run') ? '' : ' disabled') + '><span class="txt small">' + esc(x.task) + '<br><span class="tiny muted">Owner: ' + esc(x.owner || 'Unassigned') + ' · Due: ' + esc(x.due || 'Not specified') + '</span></span></label>';
+  }).join('') + '<div class="engine-note">' + esc(t.actionsEngine || PD.ENGINE_LABEL) + '</div>' : '<p class="small muted">No action items were found in this transcript.</p>') : '<p class="small muted">Not extracted yet.</p>';
+  var chat = (S.chat[t.id] || []).map(chatMsg).join('');
+  return '<div class="stack"><div class="card"><div class="row between"><div style="min-width:0"><button class="btn sm ghost" data-go="transcripts">← All transcripts</button><h2 style="margin:8px 0 4px">' + esc(t.title) + '</h2>' +
+    '<div class="row small muted">' + (p ? '<span class="tag">' + esc(p.name) + '</span>' : '') + '<span>' + esc(t.source) + '</span><span>· ' + dt(t.recordedAt) + '</span><span>· ' + PD.fmtDuration(t.durationMs) + '</span><span>· ' + speakers.length + ' speaker' + (speakers.length === 1 ? '' : 's') + '</span></div></div>' +
+    '<div class="row"><button class="btn primary" data-act="summarize" data-id="' + esc(t.id) + '"' + (can('ai.run') ? '' : ' disabled') + '>✦ Summarize</button><button class="btn" data-act="extract" data-id="' + esc(t.id) + '"' + (can('ai.run') ? '' : ' disabled') + '>☑ Action items</button>' +
+    '<button class="btn" data-act="export-one" data-id="' + esc(t.id) + '"' + (can('export.create') ? '' : ' disabled') + '>⬇ Word</button>' + (can('transcript.delete') ? '<button class="btn danger" data-act="delete-t" data-id="' + esc(t.id) + '">Delete</button>' : '') + '</div></div>' +
+    (can('ai.run') ? '' : '<div class="notice" style="margin-top:12px">Viewers can read and ask questions. Running AI and exporting need an Editor role or higher.</div>') + '</div>' +
+    '<div class="grid g-detail"><div class="card"><h2>Transcript</h2>' + segs + '</div><div class="stack">' +
+    '<div class="card"><h2>Summary</h2>' + sum + '</div><div class="card"><h2>Action items</h2>' + acts + '</div>' +
+    '<div class="card"><h2>Ask this transcript</h2><div class="chat" id="chat">' + (chat || '<div class="small muted">Ask about decisions, owners, dates…</div>') + '</div>' +
+    '<form class="row" data-form="ask-one" data-id="' + esc(t.id) + '" style="margin-top:10px"><input type="text" name="q" placeholder="e.g. What was decided about the lease?" required maxlength="300" style="flex:1"><button class="btn primary">Ask</button></form></div></div></div></div>';
+}
+function chatMsg(m) {
+  if (m.role === 'user') return '<div class="msg user">' + esc(m.text) + '</div>';
+  if (m.role === 'error') return '<div class="msg err">' + esc(m.text) + '</div>';
+  var cites = (m.citations || []).map(function (c) { return '• ' + (c.speaker || 'Speaker') + ' [' + PD.fmtMs(c.start) + '] in "' + c.transcriptTitle + '"'; }).join('\n');
+  return '<div class="msg ai">' + esc(m.text) + (cites ? '\n\nSources:\n' + esc(cites) : '') + (m.sufficient === false ? '\n\n(Not enough evidence in the selected transcripts.)' : '') + '<div class="engine-note">' + esc(m.engine || '') + '</div></div>';
+}
+function vImport() {
+  if (!can('transcript.create')) return '<div class="card"><h2>Import</h2><div class="notice">Your role (' + PD.ROLE_LABEL[role()] + ') can read transcripts but cannot import. Ask an owner or admin for Editor access.</div></div>';
+  var opts = '<option value="">No project</option>' + wsProjects().map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(p.name) + '</option>'; }).join('');
+  return '<div class="stack"><div class="card"><h2>Upload files</h2><p class="small muted">TXT, SRT, VTT, PLAUD JSON exports and Word (DOCX). Up to 2 MB per file in the demo. Files are read in your browser only.</p>' +
+    '<label class="fld" style="max-width:320px;margin-bottom:12px">Project<select id="imp-proj">' + opts + '</select></label>' +
+    '<div class="dropzone" id="drop" tabindex="0" role="button" aria-label="Choose files to import"><div style="font-size:26px">⇪</div><b>Drop files here or click to choose</b><div class="small muted">.txt · .srt · .vtt · .json · .docx</div></div>' +
+    '<input type="file" id="file" multiple accept=".txt,.srt,.vtt,.json,.docx" class="sr-only">' +
+    '<div id="imp-results" style="margin-top:12px"></div>' +
+    '<div class="notice" style="margin-top:12px">Audio (MP3, WAV, M4A) and PDF import run on the server in the full app: audio is transcribed with speaker labels through the PLAUD Transcription API.</div></div>' +
+    '<div class="card"><h2>Paste a transcript</h2><form class="stack" data-form="paste"><label class="fld">Title<input type="text" name="title" required maxlength="160" placeholder="e.g. Partner call — Apex Health"></label>' +
+    '<label class="fld">Transcript<textarea name="text" required placeholder="[00:00] Morgan: Let\'s start with the budget.\n[00:12] Daniel: We are 4 percent under plan."></textarea></label>' +
+    '<div class="row"><button class="btn primary">Save transcript</button><span class="tiny muted">Lines like "[mm:ss] Name: text" become speaker turns.</span></div></form></div></div>';
+}
+function vProjects() {
+  var ps = wsProjects(), ts = wsTranscripts();
+  return '<div class="stack">' + (can('project.create') ? '<div class="card"><h2>New project</h2><form class="row" data-form="project"><input type="text" name="name" placeholder="Project name" required maxlength="80" style="flex:1;min-width:180px"><input type="text" name="desc" placeholder="Description (optional)" maxlength="160" style="flex:2;min-width:200px"><button class="btn primary">Create</button></form></div>' : '') +
+    '<div class="grid g3">' + (ps.length ? ps.map(function (p) {
+      var n = ts.filter(function (t) { return t.project === p.id; }).length;
+      return '<div class="card clickable" data-act="open-project" data-id="' + esc(p.id) + '"><div class="row between"><h3 style="margin:0">' + esc(p.name) + '</h3><span class="tag">' + n + '</span></div><p class="small muted">' + esc(p.description || 'No description') + '</p></div>';
+    }).join('') : '<div class="card empty">No projects yet.</div>') + '</div></div>';
+}
+function providerNames() { return { demo: 'Demo engine', openrouter: 'OpenRouter', openai: 'OpenAI', anthropic: 'Anthropic Claude', gemini: 'Google Gemini' }; }
+function vAi() {
+  var ps = providerState(), names = providerNames(), dev = realActor() && realActor().developer;
+  var cards = [
+    { id: 'openrouter', how: 'Sign in with your OpenRouter account (one click). One login gives access to Claude, GPT, Gemini and open models. Recommended.', btn: 'Sign in with OpenRouter' },
+    { id: 'gemini', how: 'Sign in with Google once the app is verified by Google, or paste a Gemini API key.', btn: 'Paste API key' },
+    { id: 'openai', how: 'Paste an OpenAI API key. OpenAI does not offer sign-in for third-party apps.', btn: 'Paste API key' },
+    { id: 'anthropic', how: 'Paste an Anthropic API key. Anthropic does not allow Claude.ai login in third-party apps.', btn: 'Paste API key' }
+  ].map(function (c) {
+    var con = ps.connected[c.id];
+    return '<div class="card"><div class="row between"><h3 style="margin:0">' + names[c.id] + '</h3>' + (con ? '<span class="tag green">Connected</span>' : '<span class="tag">Not connected</span>') + '</div>' +
+      '<p class="small muted">' + esc(c.how) + '</p>' +
+      (con ? '<div class="tiny muted" style="margin-bottom:8px">' + (con.mode === 'managed' ? 'Managed by the developer (spending cap $25/month)' : con.mode === 'oauth' ? 'Signed in with OpenRouter' : 'API key ending ' + esc(con.last4)) + ' · ' + ago(con.at) + '</div>' : '') +
+      '<div class="row">' + (con ? (ps.active === c.id ? '<span class="tag blue">In use</span>' : '<button class="btn sm" data-act="use-provider" data-id="' + c.id + '"' + (can('ai.connect') ? '' : ' disabled') + '>Use this</button>') + '<button class="btn sm danger" data-act="disconnect" data-id="' + c.id + '"' + (can('ai.connect') ? '' : ' disabled') + '>Disconnect</button>'
+        : '<button class="btn sm primary" data-act="connect" data-id="' + c.id + '"' + (can('ai.connect') ? '' : ' disabled') + '>' + c.btn + '</button>' + (c.id === 'openrouter' && dev ? '<button class="btn sm" data-act="connect-managed">Managed key</button>' : '')) + '</div></div>';
+  }).join('');
+  var ts = wsTranscripts(), sel = ui.selected;
+  var checks = ts.map(function (t) { return '<label class="check-row"><input type="checkbox" data-act="sel-t" data-id="' + esc(t.id) + '"' + (sel[t.id] ? ' checked' : '') + '><span class="small">' + esc(t.title) + '</span></label>'; }).join('');
+  var chat = (S.chat['ws:' + S.session.ws] || []).map(chatMsg).join('');
+  return '<div class="stack"><div class="card"><div class="row between"><div><h2 style="margin:0">AI providers</h2><div class="small muted">Only owners and admins can connect providers. Keys are kept on the server, encrypted, and never shown again.</div></div>' +
+    '<label class="fld" style="min-width:200px">Provider in use<select data-act="active-provider"' + (can('ai.connect') ? '' : ' disabled') + '>' + ['demo'].concat(Object.keys(ps.connected)).map(function (id) { return '<option value="' + id + '"' + (ps.active === id ? ' selected' : '') + '>' + names[id] + '</option>'; }).join('') + '</select></label></div>' +
+    (S.debug.outage ? '<div class="notice red" style="margin-top:12px">A provider outage is being simulated by the developer. Requests to external providers fail with a clear error; nothing is silently replaced.</div>' : '') +
+    '<div class="notice" style="margin-top:12px">Demo: no request leaves your browser. Whatever provider is selected, answers come from the extractive demo engine and are labelled as such.</div></div>' +
+    '<div class="grid g2">' + cards + '</div>' +
+    '<div class="grid g-detail"><div class="card"><h2>Ask across transcripts</h2><div class="chat" id="chat">' + (chat || '<div class="small muted">Select transcripts on the right, then ask a question. Answers cite the speaker and time.</div>') + '</div>' +
+    '<form class="row" data-form="ask-many" style="margin-top:10px"><input type="text" name="q" placeholder="e.g. What did we decide about reporting?" required maxlength="300" style="flex:1"><button class="btn primary">Ask</button></form></div>' +
+    '<div class="card"><div class="row between"><h2 style="margin:0">Transcripts</h2><button class="btn sm ghost" data-act="sel-all">Select all</button></div>' + (checks || '<div class="empty">No transcripts.</div>') + '</div></div></div>';
+}
+function vExports() {
+  var ts = wsTranscripts();
+  var history = S.exports.filter(function (e) { return e.ws === S.session.ws; });
+  var form = can('export.create') ? '<div class="card"><h2>New export package</h2><form class="stack" data-form="export"><div class="grid g3">' +
+    '<label class="fld">Format<select name="format"><option value="both">Word + PDF</option><option value="docx">Word (.docx)</option><option value="pdf">PDF</option></select></label>' +
+    '<label class="fld">Template<select name="template"><option value="clean_transcript">Clean transcript</option><option value="meeting_minutes">Meeting minutes</option><option value="executive_summary">Executive summary</option></select></label>' +
+    '<label class="fld">Organisation name<input type="text" name="org" maxlength="80" value="' + esc(activeWs().ws.name.split(' — ')[0]) + '"></label></div>' +
+    '<div class="row"><label class="row small"><input type="checkbox" name="summary" checked> Include summary</label><label class="row small"><input type="checkbox" name="actions" checked> Include action items</label></div>' +
+    '<div>' + ts.map(function (t) { return '<label class="check-row"><input type="checkbox" name="t" value="' + esc(t.id) + '" checked><span class="small">' + esc(t.title) + ' <span class="muted tiny">· ' + PD.fmtDuration(t.durationMs) + '</span></span></label>'; }).join('') + '</div>' +
+    '<div class="row"><button class="btn primary">⬇ Build and download ZIP</button><span class="tiny muted">Real files, built in your browser. Same-title transcripts get unique file names; manifest.json lists every file.</span></div></form></div>'
+    : '<div class="card"><div class="notice">Your role (' + PD.ROLE_LABEL[role()] + ') cannot create exports.</div></div>';
+  return '<div class="stack">' + form + '<div class="card"><h2>Export history</h2>' + (history.length ? '<div class="table-wrap"><table class="tbl"><thead><tr><th>Package</th><th>Items</th><th>Format</th><th>Created</th><th>By</th></tr></thead><tbody>' +
+    history.map(function (e) { var by = user(e.by); return '<tr><td>' + esc(e.name) + '</td><td>' + e.count + '</td><td>' + esc(e.format) + '</td><td>' + dt(e.at) + '</td><td>' + esc(by ? by.name : '—') + (e.as ? ' <span class="tag amber">as ' + esc((user(e.as) || {}).name) + '</span>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="empty">No exports yet.</div>') + '</div></div>';
+}
+function vDevice() {
+  var d = S.device;
+  return '<div class="stack"><div class="card"><div class="row between"><h2 style="margin:0">PLAUD Note / NotePin</h2>' + (d.paired ? '<span class="tag green">● Connected</span>' : '<span class="tag">Not paired</span>') + '</div>' +
+    '<div class="notice amber" style="margin:12px 0">Simulated device. The full mobile app uses the official PLAUD Embedded SDK for Bluetooth pairing, file sync and Wi-Fi fast transfer.</div>' +
+    (d.paired ? '<dl class="kv"><dt>Device</dt><dd>' + esc(d.name) + '</dd><dt>Battery</dt><dd>' + d.battery + '%</dd><dt>Firmware</dt><dd>' + esc(d.firmware) + '</dd><dt>Recordings on device</dt><dd>' + Math.max(0, PD.SAMPLE_RECORDINGS.length - d.nextSample) + ' not yet synced</dd></dl>' +
+      '<div class="progress" style="margin:14px 0"><div id="sync-bar"></div></div><div class="row"><button class="btn primary" data-act="sync"' + (can('device.manage') ? '' : ' disabled') + '>⟳ Sync next recording</button><button class="btn" data-act="unpair"' + (can('device.manage') ? '' : ' disabled') + '>Unpair</button></div>'
+      : '<p class="small muted">Turn on your PLAUD device, keep it close, then pair.</p><div class="progress" style="margin:14px 0"><div id="pair-bar"></div></div><button class="btn primary" data-act="pair"' + (can('device.manage') ? '' : ' disabled') + '>Pair device</button>') + '</div></div>';
+}
+function vTeam() {
+  var a = activeWs(), mem = S.members.filter(function (m) { return m.ws === a.ws.id; });
+  var manage = can('team.manage');
+  var rows = mem.map(function (m) {
+    var u = user(m.user) || { name: '?', email: '' }, self = m.user === me().id, owner = m.role === 'owner';
+    var roleCell = manage && !owner && !self ? '<select data-act="set-role" data-user="' + esc(m.user) + '">' + ['admin', 'editor', 'viewer'].map(function (r) { return '<option value="' + r + '"' + (m.role === r ? ' selected' : '') + '>' + PD.ROLE_LABEL[r] + '</option>'; }).join('') + '</select>' : PD.ROLE_LABEL[m.role];
+    return '<tr><td><div class="row"><div class="avatar">' + esc(PD.initials(u.name)) + '</div><div><div style="font-weight:600">' + esc(u.name) + (self ? ' <span class="tag">you</span>' : '') + '</div><div class="tiny muted">' + esc(u.email) + '</div></div></div></td><td>' + roleCell + '</td><td>' + (u.status === 'suspended' ? '<span class="tag red">Suspended</span>' : '<span class="tag green">Active</span>') + '</td><td>' + (manage && !owner && !self ? '<button class="btn sm danger" data-act="remove-member" data-user="' + esc(m.user) + '">Remove</button>' : '') + '</td></tr>';
+  }).join('');
+  var inv = S.invites.filter(function (i) { return i.ws === a.ws.id; });
+  return '<div class="stack"><div class="card"><h2>Members of ' + esc(a.ws.name) + '</h2><div class="table-wrap"><table class="tbl"><thead><tr><th>Person</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
+    (can('team.invite') ? '<div class="card"><h2>Invite someone</h2><form class="row" data-form="invite"><input type="email" name="email" placeholder="name@company.com" required maxlength="120" style="flex:2;min-width:200px"><select name="role" style="flex:1;min-width:120px"><option value="editor">Editor</option><option value="viewer">Viewer</option><option value="admin">Admin</option></select><button class="btn primary">Send invite</button></form>' +
+      (inv.length ? '<div style="margin-top:12px">' + inv.map(function (i) { return '<div class="list-item"><div class="grow"><div class="title">' + esc(i.email) + '</div><div class="tiny muted">' + PD.ROLE_LABEL[i.role] + ' · invited ' + ago(i.at) + ' · expires in 7 days</div></div><span class="tag amber">Pending</span></div>'; }).join('') + '</div>' : '') +
+      '<p class="tiny muted">Demo: no email is sent. In the full app the invite email contains a single-use link that expires after 7 days.</p></div>' : '') +
+    '<div class="card"><h2>What each role can do</h2><div class="table-wrap"><table class="tbl"><thead><tr><th>Action</th><th>Owner</th><th>Admin</th><th>Editor</th><th>Viewer</th></tr></thead><tbody>' +
+    [['Read transcripts & ask questions', 'transcript.view'], ['Import & delete transcripts', 'transcript.create'], ['Run AI summaries', 'ai.run'], ['Build exports', 'export.create'], ['Connect AI providers', 'ai.connect'], ['Invite & manage members', 'team.manage']].map(function (r) {
+      return '<tr><td>' + r[0] + '</td>' + PD.ROLES.map(function (ro) { return '<td>' + (PD.can(ro, r[1]) ? '✓' : '—') + '</td>'; }).join('') + '</tr>';
+    }).join('') + '</tbody></table></div></div></div>';
+}
+function vSettings() {
+  var themes = [
+    { id: 'classic', name: 'Classic', desc: 'Light, navy and emerald, full sidebar.', prev: '<div style="width:28%;background:#101B33"></div><div style="flex:1;background:#F6F8FB;padding:8px"><div style="height:12px;width:60%;background:#18A879;border-radius:4px"></div></div>' },
+    { id: 'modern', name: 'Modern', desc: 'Dark, teal and indigo, compact icon rail.', prev: '<div style="width:14%;background:#0E1528"></div><div style="flex:1;background:#0B1020;padding:8px"><div style="height:12px;width:60%;background:linear-gradient(90deg,#2DD4BF,#818CF8);border-radius:6px"></div></div>' }
+  ].map(function (t) { return '<div class="theme-card' + (S.theme === t.id ? ' active' : '') + '" role="button" tabindex="0" data-act="set-theme" data-theme-id="' + t.id + '"><div class="theme-prev">' + t.prev + '</div><b>' + t.name + '</b><div class="small muted">' + t.desc + '</div></div>'; }).join('');
+  return '<div class="stack"><div class="card"><h2>Design</h2><p class="small muted">Both designs ship with the app. Each person can pick their own.</p><div class="grid g2">' + themes + '</div></div>' +
+    '<div class="card"><h2>Security in the full app</h2><ul class="small" style="margin:0;padding-left:18px"><li>Transcripts, AI output and files are encrypted on the server with a separate key for each workspace.</li><li>Backups are AES-256 encrypted; a recovery sheet is printed at installation.</li><li>Updates are signed (Ed25519) and verified before they are applied, with automatic rollback.</li><li>AI provider keys are encrypted and never shown again after saving.</li><li>Developer access to a user\'s workspace is time-limited and recorded in the audit log.</li></ul></div>' +
+    '<div class="card"><h2>Demo data</h2><p class="small muted">All data in this demo lives in this browser only.</p><div class="row"><button class="btn danger" data-act="reset-demo">Reset demo</button><button class="btn" data-act="logout">Switch person</button></div></div></div>';
+}
+function vProfile() {
+  var u = me(), ms = myMemberships();
+  var mine = S.transcripts.filter(function (t) { return t.createdBy === u.id; }).length;
+  return '<div class="grid g2"><div class="card"><div class="row"><div class="avatar lg">' + esc(PD.initials(u.name)) + '</div><div><h2 style="margin:0">' + esc(u.name) + '</h2><div class="muted small">' + esc(u.title) + ' · ' + esc(u.email) + '</div></div></div>' +
+    '<form class="stack" data-form="profile" style="margin-top:16px"><label class="fld">Display name<input type="text" name="name" value="' + esc(u.name) + '" required maxlength="80"></label><label class="fld">Job title<input type="text" name="title" value="' + esc(u.title) + '" maxlength="80"></label><div class="row"><button class="btn primary">Save profile</button><button class="btn" type="button" data-act="logout">Switch person</button></div></form>' +
+    '<div class="notice" style="margin-top:12px">Password change and password reset by email are part of the full app. The demo has no passwords.</div></div>' +
+    '<div class="card"><h2>My workspaces</h2>' + (ms.length ? ms.map(function (m) { return '<div class="list-item"><div class="grow"><div class="title">' + esc(m.ws.name) + '</div><div class="tiny muted">' + (m.ws.type === 'team' ? 'Team' : 'Personal') + ' workspace</div></div><span class="tag">' + PD.ROLE_LABEL[m.role] + '</span></div>'; }).join('') : '<div class="empty">No workspaces.</div>') +
+    '<dl class="kv" style="margin-top:14px"><dt>Member since</dt><dd>' + new Date(u.joined).toLocaleDateString() + '</dd><dt>Transcripts I added</dt><dd>' + mine + '</dd><dt>Account type</dt><dd>' + (u.developer ? 'Developer' : 'Standard') + '</dd></dl></div></div>';
+}
+
+/* ---------- developer console ---------- */
+function vDev() {
+  var tabs = [['overview', 'Overview'], ['users', 'Users'], ['workspaces', 'Workspaces'], ['debug', 'Debug log'], ['updates', 'Updates'], ['backups', 'Backups'], ['audit', 'Audit log']];
+  var body = { overview: devOverview, users: devUsers, workspaces: devWorkspaces, debug: devDebug, updates: devUpdates, backups: devBackups, audit: devAudit }[ui.devTab] || devOverview;
+  return '<div class="tabs" role="tablist">' + tabs.map(function (t) { return '<button role="tab" data-act="dev-tab" data-id="' + t[0] + '" class="' + (ui.devTab === t[0] ? 'active' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>' + body();
+}
+function devOverview() {
+  var active = S.users.filter(function (u) { return u.status === 'active'; }).length;
+  return '<div class="stack"><div class="grid g4">' + stat(S.users.length, 'Users (' + active + ' active)') + stat(S.workspaces.length, 'Workspaces') + stat(S.transcripts.length, 'Documents (all workspaces)') + stat(S.errors.length, 'Errors logged') + '</div>' +
+    '<div class="card"><h2>System</h2><dl class="kv"><dt>Version</dt><dd>' + esc(S.system.version) + '</dd><dt>Last backup</dt><dd>' + (S.backups[0] ? ago(S.backups[0].at) + ' (encrypted)' : 'none') + '</dd><dt>Maintenance</dt><dd>' + (S.system.maintenance ? 'ON' : 'off') + '</dd><dt>AI outage simulation</dt><dd>' + (S.debug.outage ? '<span class="tag red">ON</span>' : 'off') + '</dd></dl></div>' +
+    '<div class="notice">The developer console shows lists, counts and technical details only. To open someone\'s documents, use <b>Work as user</b> on the Users tab: it is time-limited (' + IMPERSONATION_MIN + ' minutes) and every action is recorded in the audit log.</div></div>';
+}
+function devUsers() {
+  var rows = S.users.map(function (u) {
+    var ws = S.members.filter(function (m) { return m.user === u.id; }).length, self = u.id === me().id;
+    return '<tr><td><div class="row"><div class="avatar">' + esc(PD.initials(u.name)) + '</div><div><div style="font-weight:600">' + esc(u.name) + (self ? ' <span class="tag">you</span>' : '') + '</div><div class="tiny muted">' + esc(u.email) + '</div></div></div></td>' +
+      '<td>' + (u.developer ? '<span class="tag blue">Developer</span>' : 'User') + '</td><td>' + ws + '</td><td>' + (u.status === 'active' ? '<span class="tag green">Active</span>' : '<span class="tag red">Suspended</span>') + '</td>' +
+      '<td><div class="row">' + (!self && !u.developer && u.status === 'active' ? '<button class="btn sm primary" data-act="impersonate" data-id="' + u.id + '">Work as user</button>' : '') +
+      (!self ? '<button class="btn sm ' + (u.status === 'active' ? 'danger' : '') + '" data-act="toggle-suspend" data-id="' + u.id + '">' + (u.status === 'active' ? 'Suspend' : 'Reactivate') + '</button>' : '') +
+      (!self ? '<button class="btn sm" data-act="force-logout" data-id="' + u.id + '">Sign out everywhere</button><button class="btn sm" data-act="send-reset" data-id="' + u.id + '">Password reset</button>' : '') + '</div></td></tr>';
+  }).join('');
+  return '<div class="card"><div class="row between"><h2 style="margin:0">All users</h2><button class="btn sm" data-act="add-user">+ Add user</button></div><div class="table-wrap" style="margin-top:10px"><table class="tbl"><thead><tr><th>User</th><th>Type</th><th>Workspaces</th><th>Status</th><th>Actions</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<p class="tiny muted">You cannot suspend or impersonate yourself or another developer. Suspension takes effect immediately on web and mobile.</p></div>';
+}
+function devWorkspaces() {
+  return '<div class="stack"><div class="notice">Document content is hidden here. You see titles, sizes and dates only.</div>' + S.workspaces.map(function (w) {
+    var ts = S.transcripts.filter(function (t) { return t.ws === w.id; }), owner = user(w.owner);
+    var ms = S.members.filter(function (m) { return m.ws === w.id; }).length;
+    var total = ts.reduce(function (s, t) { return s + (t.durationMs || 0); }, 0);
+    var prov = S.providers[w.id] || { active: 'demo', connected: {} };
+    return '<div class="card"><div class="row between"><div><h3 style="margin:0">' + esc(w.name) + '</h3><div class="tiny muted">Owner: ' + esc(owner ? owner.name : '—') + ' · ' + ms + ' members · ' + ts.length + ' documents · ' + PD.fmtDuration(total) + ' · AI: ' + esc(providerNames()[prov.active] || prov.active) + '</div></div>' +
+      '<button class="btn sm" data-act="managed-for" data-id="' + esc(w.id) + '">' + (prov.connected.openrouter && prov.connected.openrouter.mode === 'managed' ? 'Managed AI key ✓' : 'Set up managed AI key') + '</button></div>' +
+      '<div class="table-wrap" style="margin-top:8px"><table class="tbl"><thead><tr><th>Document</th><th>Source</th><th>Recorded</th><th>Segments</th><th>Status</th></tr></thead><tbody>' +
+      (ts.length ? ts.map(function (t) { return '<tr><td>' + esc(t.title) + '</td><td>' + esc(t.source) + '</td><td>' + new Date(t.recordedAt).toLocaleDateString() + '</td><td>' + t.segments.length + '</td><td>' + esc(t.status) + '</td></tr>'; }).join('') : '<tr><td colspan="5" class="muted">No documents.</td></tr>') +
+      '</tbody></table></div></div>';
+  }).join('') + '</div>';
+}
+function devDebug() {
+  var rows = S.errors.map(function (e) {
+    var u = user(e.user);
+    return '<details class="card" style="padding:12px"><summary class="row between" style="cursor:pointer"><span><span class="tag red">' + esc(e.source) + '</span> <b class="small">' + esc(e.message.slice(0, 120)) + '</b></span><span class="tiny muted">' + ago(e.at) + '</span></summary>' +
+      '<dl class="kv" style="margin-top:10px"><dt>Reference</dt><dd><code>' + esc(e.id) + '</code></dd><dt>When</dt><dd>' + dt(e.at) + '</dd><dt>Page</dt><dd>' + esc(e.view) + '</dd><dt>User</dt><dd>' + esc(u ? u.name : '—') + (e.actingAs ? ' (developer acting as this user)' : '') + '</dd></dl>' +
+      (e.ctx ? '<pre class="code">' + esc(JSON.stringify(e.ctx, null, 2)) + '</pre>' : '') + '</details>';
+  }).join('');
+  return '<div class="stack"><div class="card"><div class="row between"><div><h2 style="margin:0">Debug log</h2><div class="small muted">Errors from any page, with the reference shown to the user. Transcript text is never logged.</div></div><div class="row">' +
+    '<button class="btn sm ' + (S.debug.outage ? 'danger' : '') + '" data-act="toggle-outage">' + (S.debug.outage ? 'Stop AI outage simulation' : 'Simulate AI provider outage') + '</button><button class="btn sm" data-act="clear-errors">Clear log</button></div></div></div>' +
+    (rows || '<div class="card empty">No errors recorded. Try "Simulate AI provider outage", then run a summary.</div>') + '</div>';
+}
+function devUpdates() {
+  var h = S.system.history.map(function (x) { var u = user(x.by); return '<tr><td>' + dt(x.at) + '</td><td>' + esc(x.action) + '</td><td>' + esc(x.from) + ' → ' + esc(x.to) + '</td><td>' + (x.ok ? '<span class="tag green">OK</span>' : '<span class="tag red">Rolled back</span>') + '</td><td>' + esc(u ? u.name : '—') + '</td></tr>'; }).join('');
+  return '<div class="stack"><div class="card"><h2>System updates</h2><div class="notice amber" style="margin-bottom:12px">Simulated in the demo. In the full app you upload a release ZIP signed with your private key; the server verifies the signature before anything changes.</div>' +
+    '<dl class="kv"><dt>Installed version</dt><dd><b>' + esc(S.system.version) + '</b></dd><dt>Previous version kept</dt><dd>' + esc(S.system.previous || 'none') + '</dd></dl>' +
+    '<ul class="steps" id="upd-steps" style="margin:14px 0"></ul><div class="row"><button class="btn primary" data-act="apply-update">Apply signed update package</button><button class="btn" data-act="rollback"' + (S.system.previous ? '' : ' disabled') + '>Roll back</button></div></div>' +
+    '<div class="card"><h2>History</h2><div class="table-wrap"><table class="tbl"><thead><tr><th>When</th><th>Action</th><th>Version</th><th>Result</th><th>By</th></tr></thead><tbody>' + h + '</tbody></table></div></div></div>';
+}
+function devBackups() {
+  return '<div class="card"><div class="row between"><div><h2 style="margin:0">Backups</h2><div class="small muted">Database and files, AES-256 encrypted. The recovery sheet holds the key.</div></div><button class="btn primary" data-act="backup">Create backup now</button></div>' +
+    '<div class="table-wrap" style="margin-top:10px"><table class="tbl"><thead><tr><th>Created</th><th>Size</th><th>Encryption</th><th>By</th><th></th></tr></thead><tbody>' +
+    S.backups.map(function (b) { return '<tr><td>' + dt(b.at) + '</td><td>' + (b.size / 1048576).toFixed(1) + ' MB</td><td><span class="tag green">AES-256</span></td><td>' + esc(b.by) + '</td><td><button class="btn sm" data-act="dl-backup">Download demo data</button></td></tr>'; }).join('') +
+    '</tbody></table></div><p class="tiny muted">Demo: "Download demo data" saves this browser\'s demo data as plain JSON. Real backups are encrypted archives and can only be restored with the backup password.</p></div>';
+}
+function devAudit() {
+  return '<div class="card"><h2>Audit log</h2><div class="table-wrap"><table class="tbl"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Details</th></tr></thead><tbody>' +
+    (S.audit.length ? S.audit.slice(0, 200).map(function (a) {
+      var who = user(a.actor), as = a.as ? user(a.as) : null;
+      return '<tr><td class="small">' + dt(a.at) + '</td><td class="small">' + esc(who ? who.name : '—') + (as ? ' <span class="tag amber">as ' + esc(as.name) + '</span>' : '') + '</td><td><code class="small">' + esc(a.action) + '</code></td><td class="small">' + esc(a.detail) + '</td></tr>';
+    }).join('') : '<tr><td colspan="4" class="muted">No events yet.</td></tr>') + '</tbody></table></div></div>';
+}
+
+/* ---------- impersonation ---------- */
+function impLeft() {
+  var left = Math.max(0, S.session.impersonationEnds - Date.now()), m = Math.floor(left / 60000), s = Math.floor((left % 60000) / 1000);
+  return m + ':' + String(s).padStart(2, '0');
+}
+function tick() {
+  if (!S.session || !impersonating()) return;
+  if (Date.now() >= S.session.impersonationEnds) { endImpersonation('expired'); return; }
+  var el = document.getElementById('imp-left'); if (el) el.textContent = impLeft();
+}
+function startImpersonation(targetId, reason) {
+  var dev = me(), target = user(targetId);
+  if (!dev.developer || !target || target.developer || target.status !== 'active' || target.id === dev.id) { toast('This user cannot be impersonated.', true); return; }
+  audit('impersonation.start', 'Developer started working as ' + target.name + '. Reason: ' + reason);
+  S.session = { userId: target.id, impersonatorId: dev.id, ws: null, impersonationEnds: Date.now() + IMPERSONATION_MIN * 60000, reason: reason };
+  save(); go('dashboard'); render();
+  toast('You are now working as ' + target.name + ' for ' + IMPERSONATION_MIN + ' minutes.');
+}
+function endImpersonation(why) {
+  var target = me(), devId = S.session.impersonatorId;
+  audit('impersonation.end', 'Stopped working as ' + target.name + (why === 'expired' ? ' (time limit reached)' : ''));
+  S.session = { userId: devId, impersonatorId: null, ws: null };
+  ui.devTab = 'users'; save(); go('dev'); render();
+  toast(why === 'expired' ? 'Impersonation ended: the ' + IMPERSONATION_MIN + '-minute limit was reached.' : 'Back to your developer account.');
+}
+
+/* ---------- AI actions ---------- */
+function aiCall(kind, fn) {
+  var ps = providerState(), names = providerNames();
+  if (S.debug.outage && ps.active !== 'demo') {
+    var err = logError('ai:' + kind, 'ai_provider_failed: upstream ' + names[ps.active] + ' returned HTTP 503 (simulated outage)', { provider: ps.active, workspace: S.session.ws, http_status: 503 });
+    throw new Error('The AI provider (' + names[ps.active] + ') is not responding. Nothing was generated. Reference: ' + err.id);
+  }
+  var out = fn();
+  out.provider = ps.active === 'demo' ? 'Demo engine' : 'Requested via ' + names[ps.active] + ' (simulated)';
+  return out;
+}
+function summarize(t) {
+  if (!can('ai.run')) return denied('run AI');
+  try {
+    var s = aiCall('summary', function () { return PD.engine.summary(t); });
+    s.at = Date.now(); t.summary = s; audit('ai.summary', t.title); save(); render(); toast('Summary ready.');
+  } catch (e) { toast(e.message, true); render(); }
+}
+function extract(t) {
+  if (!can('ai.run')) return denied('run AI');
+  try {
+    var items = aiCall('action_items', function () { return { items: PD.engine.actions(t) }; });
+    t.actions = items.items; t.actionsEngine = PD.ENGINE_LABEL; audit('ai.action_items', t.title + ' (' + t.actions.length + ' found)'); save(); render();
+    toast(t.actions.length ? t.actions.length + ' action items found.' : 'No action items found.');
+  } catch (e) { toast(e.message, true); render(); }
+}
+function ask(key, q, ts) {
+  if (!S.chat[key]) S.chat[key] = [];
+  var log = S.chat[key];
+  log.push({ role: 'user', text: q });
+  try {
+    var r = aiCall('ask', function () { return PD.engine.ask(q, ts); });
+    log.push({ role: 'ai', text: r.answer, citations: r.citations, sufficient: r.sufficient, engine: r.engine + ' · ' + r.provider });
+  } catch (e) { log.push({ role: 'error', text: e.message }); }
+  if (log.length > 30) log.splice(0, log.length - 30);
+  save(); render();
+  var c = document.getElementById('chat'); if (c) c.scrollTop = c.scrollHeight;
+}
+
+/* ---------- import ---------- */
+function addTranscript(title, segs, source, projectId) {
+  if (!segs.length) throw new Error('No readable text found.');
+  var text = PD.segmentsToText(segs), h = PD.hash(text);
+  var dup = wsTranscripts().find(function (t) { return t.hash === h; });
+  if (dup) return { duplicate: dup };
+  var last = segs[segs.length - 1];
+  var t = { id: uid('t'), ws: S.session.ws, project: projectId || null, title: String(title || 'Untitled transcript').slice(0, 160), source: source, recordedAt: new Date().toISOString(), createdAt: new Date().toISOString(), createdBy: me().id, segments: segs, durationMs: last.end || last.start, status: 'ready', hash: h };
+  S.transcripts.push(t);
+  audit('transcript.import', t.title + ' (' + source + ', ' + segs.length + ' segments)');
+  if (!save()) { S.transcripts.pop(); throw new Error('Browser storage is full.'); }
+  return { transcript: t };
+}
+async function importFiles(files) {
+  if (!can('transcript.create')) return denied('import');
+  var out = document.getElementById('imp-results'), proj = (document.getElementById('imp-proj') || {}).value || null, html = [];
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i], ext = (f.name.split('.').pop() || '').toLowerCase(), name = f.name.replace(/\.[^.]+$/, '');
+    try {
+      if (['txt', 'srt', 'vtt', 'json', 'docx'].indexOf(ext) === -1) throw new Error('Unsupported file type .' + ext + '.');
+      if (f.size === 0 || f.size > 2 * 1024 * 1024) throw new Error('File must be between 1 byte and 2 MB in the demo.');
+      var segs, title = name, src;
+      if (ext === 'docx') {
+        var entries = await PD.readZip(new Uint8Array(await f.arrayBuffer()));
+        if (!entries['word/document.xml']) throw new Error('This DOCX has no document body.');
+        var xml = new TextDecoder().decode(await PD.zipEntryBytes(entries['word/document.xml'], 10e6));
+        segs = PD.parseText(PD.docxXmlToText(xml)); src = 'DOCX import';
+      } else {
+        var text = await f.text();
+        if (ext === 'json') { var j = PD.parseJson(text); segs = j.segments; title = j.title || name; src = 'PLAUD JSON'; }
+        else if (ext === 'srt' || ext === 'vtt') { segs = PD.parseSrt(text); src = ext.toUpperCase() + ' import'; }
+        else { segs = PD.parseText(text); src = 'TXT import'; }
+      }
+      var r = addTranscript(title, segs, src, proj);
+      html.push(r.duplicate ? '<div class="notice amber">' + esc(f.name) + ': already imported as "' + esc(r.duplicate.title) + '".</div>'
+        : '<div class="notice green">' + esc(f.name) + ': imported ' + r.transcript.segments.length + ' segments. <a href="#/t/' + esc(r.transcript.id) + '">Open</a></div>');
+    } catch (e) {
+      var err = logError('import', f.name + ': ' + e.message, { file_type: ext, size_bytes: f.size });
+      html.push('<div class="notice red">' + esc(f.name) + ': ' + esc(e.message) + ' <span class="tiny">(ref ' + esc(err.id) + ')</span></div>');
+    }
+  }
+  if (out) out.innerHTML = html.join('<div style="height:6px"></div>');
+}
+
+/* ---------- events ---------- */
+function afterRender(r) {
+  var q = document.getElementById('t-q');
+  if (q) {
+    q.addEventListener('input', function () { ui.tFilter.q = q.value; var pos = q.selectionStart; render(); var n = document.getElementById('t-q'); n.focus(); n.setSelectionRange(pos, pos); });
+    document.getElementById('t-proj').addEventListener('change', function (e) { ui.tFilter.project = e.target.value; render(); });
+  }
+  var drop = document.getElementById('drop'), file = document.getElementById('file');
+  if (drop && file) {
+    drop.addEventListener('click', function () { file.click(); });
+    drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); file.click(); } });
+    file.addEventListener('change', function () { importFiles(Array.from(file.files)); file.value = ''; });
+    ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function (e) { importFiles(Array.from(e.dataTransfer.files)); });
+  }
+  if (r.view === 'dev' && ui.devTab === 'updates') renderSteps(null);
+  var c = document.getElementById('chat'); if (c) c.scrollTop = c.scrollHeight;
+}
+var UPDATE_STEPS = ['Verify Ed25519 signature', 'Check package manifest and file hashes', 'Safety backup', 'Stage files', 'Maintenance mode on', 'Swap files (journaled)', 'Run database migrations', 'Clear caches, maintenance off'];
+function renderSteps(states) {
+  var ul = document.getElementById('upd-steps'); if (!ul) return;
+  ul.innerHTML = states ? UPDATE_STEPS.map(function (s, i) { return '<li><span class="dot ' + (states[i] || '') + '"></span>' + s + '</li>'; }).join('') : '';
+}
+function bumpVersion(v) { var d = new Date(); return d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate() + '.' + String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0'); }
+
+document.addEventListener('click', function (e) {
+  var g = e.target.closest('[data-go]');
+  if (g && !e.target.closest('[data-act]')) { e.preventDefault(); go(g.getAttribute('data-go'), g.getAttribute('data-arg')); return; }
+  var el = e.target.closest('[data-act]'); if (!el) return;
+  var act = el.getAttribute('data-act'), id = el.getAttribute('data-id');
+  if (el.tagName === 'SELECT' || (el.tagName === 'INPUT' && el.type !== 'checkbox' && el.type !== 'button')) return;
+  if (el.disabled || el.getAttribute('aria-disabled') === 'true') return;
+  handle(act, id, el, e);
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') { closeModal(); document.body.classList.remove('nav-open'); }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[role=button][data-act]')) { e.preventDefault(); e.target.click(); }
+});
+document.addEventListener('change', function (e) {
+  var el = e.target, act = el.getAttribute('data-act');
+  if (act === 'switch-ws') { S.session.ws = el.value; ui.selected = {}; save(); go('dashboard'); render(); }
+  else if (act === 'active-provider') { if (!can('ai.connect')) return denied('change the provider'); providerState().active = el.value; audit('ai.provider_selected', providerNames()[el.value]); save(); render(); }
+  else if (act === 'set-role') {
+    if (!can('team.manage')) return denied('manage members');
+    var m = S.members.find(function (x) { return x.ws === S.session.ws && x.user === el.getAttribute('data-user'); });
+    if (m && m.role !== 'owner') { m.role = el.value; audit('team.role_changed', (user(m.user) || {}).name + ' → ' + PD.ROLE_LABEL[el.value]); save(); render(); toast('Role updated.'); }
+  }
+});
+document.addEventListener('submit', function (e) {
+  var f = e.target, kind = f.getAttribute('data-form'); if (!kind) return;
+  e.preventDefault();
+  var fd = new FormData(f);
+  if (kind === 'paste') {
+    if (!can('transcript.create')) return denied('import');
+    try {
+      var r = addTranscript(fd.get('title').trim(), PD.parseText(fd.get('text')), 'Paste', (document.getElementById('imp-proj') || {}).value || null);
+      if (r.duplicate) toast('This transcript already exists: ' + r.duplicate.title, true); else { toast('Transcript saved.'); go('t', r.transcript.id); }
+    } catch (err) { toast(err.message, true); }
+  } else if (kind === 'project') {
+    if (!can('project.create')) return denied('create projects');
+    var p = { id: uid('p'), ws: S.session.ws, name: fd.get('name').trim(), description: (fd.get('desc') || '').trim() };
+    S.projects.push(p); audit('project.created', p.name); save(); render(); toast('Project created.');
+  } else if (kind === 'ask-one') {
+    var t = transcript(f.getAttribute('data-id')); if (t) ask(t.id, fd.get('q').trim(), [t]);
+  } else if (kind === 'ask-many') {
+    var ts = wsTranscripts().filter(function (x) { return ui.selected[x.id]; });
+    if (!ts.length) { toast('Select at least one transcript first.', true); return; }
+    ask('ws:' + S.session.ws, fd.get('q').trim(), ts);
+  } else if (kind === 'export') {
+    if (!can('export.create')) return denied('create exports');
+    var ids = fd.getAll('t'), chosen = wsTranscripts().filter(function (x) { return ids.indexOf(x.id) !== -1; });
+    if (!chosen.length) { toast('Select at least one transcript.', true); return; }
+    var opts = { format: fd.get('format'), template: fd.get('template'), org: fd.get('org').trim(), summary: !!fd.get('summary') || fd.get('template') !== 'clean_transcript', actions: !!fd.get('actions') || fd.get('template') === 'meeting_minutes' };
+    try {
+      var res = PD.buildExport(chosen, opts), name = 'plaud-export-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.zip';
+      download(res.bytes, name, 'application/zip');
+      S.exports.unshift({ id: uid('e'), ws: S.session.ws, name: name, count: chosen.length, format: opts.format, at: Date.now(), by: realActor().id, as: impersonating() ? me().id : null });
+      audit('export.created', chosen.length + ' transcripts, ' + opts.format); save(); render(); toast('Export package downloaded.');
+    } catch (err) { var x = logError('export', err.message); toast('Export failed. Reference ' + x.id, true); }
+  } else if (kind === 'invite') {
+    if (!can('team.invite')) return denied('invite');
+    S.invites.unshift({ ws: S.session.ws, email: fd.get('email').trim().toLowerCase(), role: fd.get('role'), at: Date.now() });
+    audit('team.invited', fd.get('email') + ' as ' + PD.ROLE_LABEL[fd.get('role')]); save(); render(); toast('Invitation created (demo: no email sent).');
+  } else if (kind === 'profile') {
+    var u = me(); u.name = fd.get('name').trim() || u.name; u.title = fd.get('title').trim();
+    audit('profile.updated', u.name); save(); render(); toast('Profile saved.');
+  } else if (kind === 'imp') {
+    var reason = fd.get('reason').trim(); if (reason.length < 5) { toast('Please give a short reason (at least 5 characters).', true); return; }
+    closeModal(); startImpersonation(f.getAttribute('data-id'), reason);
+  } else if (kind === 'key') {
+    var key = fd.get('key').trim(), pid = f.getAttribute('data-id');
+    if (key.length < 12) { toast('That does not look like an API key.', true); return; }
+    providerState().connected[pid] = { mode: 'key', last4: key.slice(-4), at: Date.now(), by: realActor().id };
+    providerState().active = pid; audit('ai.provider_connected', providerNames()[pid] + ' (API key)'); save(); closeModal(); render();
+    toast(providerNames()[pid] + ' connected (demo: the key was not stored).');
+  } else if (kind === 'add-user') {
+    var nu = { id: uid('u'), name: fd.get('name').trim(), email: fd.get('email').trim().toLowerCase(), title: fd.get('title').trim() || 'Team member', developer: false, status: 'active', joined: new Date().toISOString() };
+    S.users.push(nu);
+    if (fd.get('ws')) S.members.push({ ws: fd.get('ws'), user: nu.id, role: fd.get('role'), status: 'active' });
+    audit('user.created', nu.name + ' <' + nu.email + '>'); save(); closeModal(); render(); toast('User added.');
+  }
+});
+
+function handle(act, id, el) {
+  var t;
+  switch (act) {
+    case 'login': {
+      var u = user(id); if (!u || u.status !== 'active') { toast('This account is suspended. Contact your administrator.', true); return; }
+      S.session = { userId: u.id, impersonatorId: null, ws: null }; S.audit.unshift({ id: uid('a'), at: Date.now(), actor: u.id, as: null, ws: null, action: 'auth.login', detail: 'Demo sign-in (no password)' });
+      save(); go(u.developer ? 'dev' : 'dashboard'); render(); return;
+    }
+    case 'logout': if (impersonating()) { endImpersonation(); return; } audit('auth.logout', ''); S.session = null; save(); location.hash = ''; render(); return;
+    case 'reset-demo': modal('<h2>Reset the demo?</h2><p class="small muted">This deletes everything you changed in this browser and restores the sample data.</p><div class="row"><button class="btn danger" data-act="reset-confirm">Reset</button><button class="btn" data-act="close">Cancel</button></div>'); return;
+    case 'reset-confirm': { var th = S.theme; S = PD.seed(); S.theme = th; save(); closeModal(); location.hash = ''; render(); toast('Demo reset.'); return; }
+    case 'close': closeModal(); return;
+    case 'toggle-theme': S.theme = S.theme === 'modern' ? 'classic' : 'modern'; save(); render(); return;
+    case 'set-theme': S.theme = el.getAttribute('data-theme-id') === 'modern' ? 'modern' : 'classic'; save(); render(); return;
+    case 'open-nav': document.body.classList.toggle('nav-open'); return;
+    case 'end-imp': endImpersonation(); return;
+    case 'summarize': t = transcript(id); if (t) summarize(t); return;
+    case 'extract': t = transcript(id); if (t) extract(t); return;
+    case 'toggle-action': {
+      if (!can('ai.run')) { el.checked = !el.checked; return denied('update action items'); }
+      t = transcript(parseRoute().arg); var it = t && (t.actions || []).find(function (x) { return x.id === id; });
+      if (it) { it.done = !it.done; audit('action_item.' + (it.done ? 'done' : 'reopened'), it.task.slice(0, 80)); save(); render(); } return;
+    }
+    case 'export-one': {
+      t = transcript(id); if (!t) return; if (!can('export.create')) return denied('export');
+      var ai = {};
+      if (t.summary) ai.summary = t.summary;
+      if (t.actions) ai.actions = { items: t.actions, engine: t.actionsEngine || PD.ENGINE_LABEL };
+      download(PD.buildDocx(t, { org: activeWs().ws.name }, ai), PD.slug(t.title) + '.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      audit('export.docx', t.title); save(); toast('Word document downloaded.'); return;
+    }
+    case 'delete-t':
+      modal('<h2>Delete this transcript?</h2><p class="small muted">"' + esc(transcript(id).title) + '" and its summary will be removed.</p><div class="row"><button class="btn danger" data-act="delete-confirm" data-id="' + esc(id) + '">Delete</button><button class="btn" data-act="close">Cancel</button></div>'); return;
+    case 'delete-confirm': {
+      if (!can('transcript.delete')) return denied('delete');
+      t = transcript(id); if (!t) return;
+      S.transcripts = S.transcripts.filter(function (x) { return x.id !== id; }); delete S.chat[id];
+      audit('transcript.deleted', t.title); save(); closeModal(); go('transcripts'); toast('Transcript deleted.'); return;
+    }
+    case 'open-project': ui.tFilter = { q: '', project: id }; go('transcripts'); return;
+    case 'sel-t': ui.selected[id] = el.checked; return;
+    case 'sel-all': { var all = wsTranscripts().every(function (x) { return ui.selected[x.id]; }); wsTranscripts().forEach(function (x) { ui.selected[x.id] = !all; }); render(); return; }
+    case 'connect':
+      if (!can('ai.connect')) return denied('connect providers');
+      if (id === 'openrouter') {
+        modal('<h2>Sign in with OpenRouter</h2><p class="small">In the full app this opens OpenRouter\'s sign-in page. You approve access, OpenRouter sends back a key that belongs to you, and the server stores it encrypted. The key never reaches your phone or browser.</p><ol class="small"><li>Click Continue → OpenRouter sign-in opens</li><li>Approve "PLAUD Companion"</li><li>You return here, connected</li></ol><div class="notice amber">Demo: nothing is opened; the connection is simulated.</div><div class="row" style="margin-top:12px"><button class="btn primary" data-act="oauth-done">Continue (simulated)</button><button class="btn" data-act="close">Cancel</button></div>');
+      } else {
+        modal('<h2>Connect ' + providerNames()[id] + '</h2><form class="stack" data-form="key" data-id="' + id + '"><label class="fld">API key<input type="text" name="key" autocomplete="off" required placeholder="Paste your key"></label><div class="notice amber">Demo: do not paste a real key. Nothing is sent or stored; only the last 4 characters are kept to show the connection.</div><div class="row"><button class="btn primary">Connect</button><button class="btn" type="button" data-act="close">Cancel</button></div></form>');
+      } return;
+    case 'oauth-done': providerState().connected.openrouter = { mode: 'oauth', at: Date.now(), by: realActor().id }; providerState().active = 'openrouter'; audit('ai.provider_connected', 'OpenRouter (sign-in)'); save(); closeModal(); render(); toast('OpenRouter connected (simulated).'); return;
+    case 'connect-managed': providerState().connected.openrouter = { mode: 'managed', at: Date.now(), by: realActor().id }; providerState().active = 'openrouter'; audit('ai.managed_key', activeWs().ws.name); save(); render(); toast('Managed OpenRouter key set up (simulated).'); return;
+    case 'use-provider': providerState().active = id; audit('ai.provider_selected', providerNames()[id]); save(); render(); return;
+    case 'disconnect': delete providerState().connected[id]; if (providerState().active === id) providerState().active = 'demo'; audit('ai.provider_disconnected', providerNames()[id]); save(); render(); toast('Disconnected.'); return;
+    case 'pair': {
+      if (!can('device.manage')) return denied('manage devices');
+      var bar = document.getElementById('pair-bar'), w = 0; el.disabled = true;
+      var iv = setInterval(function () { w += 20; if (bar) bar.style.width = w + '%'; if (w >= 100) { clearInterval(iv); S.device = { paired: true, name: 'PLAUD Note · Demo', battery: 86, firmware: '1.4.2', nextSample: S.device.nextSample || 0 }; audit('device.paired', 'PLAUD Note (simulated)'); save(); render(); toast('Device paired (simulated).'); } }, 250);
+      return;
+    }
+    case 'unpair': S.device.paired = false; audit('device.unpaired', ''); save(); render(); return;
+    case 'sync': {
+      if (!can('device.manage')) return denied('sync devices');
+      var sample = PD.SAMPLE_RECORDINGS[S.device.nextSample];
+      if (!sample) { toast('All recordings on the device are already synced.'); return; }
+      var sb = document.getElementById('sync-bar'), p2 = 0; el.disabled = true;
+      var iv2 = setInterval(function () {
+        p2 += 25; if (sb) sb.style.width = p2 + '%';
+        if (p2 >= 100) {
+          clearInterval(iv2);
+          var segs = JSON.parse(JSON.stringify(sample.segments)), pj = S.projects.find(function (x) { return x.id === sample.project && x.ws === S.session.ws; });
+          var r = addTranscript(sample.title, segs, 'PLAUD Note', pj ? pj.id : null);
+          S.device.nextSample++; S.device.battery = Math.max(5, S.device.battery - 3);
+          if (r.transcript) { r.transcript.status = 'transcribing'; save(); render(); toast('Recording received. Transcribing… (simulated)'); setTimeout(function () { r.transcript.status = 'ready'; save(); render(); toast('"' + r.transcript.title + '" is ready.'); }, 1800); }
+          else { save(); render(); toast('Already synced.'); }
+        }
+      }, 250);
+      return;
+    }
+    case 'remove-member': {
+      if (!can('team.manage')) return denied('manage members');
+      var uid2 = el.getAttribute('data-user'), nm = (user(uid2) || {}).name;
+      S.members = S.members.filter(function (m) { return !(m.ws === S.session.ws && m.user === uid2 && m.role !== 'owner'); });
+      audit('team.member_removed', nm); save(); render(); toast(nm + ' removed from the workspace.'); return;
+    }
+    case 'dev-tab': ui.devTab = id; render(); return;
+    case 'impersonate': {
+      var target = user(id);
+      modal('<h2>Work as ' + esc(target.name) + '?</h2><p class="small">You will see and use the app exactly as ' + esc(target.name) + ', including their documents, for up to ' + IMPERSONATION_MIN + ' minutes. A banner stays on screen and every action is recorded in the audit log with your name.</p>' +
+        '<form class="stack" data-form="imp" data-id="' + esc(id) + '"><label class="fld">Reason (saved in the audit log)<input type="text" name="reason" required maxlength="200" placeholder="e.g. Preparing board export on Morgan\'s request"></label><div class="notice small">Full app: you confirm with your password or 2FA code before the session starts.</div><div class="row"><button class="btn primary">Start session</button><button class="btn" type="button" data-act="close">Cancel</button></div></form>');
+      return;
+    }
+    case 'toggle-suspend': {
+      var su = user(id); if (!su || su.id === me().id) return;
+      if (su.developer && su.status === 'active' && S.users.filter(function (x) { return x.developer && x.status === 'active'; }).length <= 1) { toast('You cannot suspend the last active developer.', true); return; }
+      su.status = su.status === 'active' ? 'suspended' : 'active';
+      audit(su.status === 'active' ? 'user.reactivated' : 'user.suspended', su.name); save(); render(); toast(su.name + (su.status === 'active' ? ' reactivated.' : ' suspended. They are signed out everywhere.')); return;
+    }
+    case 'force-logout': audit('user.sessions_revoked', (user(id) || {}).name); save(); render(); toast('All sessions and tokens for ' + (user(id) || {}).name + ' were revoked (simulated).'); return;
+    case 'send-reset': audit('user.password_reset_sent', (user(id) || {}).name); save(); render(); toast('Password reset email sent to ' + (user(id) || {}).email + ' (simulated).'); return;
+    case 'add-user':
+      modal('<h2>Add user</h2><form class="stack" data-form="add-user"><label class="fld">Name<input type="text" name="name" required maxlength="80"></label><label class="fld">Email<input type="email" name="email" required maxlength="120"></label><label class="fld">Job title<input type="text" name="title" maxlength="80"></label>' +
+        '<div class="grid g2"><label class="fld">Workspace<select name="ws"><option value="">None</option>' + S.workspaces.map(function (w) { return '<option value="' + esc(w.id) + '">' + esc(w.name) + '</option>'; }).join('') + '</select></label><label class="fld">Role<select name="role"><option value="editor">Editor</option><option value="viewer">Viewer</option><option value="admin">Admin</option></select></label></div>' +
+        '<div class="row"><button class="btn primary">Add user</button><button class="btn" type="button" data-act="close">Cancel</button></div></form>');
+      return;
+    case 'managed-for': {
+      if (!S.providers[id]) S.providers[id] = { active: 'demo', connected: {} };
+      S.providers[id].connected.openrouter = { mode: 'managed', at: Date.now(), by: me().id }; S.providers[id].active = 'openrouter';
+      audit('ai.managed_key', (S.workspaces.find(function (w) { return w.id === id; }) || {}).name + ' (spending cap $25/month)'); save(); render(); toast('Managed OpenRouter key set up (simulated).'); return;
+    }
+    case 'toggle-outage': S.debug.outage = !S.debug.outage; audit('debug.outage_' + (S.debug.outage ? 'on' : 'off'), ''); save(); render(); return;
+    case 'clear-errors': S.errors = []; audit('debug.cleared', ''); save(); render(); return;
+    case 'apply-update': {
+      el.disabled = true; var states = [], i = 0, from = S.system.version, to = bumpVersion(from);
+      var iv3 = setInterval(function () {
+        states[i] = 'ok'; if (i + 1 < UPDATE_STEPS.length) states[i + 1] = 'run'; renderSteps(states); i++;
+        if (i >= UPDATE_STEPS.length) {
+          clearInterval(iv3);
+          S.system.previous = from; S.system.version = to;
+          S.system.history.unshift({ at: Date.now(), action: 'update', from: from, to: to, by: me().id, ok: true });
+          audit('system.update_applied', from + ' → ' + to); save(); setTimeout(function () { render(); toast('Updated to ' + to + ' (simulated).'); }, 400);
+        }
+      }, 380);
+      states[0] = 'run'; renderSteps(states); return;
+    }
+    case 'rollback': {
+      if (!S.system.previous) return;
+      var cur = S.system.version; S.system.version = S.system.previous; S.system.previous = null;
+      S.system.history.unshift({ at: Date.now(), action: 'rollback', from: cur, to: S.system.version, by: me().id, ok: true });
+      audit('system.rollback', cur + ' → ' + S.system.version); save(); render(); toast('Rolled back to ' + S.system.version + ' (simulated).'); return;
+    }
+    case 'backup': S.backups.unshift({ id: uid('b'), at: Date.now(), size: 4500000 + Math.round(JSON.stringify(S.transcripts).length * 3), encrypted: true, by: me().name }); audit('system.backup_created', 'manual'); save(); render(); toast('Encrypted backup created (simulated).'); return;
+    case 'dl-backup': download(PD.utf8(JSON.stringify(S, null, 2)), 'plaud-demo-data.json', 'application/json'); audit('system.demo_data_downloaded', ''); save(); return;
+  }
+}
+
+/* ---------- boot ---------- */
+S = load();
+// Shareable links: ?as=<user id>&theme=modern opens the demo as that person (the demo has no passwords).
+(function () {
+  var qs = new URLSearchParams(location.search), as = qs.get('as'), th = qs.get('theme');
+  if (th === 'modern' || th === 'classic') S.theme = th;
+  var u = as ? user(as) : null;
+  if (u && u.status === 'active' && (!S.session || S.session.userId !== u.id)) { S.session = { userId: u.id, impersonatorId: null, ws: null }; audit('auth.login', 'Demo link sign-in'); }
+  if (as || th) { save(); history.replaceState(null, '', location.pathname + location.hash); }
+})();
+window.addEventListener('hashchange', function () { render(); var v = document.getElementById('view'); if (v) v.focus({ preventScroll: true }); window.scrollTo(0, 0); });
+render();
+timer = setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
