@@ -8,19 +8,20 @@
     @include('partials.pwa')
     <meta name="theme-color" content="#18A879">
     <title>PLAUD Companion — User Management</title>
+    @include('partials.theme')
     <style>
         :root {
-            --navy: #101B33;
-            --navy-light: #182747;
-            --navy-border: #253861;
-            --emerald: #18A879;
-            --emerald-hover: #149168;
-            --bg: #0B1324;
-            --card: #13203B;
-            --text: #F1F5F9;
-            --muted: #94A3B8;
-            --danger: #EF4444;
-            --warn: #F59E0B;
+            --navy: var(--pc-surface);
+            --navy-light: var(--pc-surface-alt);
+            --navy-border: var(--pc-border);
+            --emerald: var(--pc-emerald);
+            --emerald-hover: var(--pc-emerald-hover);
+            --bg: var(--pc-bg);
+            --card: var(--pc-surface);
+            --text: var(--pc-text);
+            --muted: var(--pc-muted);
+            --danger: var(--pc-danger);
+            --warn: var(--pc-amber);
         }
         * { box-sizing: border-box; }
         body {
@@ -100,7 +101,7 @@
             padding: 16px 18px;
         }
         .metric-card span { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
-        .metric-card strong { font-size: 24px; font-weight: 800; color: #fff; }
+        .metric-card strong { font-size: 24px; font-weight: 800; color: var(--text); }
         .card {
             background: var(--card);
             border: 1px solid var(--navy-border);
@@ -293,7 +294,7 @@
             text-align: center;
         }
         .stat-box span { font-size: 11.5px; color: var(--muted); display: block; margin-bottom: 4px; }
-        .stat-box strong { font-size: 18px; font-weight: 800; color: #fff; }
+        .stat-box strong { font-size: 18px; font-weight: 800; color: var(--text); }
         .section-title {
             font-size: 13px;
             font-weight: 700;
@@ -483,7 +484,7 @@
             <div class="modal-profile-header">
                 <div id="modalAvatar" class="modal-avatar">--</div>
                 <div style="flex:1;">
-                    <div id="modalDisplayName" style="font-size:16px; font-weight:800; color:#fff;">User Name</div>
+                    <div id="modalDisplayName" style="font-size:16px; font-weight:800; color: var(--text);">User Name</div>
                     <div id="modalEmail" style="font-size:13px; color:var(--muted); margin:2px 0 6px;">user@example.com</div>
                     <div style="display:flex; gap:8px; align-items:center;">
                         <span id="modalRoleBadge" class="pill user">User</span>

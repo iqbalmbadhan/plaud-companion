@@ -9,22 +9,23 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>PLAUD Companion — Reset Password</title>
+    @include('partials.theme')
     <style>
         :root {
-            --bg: #0B132B;
-            --card: #14243A;
-            --border: #23354E;
-            --text: #F8FAFC;
-            --muted: #94A3B8;
-            --emerald: #18A879;
-            --emerald-hover: #11855E;
-            --danger: #EF4444;
+            --bg: var(--pc-bg);
+            --card: var(--pc-surface);
+            --border: var(--pc-border);
+            --text: var(--pc-text);
+            --muted: var(--pc-muted);
+            --emerald: var(--pc-emerald);
+            --emerald-hover: var(--pc-emerald-hover);
+            --danger: var(--pc-danger);
         }
         * { box-sizing: border-box; }
         body {
             margin: 0;
             font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-            background: radial-gradient(circle at 50% 20%, #172A45 0%, var(--bg) 70%);
+            background: radial-gradient(circle at 50% 20%, var(--pc-glow) 0%, var(--bg) 70%);
             color: var(--text);
             min-height: 100vh;
             display: flex;
@@ -70,7 +71,7 @@
             padding: 12px 14px;
             border-radius: 10px;
             border: 1px solid var(--border);
-            background: #0B132B;
+            background: var(--surface-alt);
             color: var(--text);
             font-size: 14px;
             margin-bottom: 16px;

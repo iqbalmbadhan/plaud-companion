@@ -4,29 +4,30 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PLAUD Companion — Demo Accounts &amp; Architecture</title>
+    @include('partials.theme')
     <style>
         :root {
-            --bg: #0B132B;
-            --card: #14243A;
-            --card-sub: #101B33;
-            --border: #23354E;
-            --text: #F8FAFC;
-            --muted: #94A3B8;
-            --emerald: #18A879;
-            --emerald-hover: #11855E;
-            --emerald-soft: rgba(24, 168, 121, 0.15);
-            --blue: #3B82F6;
-            --blue-soft: rgba(59, 130, 246, 0.15);
-            --purple: #8B5CF6;
-            --purple-soft: rgba(139, 92, 246, 0.15);
-            --amber: #F59E0B;
-            --amber-soft: rgba(245, 158, 11, 0.15);
+            --bg: var(--pc-bg);
+            --card: var(--pc-surface);
+            --card-sub: var(--pc-surface-alt);
+            --border: var(--pc-border);
+            --text: var(--pc-text);
+            --muted: var(--pc-muted);
+            --emerald: var(--pc-emerald);
+            --emerald-hover: var(--pc-emerald-hover);
+            --emerald-soft: var(--pc-emerald-soft);
+            --blue: var(--pc-blue);
+            --blue-soft: var(--pc-blue-soft);
+            --purple: var(--pc-purple);
+            --purple-soft: var(--pc-emerald-soft);
+            --amber: var(--pc-amber);
+            --amber-soft: var(--pc-amber-soft);
         }
         * { box-sizing: border-box; }
         body {
             margin: 0;
             font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-            background: linear-gradient(135deg, var(--bg) 0%, #101B33 100%);
+            background: linear-gradient(135deg, var(--bg) 0%, var(--pc-glow) 100%);
             color: var(--text);
             min-height: 100vh;
             padding: 40px 20px;
@@ -147,7 +148,7 @@
             padding: 14px;
             font-size: 13px;
         }
-        .feature-item strong { display: block; margin-bottom: 4px; color: #fff; }
+        .feature-item strong { display: block; margin-bottom: 4px; color: var(--text); }
         .feature-item span { color: var(--muted); font-size: 12px; line-height: 1.45; }
     </style>
 </head>

@@ -7,22 +7,23 @@
     @include('partials.pwa')
     <meta name="theme-color" content="#18A879">
     <title>PLAUD Companion — My Profile &amp; Security</title>
+    @include('partials.theme')
     <style>
         :root {
-            --bg: #0B1324;
-            --navy: #101B33;
-            --navy-light: #182747;
-            --navy-border: #253861;
-            --card: #13203B;
-            --card-sub: #0F1A30;
-            --border: #253861;
-            --text: #F1F5F9;
-            --muted: #94A3B8;
-            --emerald: #18A879;
-            --emerald-hover: #149168;
-            --emerald-soft: rgba(24, 168, 121, 0.15);
-            --danger: #EF4444;
-            --danger-soft: rgba(239, 68, 68, 0.15);
+            --bg: var(--pc-bg);
+            --navy: var(--pc-surface);
+            --navy-light: var(--pc-surface-alt);
+            --navy-border: var(--pc-border);
+            --card: var(--pc-surface);
+            --card-sub: var(--pc-surface-alt);
+            --border: var(--pc-border);
+            --text: var(--pc-text);
+            --muted: var(--pc-muted);
+            --emerald: var(--pc-emerald);
+            --emerald-hover: var(--pc-emerald-hover);
+            --emerald-soft: var(--pc-emerald-soft);
+            --danger: var(--pc-danger);
+            --danger-soft: var(--pc-danger-soft);
         }
         * { box-sizing: border-box; }
         body {

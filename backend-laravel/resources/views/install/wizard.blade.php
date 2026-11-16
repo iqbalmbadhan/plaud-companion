@@ -7,19 +7,20 @@
     <link rel="manifest" href="{{ url('/manifest.json') }}">
     @include('partials.pwa')
     <title>PLAUD Companion — 1-Click Installer</title>
+    @include('partials.theme')
     <style>
         :root {
-            --navy: #101B33;
-            --navy-light: #182747;
-            --navy-border: #253861;
-            --emerald: #18A879;
-            --emerald-hover: #149168;
-            --bg: #0B1324;
-            --card: #13203B;
-            --text: #F1F5F9;
-            --muted: #94A3B8;
-            --danger: #EF4444;
-            --warn: #F59E0B;
+            --navy: var(--pc-surface);
+            --navy-light: var(--pc-surface-alt);
+            --navy-border: var(--pc-border);
+            --emerald: var(--pc-emerald);
+            --emerald-hover: var(--pc-emerald-hover);
+            --bg: var(--pc-bg);
+            --card: var(--pc-surface);
+            --text: var(--pc-text);
+            --muted: var(--pc-muted);
+            --danger: var(--pc-danger);
+            --warn: var(--pc-amber);
         }
         * { box-sizing: border-box; }
         body {
