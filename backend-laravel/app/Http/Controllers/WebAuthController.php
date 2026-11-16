@@ -141,6 +141,7 @@ class WebAuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        app(TokenService::class)->markSessionAuthenticated($request);
 
         return redirect()->to('/app');
     }
@@ -176,6 +177,7 @@ class WebAuthController extends Controller
 
         Auth::login($user, (bool) $request->boolean('remember', false));
         $request->session()->regenerate();
+        app(TokenService::class)->markSessionAuthenticated($request);
 
         return redirect()->intended(route('app.dashboard'));
     }
@@ -308,8 +310,9 @@ class WebAuthController extends Controller
         }
 
         $user->password_hash = app(TokenService::class)->hashPassword($validated['password']);
-        $user->setRememberToken(Str::random(60));
         $user->save();
+        // A reset may follow a compromise: end every session and API token.
+        app(TokenService::class)->revokeAllSessions($user);
 
         DB::table('password_reset_tokens')->where('email', $email)->delete();
 

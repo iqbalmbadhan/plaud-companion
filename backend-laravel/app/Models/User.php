@@ -25,6 +25,7 @@ class User extends Authenticatable
         'status',
         'is_super_admin',
         'email_verified_at',
+        'sessions_valid_after',
     ];
 
     protected $hidden = [
@@ -37,6 +38,7 @@ class User extends Authenticatable
         return [
             'is_super_admin' => 'boolean',
             'email_verified_at' => 'datetime',
+            'sessions_valid_after' => 'datetime',
         ];
     }
 

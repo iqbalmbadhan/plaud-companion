@@ -101,7 +101,7 @@ Route::middleware(['web.auth', 'super_admin'])->prefix('settings/users')->group(
 });
 
 // Super-admin-only Settings Update & Backup Panel
-Route::middleware(['super_admin'])->prefix('settings/updates')->group(function (): void {
+Route::middleware(['web.auth', 'super_admin'])->prefix('settings/updates')->group(function (): void {
     Route::get('/', [UpdateController::class, 'show'])->name('settings.updates');
     Route::prefix('api')->group(function (): void {
         Route::get('/status', [UpdateController::class, 'status']);

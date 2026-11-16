@@ -118,7 +118,7 @@ class UserProfileAndPasswordResetTest extends TestCase
             'password_confirmation' => 'NewSecretPassword123!',
         ]);
 
-        $response->assertSessionHas('status', 'Your password has been changed successfully.');
+        $response->assertSessionHas('status', 'Your password has been changed successfully. You were signed out on all other devices.');
 
         $fresh = $user->fresh();
         $this->assertTrue(app(TokenService::class)->verifyPassword('NewSecretPassword123!', $fresh->password_hash));

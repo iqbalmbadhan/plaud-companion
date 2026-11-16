@@ -118,8 +118,11 @@ class ProfileController extends Controller
         }
 
         $user->password_hash = $tokenService->hashPassword($validated['password']);
-        $user->setRememberToken(Str::random(60));
         $user->save();
+        // Sign out every other browser and invalidate API/mobile tokens; keep this session.
+        $tokenService->revokeAllSessions($user);
+        $request->session()->regenerate();
+        $tokenService->markSessionAuthenticated($request);
 
         AuditEvent::create([
             'id' => (string) Str::uuid(),
@@ -138,11 +141,11 @@ class ProfileController extends Controller
         if ($request->expectsJson() || $request->is('*/api/*')) {
             return response()->json([
                 'success' => true,
-                'message' => 'Password changed successfully.',
+                'message' => 'Password changed successfully. You were signed out on all other devices.',
             ]);
         }
 
-        return back()->with('status', 'Your password has been changed successfully.');
+        return back()->with('status', 'Your password has been changed successfully. You were signed out on all other devices.');
     }
 
     /**

@@ -37,16 +37,16 @@ class TokenService
         $accessToken = $this->encodeJwt([
             'sub' => $user->id,
             'type' => 'access',
-            'iat' => time(),
-            'exp' => time() + $expiresIn,
+            'iat' => now()->getTimestamp(),
+            'exp' => now()->getTimestamp() + $expiresIn,
             'jti' => (string) Str::uuid(),
         ]);
 
         $refreshToken = $this->encodeJwt([
             'sub' => $user->id,
             'type' => 'refresh',
-            'iat' => time(),
-            'exp' => time() + ($refreshTtlMinutes * 60),
+            'iat' => now()->getTimestamp(),
+            'exp' => now()->getTimestamp() + ($refreshTtlMinutes * 60),
             'jti' => (string) Str::uuid(),
         ]);
 
@@ -69,7 +69,13 @@ class TokenService
         if (substr_count($token, '.') === 2) {
             $payload = $this->decodeJwt($token);
             if ($payload !== null && ($payload['type'] ?? '') === 'access' && !empty($payload['sub'])) {
-                return User::query()->where('id', (string) $payload['sub'])->first();
+                $user = User::query()->where('id', (string) $payload['sub'])->first();
+                // Tokens issued before a password change / "sign out everywhere" are revoked.
+                if ($user !== null && !$this->issuedAfterRevocation($user, (int) ($payload['iat'] ?? 0))) {
+                    return null;
+                }
+
+                return $user;
             }
         }
 
@@ -83,6 +89,38 @@ class TokenService
 
         return null;
     }
+
+    /**
+     * Signs the user out of every browser session and invalidates every API token
+     * (JWTs issued earlier, Sanctum personal access tokens, "remember me" cookies).
+     * The caller's own browser session can be kept with markSessionAuthenticated().
+     */
+    public function revokeAllSessions(User $user): void
+    {
+        $user->sessions_valid_after = now();
+        $user->setRememberToken(Str::random(60));
+        $user->save();
+
+        if (method_exists($user, 'tokens')) {
+            $user->tokens()->delete();
+        }
+    }
+
+    /** Records when this browser session signed in (compared with users.sessions_valid_after). */
+    public function markSessionAuthenticated(\Illuminate\Http\Request $request): void
+    {
+        $request->session()->put(self::SESSION_AUTH_AT, now()->getTimestamp());
+    }
+
+    /** True when a session or token created at $issuedAt is still accepted for this user. */
+    public function issuedAfterRevocation(User $user, int $issuedAt): bool
+    {
+        $cutoff = $user->sessions_valid_after;
+
+        return $cutoff === null || $issuedAt >= $cutoff->getTimestamp();
+    }
+
+    public const SESSION_AUTH_AT = 'auth_at';
 
     /**
      * @return array<string, mixed>|null
@@ -113,7 +151,7 @@ class TokenService
             return null;
         }
 
-        if (isset($payload['exp']) && (int) $payload['exp'] < time()) {
+        if (isset($payload['exp']) && (int) $payload['exp'] < now()->getTimestamp()) {
             return null;
         }
 
