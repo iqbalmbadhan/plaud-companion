@@ -226,22 +226,36 @@ class PlaudAccountService
             }
         }
 
-        $normalized = $this->normalizeSegments($segments, (int) ($file['duration'] ?? 0));
+        $notes = $mcp->callJson('get_note', ['file_id' => $fileId], allowText: true);
+        $summary = is_array($notes) ? $this->notesToMarkdown($notes) : null;
+
+        return $this->importRecording($link->workspace_id, $link->user_id, $file, $segments, $summary);
+    }
+
+    /**
+     * Persists one recording as a transcript + segments. Shared by the live MCP sync and the
+     * developer sample loader, so sample data travels through the exact same mapping as real data.
+     *
+     * @param array<string, mixed> $file     Plaud file metadata (id, name, duration, start_at/created_at).
+     * @param list<array<string, mixed>> $rawSegments  Raw Plaud transcript rows (any known field spelling).
+     * @return bool  false when Plaud has not transcribed the recording yet (no usable segments).
+     */
+    public function importRecording(string $workspaceId, string $userId, array $file, array $rawSegments, ?string $summary): bool
+    {
+        $fileId = (string) ($file['id'] ?? Str::uuid());
+        $normalized = $this->normalizeSegments($rawSegments, (int) ($file['duration'] ?? 0));
         if ($normalized === []) {
             return false;
         }
 
-        $notes = $mcp->callJson('get_note', ['file_id' => $fileId], allowText: true);
-        $summary = is_array($notes) ? $this->notesToMarkdown($notes) : null;
-
         $content = implode("\n", array_map(fn ($s) => "{$s['speaker']}: {$s['text']}", $normalized));
         $title = trim((string) ($file['name'] ?? '')) ?: 'Plaud recording';
 
-        DB::transaction(function () use ($link, $file, $fileId, $normalized, $content, $title, $summary) {
+        DB::transaction(function () use ($workspaceId, $userId, $file, $fileId, $normalized, $content, $title, $summary) {
             $transcript = Transcript::create([
                 'id' => (string) Str::uuid(),
-                'workspace_id' => $link->workspace_id,
-                'created_by_user_id' => $link->user_id,
+                'workspace_id' => $workspaceId,
+                'created_by_user_id' => $userId,
                 'title' => Str::limit($title, 250, ''),
                 'description' => $this->describe($file, $normalized),
                 'source_type' => 'plaud_account',

@@ -408,6 +408,18 @@
         <div id="devWorkspaces" style="margin-top:12px; font-size:13px; color:var(--muted);">Loading&hellip;</div>
     </div>
 
+    <!-- DEVELOPER: PLAUD SAMPLE DATA -->
+    <div class="card" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div>
+                <h2 style="margin:0; font-size:16px;">Plaud sample recordings</h2>
+                <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">Loads a few <b>sample</b> recordings in Plaud's real format into your own workspace, so you can see exactly what "Connect my Plaud account" produces — no device or Plaud login needed. Sample data, clearly not real.</p>
+            </div>
+            <button class="btn btn-promote" data-dev="load-plaud-samples">&#127908; Load samples</button>
+        </div>
+        <div id="devPlaudSamples" style="margin-top:12px; font-size:13px; color:var(--muted);"></div>
+    </div>
+
     <!-- DEVELOPER: DEBUG LOG -->
     <div class="card" style="margin-top:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -720,6 +732,14 @@ document.addEventListener('click', (ev) => {
     if (!dev) return;
     const what = dev.dataset.dev;
     if (what === 'load-workspaces') loadWorkspaces();
+    else if (what === 'load-plaud-samples') {
+        const box = document.getElementById('devPlaudSamples');
+        dev.disabled = true; box.textContent = 'Loading sample recordings…';
+        apiCall(`${DEV_API_BASE}/plaud-samples`, 'POST')
+            .then(d => { box.textContent = d.message; showToast(d.message); loadWorkspaces(); })
+            .catch(e => { box.textContent = e.message; showToast(e.message, true); })
+            .finally(() => { dev.disabled = false; });
+    }
     else if (what === 'load-errors') loadErrors();
     else if (what === 'clear-errors') {
         if (confirm('Delete every entry in the debug log?')) apiCall(`${DEV_API_BASE}/errors`, 'DELETE').then(() => { showToast('Debug log cleared.'); loadErrors(); }).catch(e => showToast(e.message, true));

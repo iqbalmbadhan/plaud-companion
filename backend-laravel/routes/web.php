@@ -116,6 +116,7 @@ Route::middleware(['web.auth', 'developer'])->prefix('settings/developer/api')->
     Route::get('/workspaces', [\App\Http\Controllers\DeveloperController::class, 'workspaces']);
     Route::get('/errors', [\App\Http\Controllers\DeveloperController::class, 'errors']);
     Route::delete('/errors', [\App\Http\Controllers\DeveloperController::class, 'clearErrors']);
+    Route::post('/plaud-samples', [\App\Http\Controllers\DeveloperController::class, 'loadPlaudSamples'])->middleware('throttle:6,1');
 });
 
 // Ending impersonation is done from the impersonated session itself.

@@ -218,6 +218,52 @@ class DeveloperController extends Controller
         ]);
     }
 
+    /**
+     * Loads Plaud-format sample recordings into the developer's own first workspace, so the
+     * "Connect my Plaud account" result can be demonstrated without a device or live account.
+     * Clearly labelled sample data; skips any already loaded so it is safe to click twice.
+     */
+    public function loadPlaudSamples(Request $request, \App\Services\PlaudAccountService $plaud): JsonResponse
+    {
+        if (Impersonation::active()) {
+            return response()->json(['error' => 'forbidden', 'message' => 'Not available while working as another user.'], 403);
+        }
+
+        $user = $request->user();
+        $workspaceId = WorkspaceMember::query()
+            ->where('user_id', $user->id)
+            ->orderBy('created_at')
+            ->value('workspace_id');
+        if ($workspaceId === null) {
+            return response()->json(['error' => 'no_workspace', 'message' => 'You have no workspace to load samples into.'], 404);
+        }
+
+        $imported = 0;
+        foreach (\App\Support\PlaudSampleRecordings::all() as $sample) {
+            $exists = Transcript::query()
+                ->where('workspace_id', $workspaceId)
+                ->where('external_source', 'plaud')
+                ->where('external_id', $sample['file']['id'])
+                ->exists();
+            if ($exists) {
+                continue;
+            }
+            if ($plaud->importRecording($workspaceId, $user->id, $sample['file'], $sample['segments'], $sample['summary'])) {
+                $imported++;
+            }
+        }
+
+        $this->audit($request, 'developer.plaud_samples_loaded', null, ['workspace_id' => $workspaceId, 'imported' => $imported]);
+
+        return response()->json([
+            'success' => true,
+            'imported' => $imported,
+            'message' => $imported > 0
+                ? "{$imported} Plaud sample recording(s) loaded into your workspace."
+                : 'Plaud sample recordings are already loaded.',
+        ]);
+    }
+
     private function activeDeveloperCount(): int
     {
         return User::query()->where('is_developer', true)->where('status', 'active')->count();

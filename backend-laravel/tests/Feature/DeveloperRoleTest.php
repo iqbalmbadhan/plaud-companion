@@ -29,6 +29,32 @@ class DeveloperRoleTest extends TestCase
 
     // ---------------------------------------------------------------- access
 
+    public function test_developer_loads_plaud_sample_recordings_once(): void
+    {
+        $dev = $this->developer();
+        $ws = app(\App\Services\WorkspaceService::class)->createWorkspace($dev->id, 'Dev WS', 'personal');
+
+        $this->actingAsWebUser($dev)->postJson('/settings/developer/api/plaud-samples')
+            ->assertOk()->assertJson(['imported' => 3]);
+
+        $samples = \App\Models\Transcript::query()->where('workspace_id', $ws['id'])->where('external_source', 'plaud')->get();
+        $this->assertCount(3, $samples);
+        $standup = $samples->firstWhere('external_id', 'sample-plaud-0001');
+        $this->assertStringContainsString('Iqbal:', $standup->content_text);
+        $this->assertStringContainsString('Action Items', $standup->summary_markdown);
+        $this->assertSame(4, $standup->segments()->count());
+
+        // Second click imports nothing new.
+        $this->actingAsWebUser($dev)->postJson('/settings/developer/api/plaud-samples')
+            ->assertOk()->assertJson(['imported' => 0]);
+        $this->assertSame(3, \App\Models\Transcript::query()->where('external_source', 'plaud')->count());
+    }
+
+    public function test_plaud_sample_loader_is_developer_only(): void
+    {
+        $this->actingAsWebUser($this->createSuperAdmin())->postJson('/settings/developer/api/plaud-samples')->assertStatus(403);
+    }
+
     public function test_developer_endpoints_require_developer(): void
     {
         $admin = $this->createSuperAdmin();
