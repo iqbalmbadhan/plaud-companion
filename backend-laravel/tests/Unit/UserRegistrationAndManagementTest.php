@@ -18,7 +18,7 @@ class UserRegistrationAndManagementTest extends TestCase
         $this->assertIsArray($json, 'manifest.json must be valid JSON');
         $this->assertSame('PLAUD Companion', $json['name']);
         $this->assertSame('standalone', $json['display']);
-        $this->assertSame('/app', $json['start_url']);
+        $this->assertSame('app', $json['start_url']);
         $this->assertNotEmpty($json['icons'], 'manifest.json must define app icons');
     }
 
@@ -31,7 +31,7 @@ class UserRegistrationAndManagementTest extends TestCase
         $this->assertFileExists($offlinePath, 'Offline fallback page offline.html must exist.');
 
         $swContent = file_get_contents($swPath);
-        $this->assertStringContainsString('plaud-companion-v1', $swContent);
+        $this->assertStringContainsString('plaud-companion-v2', $swContent);
         $this->assertStringContainsString('offline.html', $swContent);
     }
 

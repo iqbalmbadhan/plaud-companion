@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="manifest" href="{{ url('/manifest.json') }}">
+    @include('partials.pwa')
     <title>PLAUD Companion — System Updates &amp; Backups</title>
     <style>
         :root {

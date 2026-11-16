@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="{{ url('/manifest.json') }}">
+    @include('partials.pwa')
     <meta name="theme-color" content="#18A879">
     <title>PLAUD Companion — My Profile &amp; Security</title>
     <style>
