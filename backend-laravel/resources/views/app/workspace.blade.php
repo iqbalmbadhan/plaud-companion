@@ -12,29 +12,30 @@
   <meta name="apple-mobile-web-app-title" content="PLAUD Companion" />
   <script src="{{ url('/js/plaud-crypto-vault.js') }}"></script>
   <title>PLAUD Companion — Transcript &amp; AI Productivity Workspace</title>
+    @include('partials.theme')
   <style>
     :root {
-      --bg: #F6F8FB;
-      --surface: #FFFFFF;
-      --surface-alt: #EDF2F8;
-      --navy: #101B33;
-      --navy-2: #14243A;
-      --slate: #2D3F57;
-      --muted: #64748B;
-      --line: #DCE3EE;
-      --emerald: #18A879;
-      --emerald-dark: #11855E;
-      --emerald-soft: #E8F8F2;
-      --blue: #2563EB;
-      --blue-soft: #EAF1FF;
-      --amber: #D97706;
-      --amber-soft: #FFF7ED;
-      --danger: #DC2626;
-      --danger-soft: #FEF2F2;
-      --shadow: 0 12px 30px rgba(16, 27, 51, 0.08);
+      --bg: var(--pc-bg);
+      --surface: var(--pc-surface);
+      --surface-alt: var(--pc-surface-alt);
+      --navy: var(--pc-text);
+      --navy-2: var(--pc-ink);
+      --slate: var(--pc-text-soft);
+      --muted: var(--pc-muted);
+      --line: var(--pc-border);
+      --emerald: var(--pc-emerald);
+      --emerald-dark: var(--pc-emerald-hover);
+      --emerald-soft: var(--pc-emerald-soft);
+      --blue: var(--pc-blue);
+      --blue-soft: var(--pc-blue-soft);
+      --amber: var(--pc-amber);
+      --amber-soft: var(--pc-amber-soft);
+      --danger: var(--pc-danger);
+      --danger-soft: var(--pc-danger-soft);
+      --shadow: var(--pc-shadow);
       --radius: 18px;
       --radius-sm: 12px;
-      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font: var(--pc-font);
     }
 
     * { box-sizing: border-box; }
@@ -265,7 +266,7 @@
     }
 
     .topbar {
-      background: rgba(255,255,255,0.88);
+      background: var(--surface);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--line);
       padding: 14px 26px;
@@ -335,9 +336,9 @@
     .btn.primary:hover { background: var(--emerald-dark); }
 
     .btn.secondary {
-      background: var(--navy);
+      background: var(--pc-ink);
       color: #fff;
-      border-color: var(--navy);
+      border-color: var(--pc-ink);
     }
 
     .btn.danger {
@@ -356,7 +357,7 @@
       width: 36px;
       height: 36px;
       border-radius: 11px;
-      background: var(--navy);
+      background: var(--pc-ink);
       color: #fff;
       display: grid;
       place-items: center;
@@ -502,7 +503,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      background: #fff;
+      background: var(--surface);
       cursor: pointer;
       transition: 0.16s ease;
     }
@@ -570,13 +571,13 @@
       border: 1px solid var(--line);
       border-radius: 15px;
       padding: 14px;
-      background: linear-gradient(180deg, #fff 0%, #FAFBFD 100%);
+      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-alt) 100%);
       cursor: pointer;
       transition: 0.18s ease;
     }
 
     .quick:hover {
-      border-color: var(--navy);
+      border-color: var(--pc-ink);
       transform: translateY(-1px);
     }
 
@@ -595,7 +596,7 @@
 
     .upload-zone {
       border: 2px dashed #B9C7DA;
-      background: #F9FBFE;
+      background: var(--surface-alt);
       border-radius: 18px;
       padding: 24px;
       text-align: center;
@@ -635,7 +636,7 @@
 
     .chip {
       border: 1px solid var(--line);
-      background: #fff;
+      background: var(--surface);
       border-radius: 999px;
       padding: 7px 12px;
       font-size: 12px;
@@ -644,9 +645,9 @@
     }
 
     .chip.active {
-      background: var(--navy);
+      background: var(--pc-ink);
       color: #fff;
-      border-color: var(--navy);
+      border-color: var(--pc-ink);
     }
 
     .table {
@@ -688,7 +689,7 @@
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 12px 14px;
-      background: #fff;
+      background: var(--surface);
     }
 
     .utterance-head {
@@ -764,7 +765,7 @@
 
     .msg.user {
       align-self: flex-end;
-      background: var(--navy);
+      background: var(--pc-ink);
       color: #fff;
       border-bottom-right-radius: 4px;
     }
@@ -804,7 +805,7 @@
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 14px;
-      background: #fff;
+      background: var(--surface);
       cursor: pointer;
     }
 
@@ -830,7 +831,7 @@
       font-size: 13px;
       font-family: inherit;
       color: var(--navy);
-      background: #fff;
+      background: var(--surface);
       outline: none;
     }
 
@@ -853,7 +854,7 @@
     .modal-backdrop.open { display: grid; }
 
     .modal {
-      background: #fff;
+      background: var(--surface);
       border-radius: 20px;
       width: 100%;
       max-width: 560px;
@@ -980,7 +981,7 @@
       border: 2px solid var(--line);
       border-radius: 14px;
       padding: 14px;
-      background: #fff;
+      background: var(--surface);
       cursor: pointer;
       transition: 0.18s ease;
     }
@@ -1006,7 +1007,7 @@
     }
 
     .toast {
-      background: var(--navy);
+      background: var(--pc-ink);
       color: #fff;
       padding: 12px 16px;
       border-radius: 12px;
@@ -1024,7 +1025,7 @@
       bottom: 0;
       left: 0;
       right: 0;
-      background: var(--navy);
+      background: var(--pc-ink);
       color: #fff;
       padding: 8px 10px;
       justify-content: space-around;
@@ -1066,7 +1067,7 @@
       display: block;
       height: 2px;
       width: 100%;
-      background: var(--navy);
+      background: var(--pc-ink);
       border-radius: 2px;
     }
 
@@ -1132,7 +1133,7 @@
       gap: 12px;
       font-size: 12px;
       color: var(--muted);
-      background: rgba(255, 255, 255, 0.7);
+      background: var(--surface-alt);
     }
     .app-footer a {
       color: var(--emerald-dark);
@@ -2160,7 +2161,7 @@
               </button>
             </div>
 
-            <div id="wizardBleSuccessCard" style="display:none; border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff;">
+            <div id="wizardBleSuccessCard" style="display:none; border:1px solid var(--line); border-radius:14px; padding:14px; background: var(--surface);">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
                   <strong style="font-size:14px;" id="wizardBleDevName">PLAUD Note (84B2)</strong>
@@ -2194,7 +2195,7 @@
               <button class="btn primary sm" onclick="event.stopPropagation(); document.getElementById('wizardFileInput').click()">Choose Files from Device</button>
             </div>
 
-            <div id="wizardStagedFilesList" style="display:none; border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff;">
+            <div id="wizardStagedFilesList" style="display:none; border:1px solid var(--line); border-radius:14px; padding:14px; background: var(--surface);">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <strong style="font-size:13px;" id="wizardStagedFilesCount">Selected Files</strong>
                 <button class="btn sm primary" onclick="processWizardImport()">Upload &amp; Save to Vault</button>
@@ -2264,7 +2265,7 @@
             </div>
           </div>
 
-          <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <div style="border:1px solid var(--line); border-radius:14px; padding:14px; background: var(--surface); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
             <div>
               <strong style="font-size:13px; display:block;">Ready to Explore Transcripts &amp; AI Analysis</strong>
               <span style="font-size:12px; color:var(--muted);">All meeting audio and text are parsed, diarized, and securely indexed.</span>
@@ -2337,7 +2338,7 @@
 
         <div style="text-align:center; font-size:12px; color:var(--muted); font-weight:600;">— OR —</div>
 
-        <div style="border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff;">
+        <div style="border:1px solid var(--line); border-radius:12px; padding:14px; background: var(--surface);">
           <strong style="font-size:13px;">Instant Hardware GATT Sync</strong>
           <p style="font-size:12px; color:var(--muted); margin:4px 0 10px;">Pull the latest recording session directly through the paired BLE bridge or PLAUD Cloud.</p>
           <button class="btn sm" style="width:100%; justify-content:center;" onclick="executeBleHardwareSync()">⚡ Ingest Latest Session</button>
@@ -2894,14 +2895,14 @@
         const isBuiltin = pid === 'builtin';
         const model = c.active_model || c.default_model;
         return `
-        <div style="border:1px solid var(--line); border-radius:14px; padding:16px; background:#fff; display:flex; flex-direction:column; justify-content:space-between; gap:12px; box-shadow:0 1px 3px rgba(16,27,51,0.03);">
+        <div style="border:1px solid var(--line); border-radius:14px; padding:16px; background: var(--surface); display:flex; flex-direction:column; justify-content:space-between; gap:12px; box-shadow:0 1px 3px rgba(16,27,51,0.03);">
           <div>
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:6px;">
               <strong style="font-size:14px; color:var(--navy);">${escapeHtml(c.name)}</strong>
               <span class="tag ${isConnected ? 'green' : ''}">${isConnected ? (isBuiltin ? 'Embedded' : 'Active') : 'Optional'}</span>
             </div>
             <div style="font-size:12px; color:var(--muted); margin-bottom:8px; line-height:1.4;">${escapeHtml(c.description || '')}</div>
-            <div style="font-size:11.5px; color:var(--muted);">Model: <code style="background:#F1F5F9; padding:2px 6px; border-radius:4px;">${escapeHtml(model)}</code></div>
+            <div style="font-size:11.5px; color:var(--muted);">Model: <code style="background: var(--surface-alt); padding:2px 6px; border-radius:4px;">${escapeHtml(model)}</code></div>
             ${c.masked_key ? `<div style="font-size:11px; color:var(--emerald-dark); margin-top:4px; font-weight:600;">Auth: ${escapeHtml(c.masked_key)}</div>` : ''}
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; padding-top:8px; border-top:1px solid var(--line);">

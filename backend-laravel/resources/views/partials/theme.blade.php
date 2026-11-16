@@ -37,6 +37,8 @@
     --pc-radius-pill: 999px;
     --pc-shadow: 0 1px 2px rgba(16, 27, 51, 0.06), 0 8px 24px rgba(16, 27, 51, 0.06);
     --pc-glow: #E9EFF7;
+    --pc-ink: #101B33;        /* inverted chips: dark in light theme */
+    --pc-ink-text: #FFFFFF;
     color-scheme: light;
   }
 
@@ -60,6 +62,8 @@
     --pc-purple: #8B5CF6;
     --pc-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
     --pc-glow: #172A45;
+    --pc-ink: #223252;        /* inverted chips: a raised surface in dark theme */
+    --pc-ink-text: #F1F5F9;
     color-scheme: dark;
   }
 
