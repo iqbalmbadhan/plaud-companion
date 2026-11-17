@@ -346,22 +346,30 @@ function New-CleanComposerStaging {
             }
 
             $composerCmd = Get-Command composer -ErrorAction SilentlyContinue
-            if ($null -ne $composerCmd) {
-                & $composerCmd.Source install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
-            } else {
-                $composerPharCandidates = @(
-                    (Join-Path $BackendDir 'composer.phar'),
-                    (Join-Path (Split-Path -Parent $BackendDir) 'composer.phar'),
-                    (Join-Path $env:USERPROFILE 'composer.phar')
-                )
-                $composerPhar = $composerPharCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-                if ($null -eq $composerPhar) {
-                    throw (
-                        "Composer is required on PATH (or as composer.phar in repo root / user profile) to build clean --no-dev vendor directory.`n" +
-                        "Install Composer (https://getcomposer.org/download/) and ensure 'composer' is on PATH."
+            # Composer writes progress to stderr; in PS 5.1 that triggers NativeCommandError even on success.
+            # Temporarily lower the preference so stderr info lines don't abort the script; we check $LASTEXITCODE after.
+            $prevEap = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            try {
+                if ($null -ne $composerCmd) {
+                    & $composerCmd.Source install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
+                } else {
+                    $composerPharCandidates = @(
+                        (Join-Path $BackendDir 'composer.phar'),
+                        (Join-Path (Split-Path -Parent $BackendDir) 'composer.phar'),
+                        (Join-Path $env:USERPROFILE 'composer.phar')
                     )
+                    $composerPhar = $composerPharCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+                    if ($null -eq $composerPhar) {
+                        throw (
+                            "Composer is required on PATH (or as composer.phar in repo root / user profile) to build clean --no-dev vendor directory.`n" +
+                            "Install Composer (https://getcomposer.org/download/) and ensure 'composer' is on PATH."
+                        )
+                    }
+                    & php @phpIniArgs $composerPhar install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
                 }
-                & php @phpIniArgs $composerPhar install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
+            } finally {
+                $ErrorActionPreference = $prevEap
             }
             if ($LASTEXITCODE -ne 0) {
                 throw "composer install failed with exit code $LASTEXITCODE."

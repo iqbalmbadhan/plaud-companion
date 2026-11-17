@@ -1551,7 +1551,6 @@
                 <option value="gemini">Google Gemini (Fast)</option>
                 <option value="groq">Groq (Ultra-Fast / Free Tier)</option>
                 <option value="cloudflare">Cloudflare Workers AI (Free Tier)</option>
-                <option value="zai">Z.ai — 01.AI (Yi Models)</option>
                 <option value="anthropic">Anthropic Claude (High Accuracy)</option>
                 <option value="openai">OpenAI (GPT-4o)</option>
               </select>
@@ -1987,6 +1986,10 @@
         <div>
           <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">API Key</label>
           <input type="password" id="connectAiKeyInput" class="form-input" placeholder="Paste provider API key..." oninput="scheduleModelFetch()" />
+          <div id="connectAiCloudflareHint" style="display:none; margin-top:8px; padding:10px 12px; background:var(--pc-warning-bg,#fef3c7); border:1px solid var(--pc-warning-border,#f59e0b); border-radius:6px; font-size:12px; color:var(--pc-warning-text,#92400e); line-height:1.5;">
+            <strong>Cloudflare key format:</strong> <code style="font-family:monospace; background:rgba(0,0,0,.08); padding:1px 4px; border-radius:3px;">account_id:api_token</code><br>
+            Find your Account ID in the Cloudflare dashboard sidebar. Create an API Token at <em>My Profile → API Tokens</em>.
+          </div>
         </div>
         <div>
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
@@ -3008,8 +3011,9 @@
       document.getElementById('connectAiTitle').textContent = `Connect ${c.name}`;
       document.getElementById('connectAiKeyInput').value = '';
       document.getElementById('connectAiKeyInput').placeholder = pid === 'cloudflare'
-        ? 'account_id:api_token  (from dash.cloudflare.com)'
+        ? 'account_id:api_token'
         : 'Paste provider API key...';
+      document.getElementById('connectAiCloudflareHint').style.display = pid === 'cloudflare' ? 'block' : 'none';
       document.getElementById('connectAiModelsHint').textContent = 'Enter your API key then click Refresh Models to load live models.';
       const sel = document.getElementById('connectAiModelSelect');
       const models = c.available_models || c.models || [c.default_model];

@@ -73,16 +73,6 @@ class AiService
             'tag' => 'Free Tier',
             'free_tier' => true,
         ],
-        'zai' => [
-            'name' => 'Z.ai (01.AI)',
-            'description' => 'High-performance Yi language models by 01.AI. Fast inference, competitive on major benchmarks.',
-            'default_model' => 'yi-large',
-            'available_models' => ['yi-large', 'yi-lightning', 'yi-large-turbo', 'yi-medium'],
-            'setup_help_url' => 'https://platform.lingyiwanwu.com/apikeys',
-            'auth_type' => 'api_key',
-            'tag' => null,
-            'free_tier' => false,
-        ],
         'builtin' => [
             'name' => 'PLAUD Neural Meeting Engine',
             'description' => 'Embedded local neural engine for real-time diarization parsing, executive summaries, and action matrix synthesis.',
@@ -125,7 +115,6 @@ class AiService
                 'openrouter'  => env('OPENROUTER_API_KEY'),
                 'groq'        => env('GROQ_API_KEY'),
                 'cloudflare'  => env('CLOUDFLARE_AI_KEY'),
-                'zai'         => env('ZAI_API_KEY'),
                 default       => null,
             };
             $hasEnvKey = !empty($envKey);
@@ -287,7 +276,6 @@ class AiService
                 'openrouter' => env('OPENROUTER_API_KEY'),
                 'groq'       => env('GROQ_API_KEY'),
                 'cloudflare' => env('CLOUDFLARE_AI_KEY'),
-                'zai'        => env('ZAI_API_KEY'),
                 default      => null,
             };
             if (!empty($apiKey)) {
@@ -298,7 +286,6 @@ class AiService
                     'openrouter' => 'anthropic/claude-3.5-sonnet',
                     'groq'       => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
                     'cloudflare' => env('CLOUDFLARE_MODEL', '@cf/meta/llama-3.1-8b-instruct'),
-                    'zai'        => env('ZAI_MODEL', 'yi-large'),
                     default      => self::PROVIDERS[$pid]['default_model'],
                 };
             }
@@ -485,11 +472,6 @@ class AiService
             return ['cloudflare', (string) $cloudflareKey, env('CLOUDFLARE_MODEL', '@cf/meta/llama-3.1-8b-instruct')];
         }
 
-        $zaiKey = env('ZAI_API_KEY');
-        if (!empty($zaiKey)) {
-            return ['zai', (string) $zaiKey, env('ZAI_MODEL', 'yi-large')];
-        }
-
         // Built-in intelligent neural engine fallback
         return ['builtin', 'system-internal', 'neural-synthesis-v2'];
     }
@@ -529,6 +511,8 @@ class AiService
 
             if (str_contains($rawMsg, '401') || str_contains($rawMsg, '403') || str_contains($rawMsg, 'Unauthorized') || str_contains($rawMsg, 'API_KEY_INVALID')) {
                 $cleanMsg = 'Authentication failed. Please verify that your API key is correct and active.';
+            } elseif (str_contains($rawMsg, '410')) {
+                $cleanMsg = 'This provider\'s API endpoint returned HTTP 410 (Gone) — the service has been retired or moved. Check the provider\'s documentation for a current endpoint.';
             } elseif (str_contains($rawMsg, '429') || str_contains($rawMsg, 'quota') || str_contains($rawMsg, 'rate limit') || str_contains($rawMsg, 'RESOURCE_EXHAUSTED')) {
                 $cleanMsg = 'Rate limit or quota exceeded for this provider account.';
             } elseif (str_contains($rawMsg, '404') || str_contains($rawMsg, 'model_not_found') || str_contains($rawMsg, 'NOT_FOUND')) {
@@ -603,7 +587,6 @@ class AiService
             'anthropic'  => $this->callAnthropic($apiKey, $model, $systemPrompt, $userPrompt),
             'gemini'     => $this->callGemini($apiKey, $model, $systemPrompt, $userPrompt),
             'cloudflare' => $this->callCloudflare($apiKey, $model, $systemPrompt, $userPrompt),
-            'zai'        => $this->callOpenAiCompatible('https://api.lingyiwanwu.com/v1/chat/completions', $apiKey, $model, $systemPrompt, $userPrompt),
             'builtin'    => $this->runBuiltinEngine($systemPrompt, $userPrompt),
             default      => throw new HttpResponseException(response()->json(['detail' => "Unsupported provider '{$providerId}'."], 400)),
         };
@@ -914,7 +897,6 @@ class AiService
                 'openrouter' => $this->fetchOpenRouterModels($apiKey),
                 'cloudflare' => $this->fetchCloudflareModels($apiKey),
                 'anthropic'  => $static, // no public listing endpoint
-                'zai'        => $static, // no public listing endpoint
                 default      => $static,
             };
 
