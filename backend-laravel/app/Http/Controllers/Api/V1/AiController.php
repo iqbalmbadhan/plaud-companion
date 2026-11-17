@@ -29,13 +29,20 @@ class AiController extends Controller
             'model' => ['nullable', 'string', 'max:100'],
         ]);
 
-        return response()->json($this->ai->connectProvider(
+        $result = $this->ai->connectProvider(
             $workspaceId,
             $request->user()->id,
             $providerId,
             $validated['api_key'] ?? null,
             $validated['model'] ?? null
-        ));
+        );
+
+        // Return 422 so the frontend apiFetch throws and shows the error message.
+        if (!($result['success'] ?? false)) {
+            return response()->json($result, 422);
+        }
+
+        return response()->json($result);
     }
 
     public function test(Request $request, string $workspaceId, string $providerId): JsonResponse

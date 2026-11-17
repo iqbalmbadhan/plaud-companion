@@ -1304,7 +1304,7 @@ class EndToEndUserWorkflowTest extends TestCase
             'api_key' => '   ',
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(422);
         $this->assertFalse($response->json('success'));
         $this->assertStringContainsString('API key is required', $response->json('message'));
     }
@@ -1319,7 +1319,7 @@ class EndToEndUserWorkflowTest extends TestCase
             'api_key' => 'some-valid-looking-key',
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(422);
         $this->assertFalse($response->json('success'));
         $this->assertStringContainsString('Unknown provider', $response->json('message'));
     }

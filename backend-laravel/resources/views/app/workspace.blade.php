@@ -3034,16 +3034,21 @@
       const api_key = document.getElementById('connectAiKeyInput').value.trim();
       const model = document.getElementById('connectAiModelSelect').value;
       if (!api_key) return showToast('Please enter an API key', true);
+      const btn = document.querySelector('#connectAiModal .btn.primary');
+      if (btn) { btn.disabled = true; btn.textContent = 'Connecting…'; }
       try {
-        await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/ai/connectors/${provider}/connect`, {
+        const res = await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/ai/connectors/${provider}/connect`, {
           method: 'POST',
           body: { api_key, model }
         });
+        if (res && res.success === false) throw new Error(res.message || 'Connection failed');
         closeModal('connectAiModal');
-        showToast(`${provider.toUpperCase()} credentials saved successfully`);
+        showToast(`${provider} connected successfully`);
         await loadWorkspaceData();
       } catch (e) {
-        showToast(e.message, true);
+        showToast(e.message || 'Failed to connect provider', true);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Save & Connect'; }
       }
     }
 
