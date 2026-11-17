@@ -161,10 +161,13 @@ class UserProfileAndPasswordResetTest extends TestCase
         $this->assertStringContainsString('route(\'register\')', $demoContent);
         $this->assertStringContainsString('route(\'password.request\')', $demoContent);
 
-        // Workspace View has clickable avatar to profile and sidebar profile link
+        // Workspace View exposes Profile, Users and Updates under the account menu, plus the sidebar profile link.
         $workspaceContent = file_get_contents($this->baseDir . '/resources/views/app/workspace.blade.php');
-        $this->assertStringContainsString('href="{{ route(\'profile.show\') }}" class="avatar"', $workspaceContent);
+        $this->assertStringContainsString('href="{{ route(\'profile.show\') }}"', $workspaceContent);
         $this->assertStringContainsString('href="{{ route(\'profile.show\') }}" class="nav-item-link"', $workspaceContent);
+        $this->assertStringContainsString('route(\'settings.users\')', $workspaceContent);
+        $this->assertStringContainsString('route(\'settings.updates\')', $workspaceContent);
+        $this->assertStringContainsString('acctMenu', $workspaceContent);
     }
 
     public function test_password_reset_token_sha256_hash_and_expiry_logic(): void

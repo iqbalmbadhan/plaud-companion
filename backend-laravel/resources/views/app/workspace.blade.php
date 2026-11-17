@@ -304,8 +304,31 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      flex-wrap: wrap;
     }
+
+    /* Dropdown menus (New + Account) — flat, clean, keyboard-friendly. */
+    .menu { position: relative; }
+    .menu-pop {
+      position: absolute; top: calc(100% + 8px); left: 0; min-width: 232px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(16,27,51,0.14); padding: 6px; z-index: 50;
+      opacity: 0; visibility: hidden; transform: translateY(-6px); transition: .16s ease;
+    }
+    .menu-pop.right { left: auto; right: 0; }
+    .menu.open .menu-pop { opacity: 1; visibility: visible; transform: translateY(0); }
+    .menu-pop a, .menu-pop button {
+      display: flex; align-items: center; gap: 11px; width: 100%; box-sizing: border-box;
+      padding: 11px 12px; border: 0; background: transparent; border-radius: 10px;
+      font: 600 14px/1.2 var(--font); color: var(--navy); text-align: left; cursor: pointer; text-decoration: none;
+    }
+    .menu-pop a:hover, .menu-pop button:hover { background: var(--emerald-soft); color: var(--emerald-dark); }
+    .menu-pop form { margin: 0; }
+    .menu-head { padding: 10px 12px 12px; border-bottom: 1px solid var(--line); margin-bottom: 6px; display: flex; flex-direction: column; gap: 2px; }
+    .menu-head strong { font-size: 14px; color: var(--navy); }
+    .menu-head span { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+    .menu-sep { height: 1px; background: var(--line); margin: 6px 4px; }
+    .avatar-btn { border: 1px solid var(--line); background: transparent; padding: 2px; border-radius: 13px; cursor: pointer; }
+    .avatar-btn:hover { border-color: var(--emerald); }
 
     .btn {
       border: 1px solid var(--line);
@@ -1223,20 +1246,42 @@
           <input id="globalSearch" type="text" placeholder="Search transcripts, speakers, action items, or projects..." oninput="handleGlobalSearch(this.value)" />
         </div>
         <div class="top-actions">
-          <span class="tag green" style="display:inline-flex; align-items:center; gap:5px; font-weight:700;" title="All meeting audio, transcripts, and notes are encrypted strictly on this physical device.">🔒 On-Device Encryption</span>
-          <button class="btn sm" id="btnPwaInstall" style="display:none; background:rgba(24,168,121,0.15); border:1px solid var(--emerald); color:var(--emerald-dark); font-weight:700;" onclick="installPwa()">📲 Install App</button>
-          @if($user['is_super_admin'])
-            <a href="{{ route('settings.users') }}" class="btn sm" title="Super-Admin User Management" style="text-decoration:none;">👥 Users</a>
-          @endif
-          <button class="btn primary" onclick="openDeviceWizard()">🎙️ Connect Device</button>
-          <button class="btn" onclick="switchView('transcripts'); document.getElementById('fileUploadInput').click();">+ Import Files</button>
-          <button class="btn" onclick="openModal('newTranscriptModal')">+ Paste Transcript</button>
+          <button class="btn sm" id="btnPwaInstall" style="display:none;" onclick="installPwa()" title="Install PLAUD Companion as an app">⬇ Install app</button>
+
+          <!-- Create: grouped so the bar stays clean -->
+          <div class="menu" id="newMenu">
+            <button class="btn" onclick="toggleTopMenu('newMenu')" aria-haspopup="true" aria-expanded="false">+ New ▾</button>
+            <div class="menu-pop">
+              <button type="button" onclick="closeTopMenus(); openDeviceWizard();">🎙️ Connect device</button>
+              <button type="button" onclick="closeTopMenus(); switchView('transcripts'); document.getElementById('fileUploadInput').click();">📁 Import files</button>
+              <button type="button" onclick="closeTopMenus(); openModal('newTranscriptModal');">📝 Paste transcript</button>
+            </div>
+          </div>
+
           <button class="btn primary" onclick="switchView('assistant')">✨ Ask AI</button>
-          <a href="{{ route('profile.show') }}" class="avatar" title="View Profile: {{ $user['display_name'] }} ({{ $user['email'] }})" style="text-decoration:none;">{{ $user['initials'] }}</a>
-          <form method="POST" action="{{ route('logout') }}" style="margin:0;">
-            @csrf
-            <button type="submit" class="btn sm" title="Sign Out">Sign Out</button>
-          </form>
+
+          <!-- Account: Profile, Users, Updates, Sign out all live here, under the dashboard -->
+          <div class="menu" id="acctMenu">
+            <button class="avatar-btn" onclick="toggleTopMenu('acctMenu')" aria-haspopup="true" aria-expanded="false" title="Account menu">
+              <span class="avatar">{{ $user['initials'] }}</span>
+            </button>
+            <div class="menu-pop right">
+              <div class="menu-head">
+                <strong>{{ $user['display_name'] }}</strong>
+                <span>{{ $user['email'] }}</span>
+              </div>
+              <a href="{{ route('profile.show') }}">👤 My profile &amp; password</a>
+              @if($user['is_super_admin'])
+                <a href="{{ route('settings.users') }}">👥 Users &amp; access</a>
+                <a href="{{ route('settings.updates') }}">⚙️ Updates &amp; backups</a>
+              @endif
+              <div class="menu-sep"></div>
+              <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit">↩ Sign out</button>
+              </form>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -2787,9 +2832,7 @@
         const summaryBox = document.getElementById('detailSummaryBox');
         summaryBox.style.whiteSpace = detail.summary_markdown ? 'pre-wrap' : '';
         summaryBox.textContent = detail.summary_markdown
-          ? 'Summary from Plaud:
-
-' + detail.summary_markdown
+          ? 'Summary from Plaud:\n\n' + detail.summary_markdown
           : 'Click "✨ Generate" to synthesize an executive AI summary for "' + detail.title + '".';
         document.getElementById('detailActionsBox').innerHTML =
           '<p style="font-size:13px; color:var(--muted); margin:0;">Click "⚡ Extract Actions" to extract tasks and owners from "' + escapeHtml(detail.title) + '".</p>';
@@ -3971,6 +4014,27 @@
       }
       showToast('Open this site in Chrome or Edge, then use the install icon in the address bar.');
     }
+
+    // Topbar dropdown menus (New + Account).
+    function closeTopMenus() {
+      document.querySelectorAll('.menu.open').forEach((m) => {
+        m.classList.remove('open');
+        const t = m.querySelector('[aria-haspopup]');
+        if (t) t.setAttribute('aria-expanded', 'false');
+      });
+    }
+    function toggleTopMenu(id) {
+      const menu = document.getElementById(id);
+      const isOpen = menu.classList.contains('open');
+      closeTopMenus();
+      if (!isOpen) {
+        menu.classList.add('open');
+        const t = menu.querySelector('[aria-haspopup]');
+        if (t) t.setAttribute('aria-expanded', 'true');
+      }
+    }
+    document.addEventListener('click', (e) => { if (!e.target.closest('.menu')) closeTopMenus(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeTopMenus(); });
 
     // Initialize workspace on page load
     renderWorkspaceSelector();
