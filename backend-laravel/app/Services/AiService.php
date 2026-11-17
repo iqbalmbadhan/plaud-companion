@@ -820,6 +820,109 @@ class AiService
     }
 
     /**
+     * Fetch the live model list from a provider using the supplied API key.
+     * Falls back to the static PROVIDERS list if the API call fails.
+     *
+     * @return list<string>
+     */
+    public function fetchProviderModels(string $workspaceId, string $userId, string $providerId, string $apiKey): array
+    {
+        $this->workspaces->requireMembership($workspaceId, $userId);
+        $pid = strtolower(trim($providerId));
+
+        $static = self::PROVIDERS[$pid]['available_models'] ?? [];
+
+        if (empty($apiKey) || !isset(self::PROVIDERS[$pid])) {
+            return $static;
+        }
+
+        try {
+            $live = match ($pid) {
+                'openai'     => $this->fetchOpenAiModels($apiKey),
+                'groq'       => $this->fetchGroqModels($apiKey),
+                'gemini'     => $this->fetchGeminiModels($apiKey),
+                'openrouter' => $this->fetchOpenRouterModels($apiKey),
+                'anthropic'  => $static, // Anthropic has no public models listing endpoint
+                default      => $static,
+            };
+
+            return $live ?: $static;
+        } catch (\Throwable) {
+            return $static;
+        }
+    }
+
+    /** @return list<string> */
+    private function fetchOpenAiModels(string $apiKey): array
+    {
+        $resp = Http::timeout(10)->withToken($apiKey)->get('https://api.openai.com/v1/models');
+        if ($resp->failed()) {
+            return [];
+        }
+
+        return collect($resp->json('data', []))
+            ->filter(fn ($m) => str_starts_with($m['id'] ?? '', 'gpt-'))
+            ->sortByDesc(fn ($m) => $m['created'] ?? 0)
+            ->pluck('id')
+            ->values()
+            ->take(20)
+            ->all();
+    }
+
+    /** @return list<string> */
+    private function fetchGroqModels(string $apiKey): array
+    {
+        $resp = Http::timeout(10)->withToken($apiKey)->get('https://api.groq.com/openai/v1/models');
+        if ($resp->failed()) {
+            return [];
+        }
+
+        return collect($resp->json('data', []))
+            ->pluck('id')
+            ->sort()
+            ->values()
+            ->all();
+    }
+
+    /** @return list<string> */
+    private function fetchGeminiModels(string $apiKey): array
+    {
+        $resp = Http::timeout(10)->get('https://generativelanguage.googleapis.com/v1beta/models', [
+            'key' => $apiKey,
+        ]);
+        if ($resp->failed()) {
+            return [];
+        }
+
+        return collect($resp->json('models', []))
+            ->filter(fn ($m) => in_array('generateContent', $m['supportedGenerationMethods'] ?? [], true))
+            ->pluck('name')
+            ->map(fn ($n) => preg_replace('#^models/#', '', (string) $n))
+            ->sort()
+            ->values()
+            ->all();
+    }
+
+    /** @return list<string> */
+    private function fetchOpenRouterModels(string $apiKey): array
+    {
+        $resp = Http::timeout(10)
+            ->withToken($apiKey)
+            ->withHeader('HTTP-Referer', config('app.url', 'http://localhost'))
+            ->get('https://openrouter.ai/api/v1/models');
+        if ($resp->failed()) {
+            return [];
+        }
+
+        return collect($resp->json('data', []))
+            ->pluck('id')
+            ->sort()
+            ->values()
+            ->take(100)
+            ->all();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function decodeJsonPayload(string $raw): array

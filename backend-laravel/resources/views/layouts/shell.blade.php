@@ -23,8 +23,9 @@
         a { color: inherit; }
         .app { display: grid; grid-template-columns: 264px 1fr; min-height: 100vh; }
 
-        /* Sidebar — always dark to match the workspace dashboard */
-        .sidebar { background: linear-gradient(180deg, var(--pc-text) 0%, var(--pc-ink) 100%); border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; justify-content: space-between; padding: 20px 16px; color: #fff; }
+        /* Sidebar — always dark navy regardless of theme */
+        .sidebar { background: linear-gradient(180deg, #101B33 0%, #162944 100%); border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; justify-content: space-between; padding: 20px 16px; color: #fff; }
+        html[data-theme="dark"] .sidebar { background: linear-gradient(180deg, #13203B 0%, #0F1A30 100%); }
         .brand { display: flex; align-items: center; gap: 12px; padding: 4px 6px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 16px; }
         .brand-logo { width: 42px; height: 42px; border-radius: 14px; background: linear-gradient(135deg, var(--pc-emerald), #37C89A); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 18px; box-shadow: 0 10px 24px rgba(24,168,121,0.35); flex-shrink: 0; }
         .brand h1 { margin: 0; font-size: 16px; font-weight: 800; color: #fff; }
@@ -129,6 +130,7 @@
             </div>
             <div class="top-actions">
                 <a href="{{ route('app.dashboard') }}" class="btn">← Dashboard</a>
+                <button class="btn" data-pc-theme-btn="1" onclick="__pcToggleTheme && __pcToggleTheme()" title="Toggle theme" style="padding:9px 12px; font-size:16px; line-height:1;">🌙</button>
                 <div class="menu" id="acctMenu">
                     <button class="avatar-btn" onclick="toggleAcct()" aria-haspopup="true" aria-expanded="false" title="Account menu"><span class="avatar">{{ $__initials }}</span></button>
                     <div class="menu-pop">

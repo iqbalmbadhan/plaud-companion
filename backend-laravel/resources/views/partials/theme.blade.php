@@ -86,24 +86,37 @@
     var root = document.documentElement;
     function system() { return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
     function stored() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
-    function apply(theme) { root.setAttribute('data-theme', theme); }
+    function applyTheme(theme) { root.setAttribute('data-theme', theme); }
     // Apply as early as possible to avoid a flash.
-    apply(stored() || system());
+    applyTheme(stored() || system());
+
+    // Global toggle callable from any inline button in the topbar.
+    window.__pcToggleTheme = function () {
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      try { localStorage.setItem(KEY, next); } catch (e) {}
+      // Update all theme-toggle button labels on the page.
+      document.querySelectorAll('[data-pc-theme-btn]').forEach(function (el) {
+        var dark = root.getAttribute('data-theme') === 'dark';
+        el.setAttribute('title', dark ? 'Switch to light mode' : 'Switch to dark mode');
+        el.innerHTML = dark ? '☀️' : '🌙';
+      });
+    };
+
+    // Only create the floating button on pages that have no .topbar (e.g. auth pages).
     document.addEventListener('DOMContentLoaded', function () {
+      if (document.querySelector('.topbar')) return;
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'pc-theme-toggle';
+      btn.setAttribute('data-pc-theme-btn', '1');
       btn.setAttribute('aria-label', 'Switch between light and dark theme');
       function label() {
         var dark = root.getAttribute('data-theme') === 'dark';
         btn.innerHTML = (dark ? '☀️' : '🌙') + ' <span>' + (dark ? 'Light' : 'Dark') + '</span>';
+        btn.setAttribute('title', dark ? 'Switch to light mode' : 'Switch to dark mode');
       }
-      btn.addEventListener('click', function () {
-        var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        apply(next);
-        try { localStorage.setItem(KEY, next); } catch (e) {}
-        label();
-      });
+      btn.addEventListener('click', function () { window.__pcToggleTheme(); label(); });
       label();
       document.body.appendChild(btn);
     });

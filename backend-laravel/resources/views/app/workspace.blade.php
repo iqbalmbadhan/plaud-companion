@@ -55,7 +55,7 @@
     }
 
     .sidebar {
-      background: linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+      background: linear-gradient(180deg, #101B33 0%, #162944 100%);
       color: #fff;
       padding: 22px 18px;
       display: flex;
@@ -66,6 +66,7 @@
       top: 0;
       height: 100vh;
     }
+    html[data-theme="dark"] .sidebar { background: linear-gradient(180deg, #13203B 0%, #0F1A30 100%); }
 
     .brand {
       display: flex;
@@ -1260,6 +1261,8 @@
 
           <button class="btn primary" onclick="switchView('assistant')">✨ Ask AI</button>
 
+          <button class="btn" data-pc-theme-btn="1" onclick="__pcToggleTheme && __pcToggleTheme()" title="Toggle theme" style="padding:9px 12px; font-size:16px; line-height:1;">🌙</button>
+
           <!-- Account: Profile, Users, Updates, Sign out all live here, under the dashboard -->
           <div class="menu" id="acctMenu">
             <button class="avatar-btn" onclick="toggleTopMenu('acctMenu')" aria-haspopup="true" aria-expanded="false" title="Account menu">
@@ -1979,11 +1982,15 @@
       <div style="display:flex; flex-direction:column; gap:12px;">
         <div>
           <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">API Key</label>
-          <input type="password" id="connectAiKeyInput" class="form-input" placeholder="Paste provider API key..." />
+          <input type="password" id="connectAiKeyInput" class="form-input" placeholder="Paste provider API key..." oninput="scheduleModelFetch()" />
         </div>
         <div>
-          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">Preferred Model</label>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+            <label style="font-size:12px; font-weight:700;">Preferred Model</label>
+            <button class="btn sm" id="fetchModelsBtn" onclick="fetchConnectModels()" style="font-size:11px; padding:3px 9px;">↺ Refresh Models</button>
+          </div>
           <select id="connectAiModelSelect" class="form-select"></select>
+          <div id="connectAiModelsHint" style="font-size:11px; color:var(--muted); margin-top:4px;">Enter your API key then click Refresh Models to load live models.</div>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
           <button class="btn" onclick="closeModal('connectAiModal')">Cancel</button>
@@ -2962,6 +2969,8 @@
       }).join('');
     }
 
+    var _modelFetchTimer = null;
+
     function openConnectAiModal(providerId) {
       const connectors = Array.isArray(state.connectors) ? state.connectors : (state.connectors?.providers || []);
       const c = connectors.find(x => (x.provider_id || x.provider) === providerId);
@@ -2970,12 +2979,54 @@
       document.getElementById('connectAiProviderId').value = pid;
       document.getElementById('connectAiTitle').textContent = `Connect ${c.name}`;
       document.getElementById('connectAiKeyInput').value = '';
+      document.getElementById('connectAiModelsHint').textContent = 'Enter your API key then click Refresh Models to load live models.';
       const sel = document.getElementById('connectAiModelSelect');
       const models = c.available_models || c.models || [c.default_model];
       sel.innerHTML = models.map(m =>
         `<option value="${m}" ${m === (c.active_model || c.default_model) ? 'selected' : ''}>${m}</option>`
       ).join('');
       openModal('connectAiModal');
+    }
+
+    function scheduleModelFetch() {
+      if (_modelFetchTimer) clearTimeout(_modelFetchTimer);
+      const key = document.getElementById('connectAiKeyInput').value.trim();
+      if (key.length < 10) return;
+      _modelFetchTimer = setTimeout(fetchConnectModels, 1200);
+    }
+
+    async function fetchConnectModels() {
+      if (_modelFetchTimer) { clearTimeout(_modelFetchTimer); _modelFetchTimer = null; }
+      const provider = document.getElementById('connectAiProviderId').value;
+      const apiKey = document.getElementById('connectAiKeyInput').value.trim();
+      if (!apiKey) return showToast('Enter an API key first', true);
+      const btn = document.getElementById('fetchModelsBtn');
+      const hint = document.getElementById('connectAiModelsHint');
+      btn.disabled = true;
+      btn.textContent = 'Fetching…';
+      hint.textContent = 'Fetching live models from provider…';
+      try {
+        const res = await apiFetch(`/app/api/workspaces/${state.activeWorkspaceId}/ai/connectors/${provider}/fetch-models`, {
+          method: 'POST',
+          body: { api_key: apiKey }
+        });
+        const sel = document.getElementById('connectAiModelSelect');
+        const currentVal = sel.value;
+        const models = res.models || [];
+        if (models.length === 0) {
+          hint.textContent = 'No models returned — static list shown.';
+          return;
+        }
+        sel.innerHTML = models.map(m =>
+          `<option value="${m}" ${m === currentVal ? 'selected' : ''}>${m}</option>`
+        ).join('');
+        hint.textContent = `${models.length} model${models.length !== 1 ? 's' : ''} loaded from provider.`;
+      } catch (e) {
+        hint.textContent = 'Could not fetch live models — using static list.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '↺ Refresh Models';
+      }
     }
 
     async function saveAiConnector() {

@@ -43,6 +43,18 @@ class AiController extends Controller
         return response()->json($this->ai->testWorkspaceConnection($workspaceId, $request->user()->id, $providerId));
     }
 
+    public function fetchModels(Request $request, string $workspaceId, string $providerId): JsonResponse
+    {
+        $apiKey = (string) ($request->input('api_key', ''));
+        if ($apiKey === '') {
+            return response()->json(['error' => 'api_key required', 'models' => []], 422);
+        }
+
+        $models = $this->ai->fetchProviderModels($workspaceId, $request->user()->id, $providerId, $apiKey);
+
+        return response()->json(['provider_id' => $providerId, 'models' => $models]);
+    }
+
     public function summary(Request $request, string $arg1, ?string $arg2 = null): JsonResponse
     {
         $transcriptId = $arg2 !== null ? $arg2 : $arg1;
