@@ -1156,9 +1156,10 @@
       flex-wrap: wrap;
       gap: 12px;
       font-size: 12px;
-      color: var(--muted);
+      color: var(--slate);
       background: var(--surface-alt);
     }
+    .app-footer strong { color: var(--navy); }
     .app-footer a {
       color: var(--emerald-dark);
       text-decoration: none;
@@ -1551,7 +1552,7 @@
                 <option value="groq">Groq (Ultra-Fast / Free Tier)</option>
                 <option value="cloudflare">Cloudflare Workers AI (Free Tier)</option>
                 <option value="zai">Z.ai — 01.AI (Yi Models)</option>
-                <option value="claude">Anthropic Claude (High Accuracy)</option>
+                <option value="anthropic">Anthropic Claude (High Accuracy)</option>
                 <option value="openai">OpenAI (GPT-4o)</option>
               </select>
             </div>

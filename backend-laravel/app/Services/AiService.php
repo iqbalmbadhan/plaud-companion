@@ -480,6 +480,16 @@ class AiService
             return ['groq', (string) $groqKey, env('GROQ_MODEL', 'llama-3.3-70b-versatile')];
         }
 
+        $cloudflareKey = env('CLOUDFLARE_AI_KEY');
+        if (!empty($cloudflareKey)) {
+            return ['cloudflare', (string) $cloudflareKey, env('CLOUDFLARE_MODEL', '@cf/meta/llama-3.1-8b-instruct')];
+        }
+
+        $zaiKey = env('ZAI_API_KEY');
+        if (!empty($zaiKey)) {
+            return ['zai', (string) $zaiKey, env('ZAI_MODEL', 'yi-large')];
+        }
+
         // Built-in intelligent neural engine fallback
         return ['builtin', 'system-internal', 'neural-synthesis-v2'];
     }

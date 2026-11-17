@@ -74,12 +74,12 @@
         .app-footer-brand { display: flex; align-items: center; gap: 10px; }
         .app-footer-logo { width: 28px; height: 28px; border-radius: 8px; background: var(--pc-emerald); color: #fff; font-weight: 800; font-size: 11px; display: grid; place-items: center; letter-spacing: -.5px; flex-shrink: 0; }
         .app-footer-brand-text { font-size: 13px; font-weight: 700; color: var(--pc-text); line-height: 1.2; }
-        .app-footer-brand-text span { display: block; font-size: 11px; font-weight: 500; color: var(--pc-muted); }
-        .app-footer-credits { font-size: 12px; color: var(--pc-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+        .app-footer-brand-text span { display: block; font-size: 11px; font-weight: 500; color: var(--pc-text-soft); }
+        .app-footer-credits { font-size: 12px; color: var(--pc-text-soft); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
         .app-footer-credits a { color: var(--pc-emerald-hover); text-decoration: none; font-weight: 600; }
         .app-footer-credits a:hover { text-decoration: underline; }
         .app-footer-credits .sep { opacity: .4; }
-        .app-footer-ver { font-size: 11px; color: var(--pc-muted); background: var(--pc-surface); border: 1px solid var(--pc-border); border-radius: 6px; padding: 3px 9px; font-weight: 600; white-space: nowrap; }
+        .app-footer-ver { font-size: 11px; color: var(--pc-text-soft); background: var(--pc-surface); border: 1px solid var(--pc-border); border-radius: 6px; padding: 3px 9px; font-weight: 600; white-space: nowrap; }
 
         .hamburger { display: none; }
         @media (max-width: 900px) {
