@@ -399,7 +399,7 @@
     .content.active { display: flex; }
 
     .hero {
-      background: linear-gradient(135deg, var(--navy) 0%, #17345A 60%, #146A5B 100%);
+      background: linear-gradient(135deg, #101B33 0%, #17345A 60%, #146A5B 100%);
       color: #fff;
       border-radius: 22px;
       padding: 24px;

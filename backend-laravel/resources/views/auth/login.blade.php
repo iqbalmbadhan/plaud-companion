@@ -20,6 +20,7 @@
             --emerald: var(--pc-emerald);
             --emerald-hover: var(--pc-emerald-hover);
             --danger: var(--pc-danger);
+            --surface-alt: var(--pc-surface-alt);
         }
         * { box-sizing: border-box; }
         body {

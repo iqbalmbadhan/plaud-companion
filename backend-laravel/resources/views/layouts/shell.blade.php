@@ -117,7 +117,7 @@
             </nav>
         </div>
         <div class="side-card">
-            <strong style="color:var(--pc-text);">PLAUD Companion</strong><br>
+            <strong style="color:rgba(255,255,255,0.90);">PLAUD Companion</strong><br>
             <span class="dot"></span>v{{ config('app.version', '1.0.0') }} • Ready
         </div>
     </aside>

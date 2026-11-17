@@ -103,8 +103,14 @@
       });
     };
 
-    // Only create the floating button on pages that have no .topbar (e.g. auth pages).
+    // On pages with a topbar the theme button is static HTML — sync its label on load.
     document.addEventListener('DOMContentLoaded', function () {
+      var isDark = root.getAttribute('data-theme') === 'dark';
+      document.querySelectorAll('[data-pc-theme-btn]').forEach(function (el) {
+        el.innerHTML = isDark ? '☀️' : '🌙';
+        el.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+      });
+      // Only create the floating button on pages that have no .topbar (e.g. auth pages).
       if (document.querySelector('.topbar')) return;
       var btn = document.createElement('button');
       btn.type = 'button';
