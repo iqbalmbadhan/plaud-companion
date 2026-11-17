@@ -1,7 +1,8 @@
 {{-- Adds a show/hide (eye) button to every password field on the page. Self-contained. --}}
 <style>
-  .pw-wrap { position: relative; display: block; }
-  .pw-wrap > input { padding-right: 48px !important; }
+  .pw-wrap { position: relative; display: block; width: 100%; }
+  /* width + display: block prevent shrink when type switches to text */
+  .pw-wrap > input { padding-right: 48px !important; width: 100% !important; display: block; box-sizing: border-box; }
   .pw-eye {
     position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
     width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
@@ -35,6 +36,22 @@
         '<svg class="pw-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
       btn.addEventListener('click', function () {
         var show = input.type === 'password';
+        if (show) {
+          // Snapshot padding before type change — CSS rule input[type="password"] will stop applying
+          var cs = window.getComputedStyle(input);
+          input.style.paddingTop = cs.paddingTop;
+          input.style.paddingBottom = cs.paddingBottom;
+          input.style.paddingLeft = cs.paddingLeft;
+          input.style.fontSize = cs.fontSize;
+          input.style.lineHeight = cs.lineHeight;
+        } else {
+          // Release inline overrides so the CSS cascade takes back control
+          input.style.paddingTop = '';
+          input.style.paddingBottom = '';
+          input.style.paddingLeft = '';
+          input.style.fontSize = '';
+          input.style.lineHeight = '';
+        }
         input.type = show ? 'text' : 'password';
         btn.classList.toggle('is-on', show);
         btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');

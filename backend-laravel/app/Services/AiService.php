@@ -15,21 +15,33 @@ class AiService
     private const PROVIDERS = [
         'openrouter' => [
             'name' => 'OpenRouter',
-            'description' => 'Access Claude, GPT-4o, Gemini, and Llama models via a single OpenRouter key.',
+            'description' => 'Access Claude, GPT-4o, Gemini, and Llama models via a single OpenRouter key. Free-tier `:free` models available.',
             'default_model' => 'anthropic/claude-3.5-sonnet',
-            'available_models' => ['anthropic/claude-3.5-sonnet', 'openai/gpt-4o-mini', 'google/gemini-2.0-flash-001'],
+            'available_models' => ['anthropic/claude-3.5-sonnet', 'openai/gpt-4o-mini', 'google/gemini-2.0-flash-001', 'meta-llama/llama-3.1-8b-instruct:free', 'google/gemini-2.0-flash-exp:free'],
             'setup_help_url' => 'https://openrouter.ai/keys',
             'auth_type' => 'api_key',
             'tag' => 'Multi-Model',
+            'free_tier' => true,
         ],
         'gemini' => [
             'name' => 'Google Gemini',
-            'description' => 'Fast, scalable processing with massive context windows powered by Google Gemini.',
+            'description' => 'Fast, scalable processing with massive context windows. Free tier: 15 req/min, no credit card needed.',
             'default_model' => 'gemini-2.0-flash',
-            'available_models' => ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'],
+            'available_models' => ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'],
             'setup_help_url' => 'https://aistudio.google.com/apikey',
             'auth_type' => 'api_key',
-            'tag' => 'Fast',
+            'tag' => 'Free Tier',
+            'free_tier' => true,
+        ],
+        'groq' => [
+            'name' => 'Groq',
+            'description' => 'Ultra-fast open-source model inference. Free tier: 30 req/min — no credit card required.',
+            'default_model' => 'llama-3.3-70b-versatile',
+            'available_models' => ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'gemma2-9b-it', 'mixtral-8x7b-32768'],
+            'setup_help_url' => 'https://console.groq.com/keys',
+            'auth_type' => 'api_key',
+            'tag' => 'Free Tier',
+            'free_tier' => true,
         ],
         'anthropic' => [
             'name' => 'Anthropic Claude',
@@ -39,6 +51,7 @@ class AiService
             'setup_help_url' => 'https://console.anthropic.com/settings/keys',
             'auth_type' => 'api_key',
             'tag' => 'Recommended',
+            'free_tier' => false,
         ],
         'openai' => [
             'name' => 'OpenAI',
@@ -48,6 +61,7 @@ class AiService
             'setup_help_url' => 'https://platform.openai.com/api-keys',
             'auth_type' => 'api_key',
             'tag' => null,
+            'free_tier' => false,
         ],
         'builtin' => [
             'name' => 'PLAUD Neural Meeting Engine',
@@ -57,6 +71,7 @@ class AiService
             'setup_help_url' => null,
             'auth_type' => 'builtin',
             'tag' => 'Instant / Offline',
+            'free_tier' => false,
         ],
     ];
 
@@ -88,6 +103,7 @@ class AiService
                 'gemini' => env('GEMINI_API_KEY'),
                 'anthropic' => env('ANTHROPIC_API_KEY'),
                 'openrouter' => env('OPENROUTER_API_KEY'),
+                'groq' => env('GROQ_API_KEY'),
                 default => null,
             };
             $hasEnvKey = !empty($envKey);
@@ -132,6 +148,7 @@ class AiService
                 'easy_connect_url' => $easyConnectUrl,
                 'auth_type' => $meta['auth_type'],
                 'tag' => $meta['tag'],
+                'free_tier' => (bool) ($meta['free_tier'] ?? false),
             ];
         }
 
@@ -246,6 +263,7 @@ class AiService
                 'gemini' => env('GEMINI_API_KEY'),
                 'anthropic' => env('ANTHROPIC_API_KEY'),
                 'openrouter' => env('OPENROUTER_API_KEY'),
+                'groq' => env('GROQ_API_KEY'),
                 default => null,
             };
             if (!empty($apiKey)) {
@@ -254,6 +272,7 @@ class AiService
                     'gemini' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
                     'anthropic' => env('ANTHROPIC_MODEL', 'claude-3-5-sonnet-latest'),
                     'openrouter' => 'anthropic/claude-3.5-sonnet',
+                    'groq' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
                     default => self::PROVIDERS[$pid]['default_model'],
                 };
             }
@@ -430,6 +449,11 @@ class AiService
             return ['openrouter', (string) $openRouterKey, 'anthropic/claude-3.5-sonnet'];
         }
 
+        $groqKey = env('GROQ_API_KEY');
+        if (!empty($groqKey)) {
+            return ['groq', (string) $groqKey, env('GROQ_MODEL', 'llama-3.3-70b-versatile')];
+        }
+
         // Built-in intelligent neural engine fallback
         return ['builtin', 'system-internal', 'neural-synthesis-v2'];
     }
@@ -539,6 +563,7 @@ class AiService
                 'HTTP-Referer' => config('app.url', 'http://localhost'),
                 'X-Title' => config('app.name', 'PLAUD Companion'),
             ]),
+            'groq' => $this->callOpenAiCompatible('https://api.groq.com/openai/v1/chat/completions', $apiKey, $model, $systemPrompt, $userPrompt),
             'anthropic' => $this->callAnthropic($apiKey, $model, $systemPrompt, $userPrompt),
             'gemini' => $this->callGemini($apiKey, $model, $systemPrompt, $userPrompt),
             'builtin' => $this->runBuiltinEngine($systemPrompt, $userPrompt),

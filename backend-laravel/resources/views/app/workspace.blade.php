@@ -2942,7 +2942,10 @@
           <div>
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; margin-bottom:6px;">
               <strong style="font-size:14px; color:var(--navy);">${escapeHtml(c.name)}</strong>
-              <span class="tag ${isConnected ? 'green' : ''}">${isConnected ? (isBuiltin ? 'Embedded' : 'Active') : 'Optional'}</span>
+              <div style="display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end;">
+                ${c.free_tier ? `<span class="tag" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:10px;">Free Tier</span>` : ''}
+                <span class="tag ${isConnected ? 'green' : ''}">${isConnected ? (isBuiltin ? 'Embedded' : 'Active') : 'Optional'}</span>
+              </div>
             </div>
             <div style="font-size:12px; color:var(--muted); margin-bottom:8px; line-height:1.4;">${escapeHtml(c.description || '')}</div>
             <div style="font-size:11.5px; color:var(--muted);">Model: <code style="background: var(--surface-alt); padding:2px 6px; border-radius:4px;">${escapeHtml(model)}</code></div>

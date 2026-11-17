@@ -23,20 +23,21 @@
         a { color: inherit; }
         .app { display: grid; grid-template-columns: 264px 1fr; min-height: 100vh; }
 
-        /* Sidebar */
-        .sidebar { background: var(--pc-surface); border-right: 1px solid var(--pc-border); display: flex; flex-direction: column; justify-content: space-between; padding: 20px 16px; }
-        .brand { display: flex; align-items: center; gap: 12px; padding: 4px 6px 18px; }
-        .brand-logo { width: 46px; height: 46px; border-radius: 13px; background: linear-gradient(135deg, var(--pc-emerald), #37C89A); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 18px; }
-        .brand h1 { margin: 0; font-size: 16px; font-weight: 800; }
-        .brand p { margin: 1px 0 0; font-size: 12px; color: var(--pc-muted); }
+        /* Sidebar — always dark to match the workspace dashboard */
+        .sidebar { background: linear-gradient(180deg, var(--pc-text) 0%, var(--pc-ink) 100%); border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; justify-content: space-between; padding: 20px 16px; color: #fff; }
+        .brand { display: flex; align-items: center; gap: 12px; padding: 4px 6px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 16px; }
+        .brand-logo { width: 42px; height: 42px; border-radius: 14px; background: linear-gradient(135deg, var(--pc-emerald), #37C89A); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 18px; box-shadow: 0 10px 24px rgba(24,168,121,0.35); flex-shrink: 0; }
+        .brand h1 { margin: 0; font-size: 16px; font-weight: 800; color: #fff; }
+        .brand p { margin: 3px 0 0; font-size: 12px; color: rgba(255,255,255,0.65); }
         .nav { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
-        .nav a { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 14px; border-radius: 12px; text-decoration: none; color: var(--pc-text); font-weight: 600; font-size: 14px; border: 1px solid transparent; transition: .15s ease; }
-        .nav a:hover { background: var(--pc-surface-alt); }
-        .nav a.active { background: var(--pc-emerald-soft); color: var(--pc-emerald-hover); border-color: color-mix(in srgb, var(--pc-emerald) 30%, transparent); }
-        .nav .sec { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--pc-muted); margin: 14px 10px 4px; font-weight: 700; }
-        .nav .pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--pc-surface-alt); color: var(--pc-muted); }
+        .nav a { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 14px; border-radius: 12px; text-decoration: none; color: rgba(255,255,255,0.80); font-weight: 600; font-size: 14px; border: 1px solid transparent; transition: .15s ease; }
+        .nav a:hover { background: rgba(255,255,255,0.09); color: #fff; }
+        .nav a.active { background: rgba(24,168,121,0.22); color: #6EE7B7; border-color: rgba(24,168,121,0.4); }
+        .nav .sec { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,0.42); margin: 14px 10px 4px; font-weight: 700; }
+        .nav .pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.60); }
         .nav a.active .pill { background: var(--pc-emerald); color: #fff; }
-        .side-card { border: 1px solid var(--pc-border); background: var(--pc-surface-alt); border-radius: 14px; padding: 14px; font-size: 12px; color: var(--pc-muted); }
+        .side-card { border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.06); border-radius: 14px; padding: 14px; font-size: 12px; color: rgba(255,255,255,0.60); }
+        .side-card strong { color: rgba(255,255,255,0.90); }
         .side-card .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pc-emerald); display: inline-block; margin-right: 6px; }
 
         /* Topbar */
@@ -67,8 +68,17 @@
         .content { padding: 26px; max-width: 1100px; width: 100%; }
         .card { background: var(--pc-surface); border: 1px solid var(--pc-border); border-radius: 16px; padding: 22px; margin-bottom: 18px; }
         .card h2, .card h3 { margin-top: 0; }
-        .app-footer { border-top: 1px solid var(--pc-border); padding: 18px 26px; font-size: 12px; color: var(--pc-muted); background: var(--pc-surface-alt); text-align: center; }
-        .app-footer a { color: var(--pc-emerald-hover); text-decoration: none; font-weight: 600; }
+        .app-footer { background: var(--pc-bg); border-top: 2px solid var(--pc-border); padding: 20px 26px; }
+        .app-footer-inner { max-width: 1100px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .app-footer-brand { display: flex; align-items: center; gap: 10px; }
+        .app-footer-logo { width: 28px; height: 28px; border-radius: 8px; background: var(--pc-emerald); color: #fff; font-weight: 800; font-size: 11px; display: grid; place-items: center; letter-spacing: -.5px; flex-shrink: 0; }
+        .app-footer-brand-text { font-size: 13px; font-weight: 700; color: var(--pc-text); line-height: 1.2; }
+        .app-footer-brand-text span { display: block; font-size: 11px; font-weight: 500; color: var(--pc-muted); }
+        .app-footer-credits { font-size: 12px; color: var(--pc-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+        .app-footer-credits a { color: var(--pc-emerald-hover); text-decoration: none; font-weight: 600; }
+        .app-footer-credits a:hover { text-decoration: underline; }
+        .app-footer-credits .sep { opacity: .4; }
+        .app-footer-ver { font-size: 11px; color: var(--pc-muted); background: var(--pc-surface); border: 1px solid var(--pc-border); border-radius: 6px; padding: 3px 9px; font-weight: 600; white-space: nowrap; }
 
         .hamburger { display: none; }
         @media (max-width: 900px) {
@@ -140,9 +150,25 @@
         </div>
 
         <footer class="app-footer">
-            Developed by <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer">Md. Iqbal Mahmud</a>
-            &bull; Technical Advisor: <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer">Dawn C Simmons</a>
-            &bull; Brought to you by <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer">AI Infos</a>
+            <div class="app-footer-inner">
+                <div class="app-footer-brand">
+                    <div class="app-footer-logo">PC</div>
+                    <div class="app-footer-brand-text">
+                        PLAUD Companion
+                        <span>Transcript &amp; AI Workspace</span>
+                    </div>
+                </div>
+                <div class="app-footer-credits">
+                    <span>Developed by</span>
+                    <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer">Md. Iqbal Mahmud</a>
+                    <span class="sep">•</span>
+                    <span>Advisor</span>
+                    <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer">Dawn C Simmons</a>
+                    <span class="sep">•</span>
+                    <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer">AI Infos</a>
+                </div>
+                <span class="app-footer-ver">v{{ config('app.version', '1.0.0') }}</span>
+            </div>
         </footer>
     </main>
 </div>
