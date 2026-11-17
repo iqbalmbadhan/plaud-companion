@@ -26,8 +26,8 @@ class AiService
         'gemini' => [
             'name' => 'Google Gemini',
             'description' => 'Fast, scalable processing with massive context windows. Free tier: 15 req/min, no credit card needed.',
-            'default_model' => 'gemini-2.0-flash',
-            'available_models' => ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'],
+            'default_model' => 'gemini-1.5-flash',
+            'available_models' => ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'],
             'setup_help_url' => 'https://aistudio.google.com/apikey',
             'auth_type' => 'api_key',
             'tag' => 'Free Tier',
@@ -269,7 +269,7 @@ class AiService
             if (!empty($apiKey)) {
                 $model = match ($pid) {
                     'openai' => env('OPENAI_MODEL', 'gpt-4o-mini'),
-                    'gemini' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+                    'gemini' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
                     'anthropic' => env('ANTHROPIC_MODEL', 'claude-3-5-sonnet-latest'),
                     'openrouter' => 'anthropic/claude-3.5-sonnet',
                     'groq' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
@@ -436,7 +436,7 @@ class AiService
 
         $geminiKey = env('GEMINI_API_KEY');
         if (!empty($geminiKey)) {
-            return ['gemini', (string) $geminiKey, env('GEMINI_MODEL', 'gemini-2.0-flash')];
+            return ['gemini', (string) $geminiKey, env('GEMINI_MODEL', 'gemini-1.5-flash')];
         }
 
         $anthropicKey = env('ANTHROPIC_API_KEY');
@@ -767,7 +767,7 @@ class AiService
     {
         $cleanModel = preg_replace('#^models/#', '', trim($model));
         if ($cleanModel === '') {
-            $cleanModel = 'gemini-2.0-flash';
+            $cleanModel = 'gemini-1.5-flash';
         }
 
         $url = sprintf(
@@ -791,7 +791,7 @@ class AiService
             $apiError = data_get($resp->json(), 'error.message');
 
             // If 404 (model not found for generateContent), attempt fallback to gemini-1.5-flash
-            if ($status === 404 && !in_array($cleanModel, ['gemini-1.5-flash', 'gemini-2.0-flash'], true)) {
+            if ($status === 404 && $cleanModel !== 'gemini-1.5-flash') {
                 $fallbackModel = 'gemini-1.5-flash';
                 $fallbackUrl = sprintf(
                     'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent',
