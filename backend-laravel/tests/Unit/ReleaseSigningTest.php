@@ -6,7 +6,28 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use ZipArchive;
 
-require_once dirname(__DIR__, 3) . '/scripts/lib/release-signing.php';
+// Search up from __DIR__ to find scripts/lib/release-signing.php.
+// This handles both a standard repo checkout (3 levels up) and environments
+// where the laravel folder is deployed independently (e.g. XAMPP htdocs).
+(static function (): void {
+    $target = 'scripts' . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'release-signing.php';
+    $dir = __DIR__;
+    for ($i = 0; $i < 6; $i++) {
+        $candidate = $dir . DIRECTORY_SEPARATOR . $target;
+        if (is_file($candidate)) {
+            require_once $candidate;
+            return;
+        }
+        $parent = dirname($dir);
+        if ($parent === $dir) {
+            break;
+        }
+        $dir = $parent;
+    }
+    throw new \RuntimeException(
+        'Cannot locate scripts/lib/release-signing.php — run tests from the repository root.'
+    );
+})();
 
 class ReleaseSigningTest extends TestCase
 {

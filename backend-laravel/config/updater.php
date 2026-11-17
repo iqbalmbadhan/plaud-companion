@@ -1,9 +1,15 @@
 <?php
 
-$rootDir = function_exists('base_path') ? base_path() : dirname(__DIR__);
-$publicDir = function_exists('public_path') ? public_path() : $rootDir . DIRECTORY_SEPARATOR . 'public';
-$storageDir = function_exists('storage_path') ? storage_path() : $rootDir . DIRECTORY_SEPARATOR . 'storage';
-$configDir = function_exists('config_path') ? config_path() : __DIR__;
+// base_path() is a Laravel helper that calls app()->basePath(). The full Application
+// class has that method, but the plain Container used in unit tests does not. Use
+// method_exists() to avoid a fatal error when config is loaded outside a full app bootstrap.
+$_pcApp = function_exists('app') ? app() : null;
+$hasFullApp = is_object($_pcApp) && method_exists($_pcApp, 'basePath');
+unset($_pcApp);
+$rootDir    = $hasFullApp && function_exists('base_path')    ? base_path()    : dirname(__DIR__);
+$publicDir  = $hasFullApp && function_exists('public_path')  ? public_path()  : $rootDir . DIRECTORY_SEPARATOR . 'public';
+$storageDir = $hasFullApp && function_exists('storage_path') ? storage_path() : $rootDir . DIRECTORY_SEPARATOR . 'storage';
+$configDir  = $hasFullApp && function_exists('config_path')  ? config_path()  : __DIR__;
 $envFn = function_exists('env') ? 'env' : static fn (string $k, mixed $d = null): mixed => $_ENV[$k] ?? $d;
 
 $keyFile = $configDir . DIRECTORY_SEPARATOR . 'updater-public.key';

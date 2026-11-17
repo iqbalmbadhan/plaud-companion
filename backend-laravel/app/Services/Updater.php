@@ -145,6 +145,11 @@ class Updater
                     $migResult = $this->migrationRunner->run();
                     $migrationsRan = (bool) ($migResult['ran'] ?? false);
                 } catch (\Throwable $migEx) {
+                    // If the runner already determined migration failed, propagate immediately.
+                    // Only attempt an Artisan in-process fallback for unexpected runner errors.
+                    if ($migEx instanceof UpdateException) {
+                        throw $migEx;
+                    }
                     $artisanClass = 'Illuminate\\Support\\Facades\\Artisan';
                     if (class_exists($artisanClass)) {
                         $artisanExit = (int) $artisanClass::call('migrate', [
