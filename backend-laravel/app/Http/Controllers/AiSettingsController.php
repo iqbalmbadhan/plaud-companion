@@ -24,6 +24,7 @@ class AiSettingsController extends Controller
     public function oauthCallback(Request $request): RedirectResponse
     {
         $code = (string) $request->query('code', '');
+        $codeVerifier = (string) $request->query('cv', '');
 
         if ($code === '') {
             return redirect()->route('app.dashboard')
@@ -31,9 +32,15 @@ class AiSettingsController extends Controller
         }
 
         // Exchange the short-lived code for a permanent API key.
+        // Include the PKCE code_verifier when present (required by OpenRouter).
+        $payload = ['code' => $code];
+        if ($codeVerifier !== '') {
+            $payload['code_verifier'] = $codeVerifier;
+        }
+
         $response = Http::timeout(15)
             ->withHeader('Content-Type', 'application/json')
-            ->post('https://openrouter.ai/api/v1/auth/keys', ['code' => $code]);
+            ->post('https://openrouter.ai/api/v1/auth/keys', $payload);
 
         if (!$response->successful()) {
             return redirect()->route('app.dashboard')

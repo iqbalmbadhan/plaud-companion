@@ -1548,6 +1548,7 @@
                 <option value="builtin">⚡ PLAUD Neural Engine (Local / 0ms)</option>
                 <option value="openrouter">OpenRouter (Multi-Model)</option>
                 <option value="gemini">Google Gemini (Fast)</option>
+                <option value="groq">Groq (Ultra-Fast / Free Tier)</option>
                 <option value="claude">Anthropic Claude (High Accuracy)</option>
                 <option value="openai">OpenAI (GPT-4o)</option>
               </select>
@@ -2959,7 +2960,7 @@
             ${c.masked_key ? `<div style="font-size:11px; color:var(--emerald-dark); margin-top:4px; font-weight:600;">Auth: ${escapeHtml(c.masked_key)}</div>` : ''}
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; padding-top:8px; border-top:1px solid var(--line);">
-            ${c.easy_connect_url ? `<a href="${c.easy_connect_url}" target="_blank" rel="noopener noreferrer" class="btn sm" style="text-decoration:none; background:#EEF2FF; color:#4F46E5; border:1px solid #C7D2FE;">1-Click Connect ↗</a>` : ''}
+            ${c.easy_connect_url ? `<button class="btn sm" style="background:#EEF2FF; color:#4F46E5; border:1px solid #C7D2FE;" onclick="openRouterEasyConnect()">1-Click Connect ↗</button>` : ''}
             ${!isBuiltin ? `<button class="btn sm primary" onclick="openConnectAiModal('${pid}')">${isConnected ? 'Update Key' : 'Connect Key'}</button>` : ''}
             <button class="btn sm" onclick="testAiConnector('${pid}')">Test Latency</button>
             ${c.setup_help_url ? `<a href="${c.setup_help_url}" target="_blank" rel="noopener noreferrer" class="btn sm" style="text-decoration:none;">Docs ↗</a>` : ''}
@@ -2970,6 +2971,30 @@
     }
 
     var _modelFetchTimer = null;
+
+    // OpenRouter "Easy Connect" OAuth with PKCE (required by OpenRouter).
+    // Generates code_verifier + code_challenge client-side, embeds the verifier
+    // in the callback URL so the server can retrieve it on the redirect.
+    async function openRouterEasyConnect() {
+      const array = new Uint8Array(32);
+      crypto.getRandomValues(array);
+      const codeVerifier = btoa(String.fromCharCode(...array))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier));
+      const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+      const callbackBase = resolveAppUrl('/settings/ai/callback');
+      const callbackUrl = callbackBase + '?cv=' + encodeURIComponent(codeVerifier);
+
+      const authUrl = 'https://openrouter.ai/auth'
+        + '?callback_url=' + encodeURIComponent(callbackUrl)
+        + '&code_challenge=' + encodeURIComponent(codeChallenge)
+        + '&code_challenge_method=S256';
+
+      window.location.href = authUrl;
+    }
 
     function openConnectAiModal(providerId) {
       const connectors = Array.isArray(state.connectors) ? state.connectors : (state.connectors?.providers || []);

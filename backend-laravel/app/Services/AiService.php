@@ -788,7 +788,24 @@ class AiService
 
         if ($resp->failed()) {
             $status = $resp->status();
-            $apiError = data_get($resp->json(), 'error.message');
+            $apiError = data_get($resp->json(), 'error.message', '');
+
+            // Some models (e.g. preview/research models) do not support systemInstruction.
+            // Retry the same model without it, folding the system prompt into the user turn.
+            if ($status === 400 && str_contains((string) $apiError, 'Developer instruction is not enabled')) {
+                $retryResp = Http::timeout(45)
+                    ->withHeaders(['x-goog-api-key' => $apiKey])
+                    ->post($url, [
+                        'contents' => [
+                            ['parts' => [['text' => $systemPrompt . "\n\n" . $userPrompt]]],
+                        ],
+                    ]);
+                if ($retryResp->successful()) {
+                    return (string) data_get($retryResp->json(), 'candidates.0.content.parts.0.text', '');
+                }
+                $status = $retryResp->status();
+                $apiError = data_get($retryResp->json(), 'error.message', $apiError);
+            }
 
             // If 404 (model not found for generateContent), attempt fallback to gemini-1.5-flash
             if ($status === 404 && $cleanModel !== 'gemini-1.5-flash') {
