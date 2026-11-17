@@ -25,7 +25,16 @@ $script:AllowRootFiles = @(
 
 $script:AllowPublicDirs = @(
     'assets',
-    'build'
+    'build',
+    'js',
+    'icons'
+)
+
+# Root-level files inside public/ that are not in a subdirectory
+$script:AllowPublicRootFiles = @(
+    'public/manifest.json',
+    'public/sw.js',
+    'public/offline.html'
 )
 
 $script:PublicKeyExceptionRelPath = 'config/updater-public.key'
@@ -176,6 +185,12 @@ function Test-UpdateRelPathAllowed {
         }
     }
 
+    foreach ($pubFile in $script:AllowPublicRootFiles) {
+        if ($norm -ceq $pubFile) {
+            return $true
+        }
+    }
+
     return $false
 }
 
@@ -278,6 +293,19 @@ function New-CleanComposerStaging {
             $srcPub = Join-Path $BackendDir (Join-Path 'public' $pubDir)
             if (Test-Path -LiteralPath $srcPub) {
                 Copy-TreeFiltered -SourceDir $srcPub -DestDir (Join-Path $stagingRoot (Join-Path 'public' $pubDir))
+            }
+        }
+
+        # Root-level public/ files (manifest.json, sw.js, offline.html)
+        foreach ($pubRootFile in $script:AllowPublicRootFiles) {
+            $srcFile = Join-Path $BackendDir ($pubRootFile -replace '/', '\')
+            if (Test-Path -LiteralPath $srcFile) {
+                $destFile = Join-Path $stagingRoot ($pubRootFile -replace '/', '\')
+                $destDir  = Split-Path -Parent $destFile
+                if (-not (Test-Path -LiteralPath $destDir)) {
+                    New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+                }
+                Copy-Item -LiteralPath $srcFile -Destination $destFile -Force
             }
         }
 

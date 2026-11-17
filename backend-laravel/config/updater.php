@@ -55,10 +55,12 @@ return [
         'VERSION',
     ],
 
-    // Public sub-folders swapped wholesale (built assets)
+    // Public sub-folders swapped wholesale (built assets + PWA static files)
     'public_dirs' => [
         'assets',
         'build',
+        'js',
+        'icons',
     ],
 
     // Never accepted from any release zip (case-insensitive normalized check)
