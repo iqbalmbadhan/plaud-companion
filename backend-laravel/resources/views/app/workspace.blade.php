@@ -1549,6 +1549,8 @@
                 <option value="openrouter">OpenRouter (Multi-Model)</option>
                 <option value="gemini">Google Gemini (Fast)</option>
                 <option value="groq">Groq (Ultra-Fast / Free Tier)</option>
+                <option value="cloudflare">Cloudflare Workers AI (Free Tier)</option>
+                <option value="zai">Z.ai — 01.AI (Yi Models)</option>
                 <option value="claude">Anthropic Claude (High Accuracy)</option>
                 <option value="openai">OpenAI (GPT-4o)</option>
               </select>
@@ -3004,6 +3006,9 @@
       document.getElementById('connectAiProviderId').value = pid;
       document.getElementById('connectAiTitle').textContent = `Connect ${c.name}`;
       document.getElementById('connectAiKeyInput').value = '';
+      document.getElementById('connectAiKeyInput').placeholder = pid === 'cloudflare'
+        ? 'account_id:api_token  (from dash.cloudflare.com)'
+        : 'Paste provider API key...';
       document.getElementById('connectAiModelsHint').textContent = 'Enter your API key then click Refresh Models to load live models.';
       const sel = document.getElementById('connectAiModelSelect');
       const models = c.available_models || c.models || [c.default_model];

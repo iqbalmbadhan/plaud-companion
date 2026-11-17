@@ -63,6 +63,26 @@ class AiService
             'tag' => null,
             'free_tier' => false,
         ],
+        'cloudflare' => [
+            'name' => 'Cloudflare Workers AI',
+            'description' => 'Run 100+ AI models at the edge. Free tier: 10,000 neurons/day. Enter key as account_id:api_token',
+            'default_model' => '@cf/meta/llama-3.1-8b-instruct',
+            'available_models' => ['@cf/meta/llama-3.1-8b-instruct', '@cf/meta/llama-3.3-70b-instruct-fp8-fast', '@cf/mistral/mistral-7b-instruct-v0.1', '@cf/google/gemma-7b-it', '@cf/qwen/qwen1.5-14b-chat'],
+            'setup_help_url' => 'https://dash.cloudflare.com/profile/api-tokens',
+            'auth_type' => 'account_id_api_token',
+            'tag' => 'Free Tier',
+            'free_tier' => true,
+        ],
+        'zai' => [
+            'name' => 'Z.ai (01.AI)',
+            'description' => 'High-performance Yi language models by 01.AI. Fast inference, competitive on major benchmarks.',
+            'default_model' => 'yi-large',
+            'available_models' => ['yi-large', 'yi-lightning', 'yi-large-turbo', 'yi-medium'],
+            'setup_help_url' => 'https://platform.lingyiwanwu.com/apikeys',
+            'auth_type' => 'api_key',
+            'tag' => null,
+            'free_tier' => false,
+        ],
         'builtin' => [
             'name' => 'PLAUD Neural Meeting Engine',
             'description' => 'Embedded local neural engine for real-time diarization parsing, executive summaries, and action matrix synthesis.',
@@ -99,12 +119,14 @@ class AiService
             $hasDbKey = $conn !== null && !empty($conn->api_key_encrypted);
 
             $envKey = match ($pid) {
-                'openai' => env('OPENAI_API_KEY'),
-                'gemini' => env('GEMINI_API_KEY'),
-                'anthropic' => env('ANTHROPIC_API_KEY'),
-                'openrouter' => env('OPENROUTER_API_KEY'),
-                'groq' => env('GROQ_API_KEY'),
-                default => null,
+                'openai'      => env('OPENAI_API_KEY'),
+                'gemini'      => env('GEMINI_API_KEY'),
+                'anthropic'   => env('ANTHROPIC_API_KEY'),
+                'openrouter'  => env('OPENROUTER_API_KEY'),
+                'groq'        => env('GROQ_API_KEY'),
+                'cloudflare'  => env('CLOUDFLARE_AI_KEY'),
+                'zai'         => env('ZAI_API_KEY'),
+                default       => null,
             };
             $hasEnvKey = !empty($envKey);
 
@@ -259,21 +281,25 @@ class AiService
 
         if (empty($apiKey)) {
             $apiKey = match ($pid) {
-                'openai' => env('OPENAI_API_KEY'),
-                'gemini' => env('GEMINI_API_KEY'),
-                'anthropic' => env('ANTHROPIC_API_KEY'),
+                'openai'     => env('OPENAI_API_KEY'),
+                'gemini'     => env('GEMINI_API_KEY'),
+                'anthropic'  => env('ANTHROPIC_API_KEY'),
                 'openrouter' => env('OPENROUTER_API_KEY'),
-                'groq' => env('GROQ_API_KEY'),
-                default => null,
+                'groq'       => env('GROQ_API_KEY'),
+                'cloudflare' => env('CLOUDFLARE_AI_KEY'),
+                'zai'        => env('ZAI_API_KEY'),
+                default      => null,
             };
             if (!empty($apiKey)) {
                 $model = match ($pid) {
-                    'openai' => env('OPENAI_MODEL', 'gpt-4o-mini'),
-                    'gemini' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
-                    'anthropic' => env('ANTHROPIC_MODEL', 'claude-3-5-sonnet-latest'),
+                    'openai'     => env('OPENAI_MODEL', 'gpt-4o-mini'),
+                    'gemini'     => env('GEMINI_MODEL', 'gemini-1.5-flash'),
+                    'anthropic'  => env('ANTHROPIC_MODEL', 'claude-3-5-sonnet-latest'),
                     'openrouter' => 'anthropic/claude-3.5-sonnet',
-                    'groq' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
-                    default => self::PROVIDERS[$pid]['default_model'],
+                    'groq'       => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+                    'cloudflare' => env('CLOUDFLARE_MODEL', '@cf/meta/llama-3.1-8b-instruct'),
+                    'zai'        => env('ZAI_MODEL', 'yi-large'),
+                    default      => self::PROVIDERS[$pid]['default_model'],
                 };
             }
         }
@@ -558,16 +584,18 @@ class AiService
         string $userPrompt
     ): string {
         return match ($providerId) {
-            'openai' => $this->callOpenAiCompatible('https://api.openai.com/v1/chat/completions', $apiKey, $model, $systemPrompt, $userPrompt),
+            'openai'     => $this->callOpenAiCompatible('https://api.openai.com/v1/chat/completions', $apiKey, $model, $systemPrompt, $userPrompt),
             'openrouter' => $this->callOpenAiCompatible('https://openrouter.ai/api/v1/chat/completions', $apiKey, $model, $systemPrompt, $userPrompt, [
                 'HTTP-Referer' => config('app.url', 'http://localhost'),
                 'X-Title' => config('app.name', 'PLAUD Companion'),
             ]),
-            'groq' => $this->callOpenAiCompatible('https://api.groq.com/openai/v1/chat/completions', $apiKey, $model, $systemPrompt, $userPrompt),
-            'anthropic' => $this->callAnthropic($apiKey, $model, $systemPrompt, $userPrompt),
-            'gemini' => $this->callGemini($apiKey, $model, $systemPrompt, $userPrompt),
-            'builtin' => $this->runBuiltinEngine($systemPrompt, $userPrompt),
-            default => throw new HttpResponseException(response()->json(['detail' => "Unsupported provider '{$providerId}'."], 400)),
+            'groq'       => $this->callOpenAiCompatible('https://api.groq.com/openai/v1/chat/completions', $apiKey, $model, $systemPrompt, $userPrompt),
+            'anthropic'  => $this->callAnthropic($apiKey, $model, $systemPrompt, $userPrompt),
+            'gemini'     => $this->callGemini($apiKey, $model, $systemPrompt, $userPrompt),
+            'cloudflare' => $this->callCloudflare($apiKey, $model, $systemPrompt, $userPrompt),
+            'zai'        => $this->callOpenAiCompatible('https://api.lingyiwanwu.com/v1/chat/completions', $apiKey, $model, $systemPrompt, $userPrompt),
+            'builtin'    => $this->runBuiltinEngine($systemPrompt, $userPrompt),
+            default      => throw new HttpResponseException(response()->json(['detail' => "Unsupported provider '{$providerId}'."], 400)),
         };
     }
 
@@ -836,6 +864,21 @@ class AiService
         return (string) data_get($resp->json(), 'candidates.0.content.parts.0.text', '');
     }
 
+    // Key format: "account_id:api_token" — users enter both separated by a colon.
+    private function callCloudflare(string $apiKey, string $model, string $systemPrompt, string $userPrompt): string
+    {
+        $parts = explode(':', $apiKey, 2);
+        if (count($parts) < 2 || empty($parts[0]) || empty($parts[1])) {
+            throw new \RuntimeException('Cloudflare key must be in format: account_id:api_token');
+        }
+        [$accountId, $token] = $parts;
+        $endpoint = sprintf(
+            'https://api.cloudflare.com/client/v4/accounts/%s/ai/v1/chat/completions',
+            urlencode($accountId)
+        );
+        return $this->callOpenAiCompatible($endpoint, $token, $model, $systemPrompt, $userPrompt);
+    }
+
     /**
      * Fetch the live model list from a provider using the supplied API key.
      * Falls back to the static PROVIDERS list if the API call fails.
@@ -859,7 +902,9 @@ class AiService
                 'groq'       => $this->fetchGroqModels($apiKey),
                 'gemini'     => $this->fetchGeminiModels($apiKey),
                 'openrouter' => $this->fetchOpenRouterModels($apiKey),
-                'anthropic'  => $static, // Anthropic has no public models listing endpoint
+                'cloudflare' => $this->fetchCloudflareModels($apiKey),
+                'anthropic'  => $static, // no public listing endpoint
+                'zai'        => $static, // no public listing endpoint
                 default      => $static,
             };
 
@@ -937,6 +982,28 @@ class AiService
             ->values()
             ->take(100)
             ->all();
+    }
+
+    /** @return list<string> */
+    private function fetchCloudflareModels(string $apiKey): array
+    {
+        $parts = explode(':', $apiKey, 2);
+        if (count($parts) < 2 || empty($parts[0]) || empty($parts[1])) {
+            return self::PROVIDERS['cloudflare']['available_models'];
+        }
+        [$accountId, $token] = $parts;
+        $url = sprintf('https://api.cloudflare.com/client/v4/accounts/%s/ai/models/search', urlencode($accountId));
+        $resp = Http::timeout(10)->withToken($token)->get($url);
+        if ($resp->failed()) {
+            return self::PROVIDERS['cloudflare']['available_models'];
+        }
+
+        return collect($resp->json('result', []))
+            ->pluck('name')
+            ->filter(fn ($n) => is_string($n) && str_starts_with($n, '@cf/'))
+            ->sort()
+            ->values()
+            ->all() ?: self::PROVIDERS['cloudflare']['available_models'];
     }
 
     /**
