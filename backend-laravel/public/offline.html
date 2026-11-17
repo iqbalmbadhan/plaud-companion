@@ -3,94 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#18A879">
   <title>Offline — PLAUD Companion</title>
   <style>
-    :root {
-      --bg: #0B132B;
-      --card: #14243A;
-      --emerald: #18A879;
-      --text: #F8FAFC;
-      --muted: #94A3B8;
-      --border: #23354E;
+    :root { --bg:#0B1324; --card:#13203B; --emerald:#18A879; --mint:#37C89A; --text:#F1F5F9; --muted:#94A3B8; --border:#253861; }
+    @media (prefers-color-scheme: light) {
+      :root { --bg:#F6F8FB; --card:#FFFFFF; --text:#101B33; --muted:#64748B; --border:#DCE3EE; }
     }
     * { box-sizing: border-box; }
     body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
-      background: radial-gradient(circle at 50% 20%, #172A45 0%, var(--bg) 70%);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      text-align: center;
+      margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center;
     }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 40px 32px;
-      max-width: 440px;
-      width: 100%;
-      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
-    }
-    .icon {
-      width: 64px;
-      height: 64px;
-      border-radius: 18px;
-      background: rgba(24, 168, 121, 0.15);
-      border: 1px solid rgba(24, 168, 121, 0.35);
-      color: var(--emerald);
-      display: grid;
-      place-items: center;
-      font-size: 28px;
-      margin: 0 auto 20px;
-    }
-    h1 {
-      margin: 0 0 10px;
-      font-size: 22px;
-      font-weight: 700;
-    }
-    p {
-      margin: 0 0 24px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .btn {
-      background: var(--emerald);
-      color: #fff;
-      font-weight: 700;
-      font-size: 14px;
-      border: none;
-      border-radius: 10px;
-      padding: 12px 24px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-      transition: opacity 0.2s;
-    }
-    .btn:hover { opacity: 0.9; }
-    .status-badge {
-      display: inline-block;
-      margin-top: 20px;
-      font-size: 12px;
-      color: var(--muted);
-    }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 40px 32px; max-width: 440px; width: 100%; box-shadow: 0 20px 45px rgba(0,0,0,0.18); }
+    .logo { width: 68px; height: 68px; border-radius: 18px; background: linear-gradient(135deg, var(--emerald), var(--mint)); color:#fff; display:grid; place-items:center; font-size:26px; font-weight:800; margin:0 auto 20px; }
+    h1 { margin: 0 0 10px; font-size: 22px; font-weight: 800; }
+    p { margin: 0 0 22px; color: var(--muted); font-size: 15px; line-height: 1.55; }
+    .btn { background: var(--emerald); color:#fff; font-weight:700; font-size:15px; border:none; border-radius:12px; padding:14px 26px; cursor:pointer; }
+    .btn:hover { opacity: .92; }
+    .badge { display:inline-flex; align-items:center; gap:8px; margin-top:22px; font-size:12.5px; color:var(--muted); }
+    .dot { width:9px; height:9px; border-radius:50%; background:#EF4444; }
+    .dot.online { background: var(--emerald); }
+    .foot { margin-top:22px; padding-top:14px; border-top:1px solid var(--border); font-size:11.5px; color:var(--muted); display:flex; flex-direction:column; gap:4px; }
+    .foot a { color: var(--emerald); text-decoration:none; font-weight:600; }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="icon">⚡</div>
-    <h1>You are Currently Offline</h1>
-    <p>PLAUD Companion cached your local workspace shell. When your network connection resumes, live sync and AI synthesis will automatically reconnect.</p>
-    <button class="btn" onclick="window.location.reload()">Retry Connection</button>
-    <div class="status-badge">PLAUD Progressive Web App &bull; Offline Mode Active</div>
-    <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 4px;">
-      <span>Developed by <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Md. Iqbal Mahmud</a> &bull; Technical Advisor: <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Dawn C Simmons</a></span>
-      <span>Brought to you by <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">AI Infos</a></span>
+    <div class="logo">PC</div>
+    <h1 id="title">You're offline</h1>
+    <p id="msg">PLAUD Companion needs a connection to load your transcripts and run AI. We'll reconnect automatically the moment you're back online.</p>
+    <button class="btn" onclick="location.reload()">Try again now</button>
+    <div class="badge"><span class="dot" id="dot"></span><span id="state">No connection</span></div>
+    <div class="foot">
+      <span>Developed by <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer">Md. Iqbal Mahmud</a> &bull; Technical Advisor: <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer">Dawn C Simmons</a></span>
+      <span>Brought to you by <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer">AI Infos</a></span>
     </div>
   </div>
+  <script>
+    // Reconnect automatically: when the browser reports it's back online, or a quick
+    // ping to the server succeeds, reload the page the user was trying to reach.
+    var dot = document.getElementById('dot'), state = document.getElementById('state'),
+        title = document.getElementById('title'), msg = document.getElementById('msg');
+    function reconnected() {
+      dot.classList.add('online'); state.textContent = 'Back online — reloading…';
+      title.textContent = 'Back online'; msg.textContent = 'Reconnected. Taking you back to the app…';
+      setTimeout(function () { location.reload(); }, 600);
+    }
+    function check() {
+      if (!navigator.onLine) return;
+      fetch('up', { cache: 'no-store' }).then(function (r) { if (r.ok) reconnected(); }).catch(function () {});
+    }
+    window.addEventListener('online', reconnected);
+    setInterval(check, 4000);
+    check();
+  </script>
 </body>
 </html>

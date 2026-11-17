@@ -2384,13 +2384,13 @@
       stagedUploadId: null
     };
 
-    function showToast(msg, isError = false) {
+    function showToast(msg, isError = false, duration = 4200) {
       const wrap = document.getElementById('toastWrap');
       const el = document.createElement('div');
       el.className = 'toast' + (isError ? ' error' : '');
       el.textContent = msg;
       wrap.appendChild(el);
-      setTimeout(() => el.remove(), 4200);
+      setTimeout(() => el.remove(), duration);
     }
 
     function toggleMobileSidebar(forceState) {
@@ -3929,15 +3929,10 @@
       });
     }
 
-    // PWA Service Worker & Install Prompt Registration
+    // PWA install prompt. (The service worker is registered once by partials/pwa.)
     let deferredPwaPrompt = null;
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('{{ url('/sw.js') }}').catch(err => {
-          console.warn('[PWA] Service Worker registration failed:', err);
-        });
-      });
-    }
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent) && !window.MSStream;
 
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -3950,26 +3945,38 @@
       deferredPwaPrompt = null;
       const btn = document.getElementById('btnPwaInstall');
       if (btn) btn.style.display = 'none';
-      showToast('PLAUD Companion App installed successfully!');
+      showToast('PLAUD Companion is installed. Open it from your home screen.');
     });
 
+    // iOS Safari never fires beforeinstallprompt — show the button with Add-to-Home-Screen help.
+    if (isIos && !isStandalone) {
+      const btn = document.getElementById('btnPwaInstall');
+      if (btn) btn.style.display = 'inline-flex';
+    }
+
     function installPwa() {
-      if (!deferredPwaPrompt) return;
-      deferredPwaPrompt.prompt();
-      deferredPwaPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-          showToast('Installing PLAUD Companion App...');
-        }
-        deferredPwaPrompt = null;
-        const btn = document.getElementById('btnPwaInstall');
-        if (btn) btn.style.display = 'none';
-      });
+      if (deferredPwaPrompt) {
+        deferredPwaPrompt.prompt();
+        deferredPwaPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') showToast('Installing PLAUD Companion…');
+          deferredPwaPrompt = null;
+          const btn = document.getElementById('btnPwaInstall');
+          if (btn) btn.style.display = 'none';
+        });
+        return;
+      }
+      if (isIos) {
+        showToast('To install: tap the Share button, then “Add to Home Screen”.', false, 6000);
+        return;
+      }
+      showToast('Open this site in Chrome or Edge, then use the install icon in the address bar.');
     }
 
     // Initialize workspace on page load
     renderWorkspaceSelector();
     loadWorkspaceData();
   </script>
+@include('partials.connectivity')
 @include('partials.plaud-auto-sync')
 @include('partials.error-reporter')
 </body>
