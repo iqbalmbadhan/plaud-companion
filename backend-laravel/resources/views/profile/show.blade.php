@@ -1,15 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="manifest" href="{{ url('/manifest.json') }}">
-    @include('partials.pwa')
-    <meta name="theme-color" content="#18A879">
-    <title>PLAUD Companion — My Profile &amp; Security</title>
-    @include('partials.theme')
-    <style>
-        :root {
+@extends('layouts.shell')
+
+@section('title', 'My Profile')
+@section('active', 'profile')
+
+@push('head')
+<style>
+:root {
             --bg: var(--pc-bg);
             --navy: var(--pc-surface);
             --navy-light: var(--pc-surface-alt);
@@ -25,89 +21,7 @@
             --danger: var(--pc-danger);
             --danger-soft: var(--pc-danger-soft);
         }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        header {
-            background: var(--navy);
-            border-bottom: 1px solid var(--border);
-            padding: 16px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        .header-brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .brand-logo {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, var(--emerald) 0%, #37C89A 100%);
-            display: grid;
-            place-items: center;
-            font-weight: 800;
-            font-size: 16px;
-            color: #fff;
-            box-shadow: 0 6px 18px rgba(24, 168, 121, 0.3);
-        }
-        .header-brand h1 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 700;
-        }
-        .header-brand p {
-            margin: 2px 0 0;
-            font-size: 12px;
-            color: var(--muted);
-        }
-        .nav-links {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .nav-tab {
-            padding: 8px 14px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--muted);
-            text-decoration: none;
-            transition: all 0.15s ease;
-            border: 1px solid transparent;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .nav-tab:hover {
-            color: var(--text);
-            background: var(--navy-light);
-        }
-        .nav-tab.active {
-            color: var(--emerald);
-            background: var(--emerald-soft);
-            border-color: rgba(24, 168, 121, 0.3);
-        }
-        main {
-            flex: 1;
-            max-width: 1100px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 32px 20px;
-        }
-        .alert-success {
+.alert-success {
             background: var(--emerald-soft);
             border: 1px solid var(--emerald);
             border-radius: 12px;
@@ -117,7 +31,7 @@
             font-size: 13.5px;
             line-height: 1.4;
         }
-        .alert-error {
+.alert-error {
             background: var(--danger-soft);
             border: 1px solid var(--danger);
             border-radius: 12px;
@@ -127,29 +41,29 @@
             font-size: 13.5px;
             line-height: 1.4;
         }
-        .grid-layout {
+.grid-layout {
             display: grid;
             grid-template-columns: 360px 1fr;
             gap: 24px;
         }
-        @media (max-width: 860px) {
+@media (max-width: 860px) {
             .grid-layout {
                 grid-template-columns: 1fr;
             }
         }
-        .card {
+.card {
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 24px;
             margin-bottom: 24px;
         }
-        .profile-overview {
+.profile-overview {
             text-align: center;
             padding-bottom: 20px;
             border-bottom: 1px solid var(--border);
         }
-        .avatar-circle {
+.avatar-circle {
             width: 72px;
             height: 72px;
             border-radius: 20px;
@@ -162,23 +76,23 @@
             margin: 0 auto 16px;
             box-shadow: 0 8px 24px rgba(24, 168, 121, 0.25);
         }
-        .profile-name {
+.profile-name {
             font-size: 19px;
             font-weight: 700;
             margin: 0;
         }
-        .profile-email {
+.profile-email {
             font-size: 13px;
             color: var(--muted);
             margin: 4px 0 12px;
         }
-        .badge-row {
+.badge-row {
             display: flex;
             justify-content: center;
             gap: 8px;
             margin-bottom: 8px;
         }
-        .badge {
+.badge {
             font-size: 11px;
             font-weight: 700;
             padding: 4px 10px;
@@ -186,50 +100,50 @@
             text-transform: uppercase;
             letter-spacing: 0.04em;
         }
-        .badge.active {
+.badge.active {
             background: var(--emerald-soft);
             color: var(--emerald);
             border: 1px solid rgba(24, 168, 121, 0.4);
         }
-        .badge.admin {
+.badge.admin {
             background: rgba(139, 92, 246, 0.15);
             color: #a78bfa;
             border: 1px solid rgba(139, 92, 246, 0.4);
         }
-        .badge.member {
+.badge.member {
             background: rgba(59, 130, 246, 0.15);
             color: #60a5fa;
             border: 1px solid rgba(59, 130, 246, 0.4);
         }
-        .member-since {
+.member-since {
             font-size: 12px;
             color: var(--muted);
             margin-top: 6px;
         }
-        .stats-grid {
+.stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin: 20px 0;
         }
-        .stat-item {
+.stat-item {
             background: var(--card-sub);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 12px 8px;
             text-align: center;
         }
-        .stat-num {
+.stat-num {
             font-size: 18px;
             font-weight: 800;
             color: var(--emerald);
         }
-        .stat-label {
+.stat-label {
             font-size: 11px;
             color: var(--muted);
             margin-top: 4px;
         }
-        .section-title {
+.section-title {
             font-size: 14px;
             font-weight: 700;
             margin: 0 0 14px;
@@ -238,7 +152,7 @@
             align-items: center;
             gap: 8px;
         }
-        .workspace-item {
+.workspace-item {
             background: var(--card-sub);
             border: 1px solid var(--border);
             border-radius: 10px;
@@ -248,11 +162,11 @@
             justify-content: space-between;
             align-items: center;
         }
-        .ws-name {
+.ws-name {
             font-size: 13.5px;
             font-weight: 600;
         }
-        .ws-role {
+.ws-role {
             font-size: 11px;
             padding: 2px 8px;
             border-radius: 6px;
@@ -260,17 +174,17 @@
             color: var(--muted);
             text-transform: capitalize;
         }
-        .form-group {
+.form-group {
             margin-bottom: 18px;
         }
-        label {
+label {
             display: block;
             font-size: 12.5px;
             font-weight: 600;
             color: var(--muted);
             margin-bottom: 6px;
         }
-        input[type="text"], input[type="email"], input[type="password"] {
+input[type="text"], input[type="email"], input[type="password"] {
             width: 100%;
             padding: 12px 14px;
             border-radius: 10px;
@@ -281,21 +195,21 @@
             outline: none;
             transition: 0.15s ease;
         }
-        input:focus {
+input:focus {
             border-color: var(--emerald);
             box-shadow: 0 0 0 3px rgba(24, 168, 121, 0.22);
         }
-        input[disabled], input[readonly] {
+input[disabled], input[readonly] {
             opacity: 0.65;
             cursor: not-allowed;
             background: rgba(15, 26, 48, 0.4);
         }
-        .help-text {
+.help-text {
             font-size: 11.5px;
             color: var(--muted);
             margin-top: 4px;
         }
-        .btn {
+.btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -309,15 +223,15 @@
             transition: all 0.15s ease;
             text-decoration: none;
         }
-        .btn-primary {
+.btn-primary {
             background: var(--emerald);
             color: #fff;
         }
-        .btn-primary:hover {
+.btn-primary:hover {
             background: var(--emerald-hover);
             transform: translateY(-1px);
         }
-        footer.attribution-footer {
+footer.attribution-footer {
             margin-top: auto;
             border-top: 1px solid var(--border);
             padding: 20px;
@@ -326,35 +240,11 @@
             color: var(--muted);
             background: var(--navy);
         }
-    </style>
-</head>
-<body>
-@include('partials.impersonation-banner')
+</style>
+@endpush
 
-<header>
-    <div class="header-brand">
-        <div class="brand-logo">PC</div>
-        <div>
-            <h1>My Profile &amp; Security</h1>
-            <p>Account overview, workspace memberships &amp; credential management</p>
-        </div>
-    </div>
-    <div class="nav-links">
-        <a href="{{ route('app.home') }}" class="nav-tab">&larr; Workspace</a>
-        <a href="{{ route('profile.show') }}" class="nav-tab active">My Profile</a>
-        @if ($user->is_super_admin)
-            <a href="{{ route('settings.users') }}" class="nav-tab">Users</a>
-            <a href="{{ route('settings.updates') }}" class="nav-tab">System Updates</a>
-        @endif
-        <form method="POST" action="{{ route('logout') }}" style="display:inline; margin:0;">
-            @csrf
-            <button type="submit" class="nav-tab" style="background:none; border:none; cursor:pointer;">Sign Out</button>
-        </form>
-    </div>
-</header>
-
-<main>
-    @if (session('status'))
+@section('content')
+@if (session('status'))
         <div class="alert-success" role="alert">
             {{ session('status') }}
         </div>
@@ -485,20 +375,4 @@
             </div>
         </div>
     </div>
-</main>
-
-<footer class="attribution-footer">
-    <div>PLAUD Note &amp; NotePin Integration Bridge &bull; On-Device Encryption</div>
-    <div style="margin-top: 10px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; align-items: center;">
-        <span>Developed by <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Md. Iqbal Mahmud</a></span>
-        <span style="opacity:0.5;">&bull;</span>
-        <span>Technical Advisor: <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Dawn C Simmons</a></span>
-        <span style="opacity:0.5;">&bull;</span>
-        <span>Brought to you by <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">AI Infos</a></span>
-    </div>
-</footer>
-
-@include('partials.error-reporter')
-    @include('partials.password-eye')
-</body>
-</html>
+@endsection

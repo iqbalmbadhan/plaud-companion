@@ -1,479 +1,184 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="manifest" href="{{ url('/manifest.json') }}">
-    @include('partials.pwa')
-    <meta name="theme-color" content="#18A879">
-    <title>PLAUD Companion — User Management</title>
-    @include('partials.theme')
-    <style>
-        :root {
-            --navy: var(--pc-surface);
-            --navy-light: var(--pc-surface-alt);
-            --navy-border: var(--pc-border);
-            --emerald: var(--pc-emerald);
-            --emerald-hover: var(--pc-emerald-hover);
-            --bg: var(--pc-bg);
-            --card: var(--pc-surface);
-            --text: var(--pc-text);
-            --muted: var(--pc-muted);
-            --danger: var(--pc-danger);
-            --warn: var(--pc-amber);
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
-            background: linear-gradient(160deg, var(--bg) 0%, var(--navy) 100%);
-            color: var(--text);
-            min-height: 100vh;
-            padding: 28px 20px;
-        }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            display: grid;
-            gap: 20px;
-        }
-        .topbar {
-            background: var(--navy);
-            border: 1px solid var(--navy-border);
-            border-radius: 14px;
-            padding: 18px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .brand { display: flex; align-items: center; gap: 12px; }
-        .badge {
-            width: 36px;
-            height: 36px;
-            border-radius: 9px;
-            background: var(--emerald);
-            color: #07131E;
-            font-weight: 800;
-            display: grid;
-            place-items: center;
-        }
-        .topbar h1 { margin: 0; font-size: 18px; }
-        .topbar p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
-        .nav-tabs {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .nav-tab {
-            text-decoration: none;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--muted);
-            border: 1px solid transparent;
-            transition: all 0.2s;
-        }
-        .nav-tab:hover {
-            color: var(--text);
-            background: rgba(255, 255, 255, 0.05);
-        }
-        .nav-tab.active {
-            color: #fff;
-            background: rgba(24, 168, 121, 0.2);
-            border-color: var(--emerald);
-        }
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-        }
-        @media (max-width: 768px) {
-            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        .metric-card {
-            background: var(--card);
-            border: 1px solid var(--navy-border);
-            border-radius: 12px;
-            padding: 16px 18px;
-        }
-        .metric-card span { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
-        .metric-card strong { font-size: 24px; font-weight: 800; color: var(--text); }
-        .card {
-            background: var(--card);
-            border: 1px solid var(--navy-border);
-            border-radius: 14px;
-            padding: 22px;
-        }
-        .search-row {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            margin-bottom: 18px;
-            flex-wrap: wrap;
-        }
-        .search-input {
-            flex: 1;
-            min-width: 240px;
-            background: var(--navy);
-            border: 1px solid var(--navy-border);
-            border-radius: 8px;
-            padding: 10px 14px;
-            color: var(--text);
-            font-size: 13.5px;
-            outline: none;
-        }
-        .search-input:focus { border-color: var(--emerald); }
-        .filter-select {
-            background: var(--navy);
-            border: 1px solid var(--navy-border);
-            border-radius: 8px;
-            padding: 10px 14px;
-            color: var(--text);
-            font-size: 13px;
-            outline: none;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13.5px;
-        }
-        th {
-            text-align: left;
-            padding: 10px 14px;
-            color: var(--muted);
-            font-size: 11.5px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 1px solid var(--navy-border);
-        }
-        td {
-            padding: 14px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            vertical-align: middle;
-        }
-        tr:hover td { background: rgba(255, 255, 255, 0.02); }
-        .user-info { display: flex; align-items: center; gap: 10px; }
-        .user-avatar {
-            width: 34px;
-            height: 34px;
-            border-radius: 9px;
-            background: linear-gradient(135deg, #18A879 0%, #104C39 100%);
-            display: grid;
-            place-items: center;
-            font-weight: 700;
-            font-size: 13px;
-            color: #fff;
-            flex-shrink: 0;
-        }
-        .pill {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 3px 9px;
-            border-radius: 999px;
-            display: inline-block;
-        }
-        .pill.active { background: rgba(24, 168, 121, 0.16); color: var(--emerald); border: 1px solid rgba(24, 168, 121, 0.35); }
-        .pill.suspended { background: rgba(239, 68, 68, 0.16); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.35); }
-        .pill.admin { background: rgba(168, 85, 247, 0.16); color: #C084FC; border: 1px solid rgba(168, 85, 247, 0.35); }
-        .pill.user { background: rgba(148, 163, 184, 0.12); color: var(--muted); }
-        .btn {
-            border: none;
-            border-radius: 7px;
-            padding: 7px 12px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .btn-suspend { background: rgba(239, 68, 68, 0.18); color: #FCA5A5; border: 1px solid rgba(239, 68, 68, 0.4); }
-        .btn-suspend:hover { background: rgba(239, 68, 68, 0.35); }
-        .btn-activate { background: rgba(24, 168, 121, 0.18); color: #6EE7B7; border: 1px solid rgba(24, 168, 121, 0.4); }
-        .btn-activate:hover { background: rgba(24, 168, 121, 0.35); }
-        .btn-promote { background: var(--navy-light); color: var(--text); border: 1px solid var(--navy-border); }
-        .btn-promote:hover { border-color: #A855F7; color: #C084FC; }
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            padding: 12px 18px;
-            border-radius: 10px;
-            font-size: 13.5px;
-            font-weight: 600;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            display: none;
-            z-index: 1000;
-        }
-        .toast.success { background: #064E3B; border: 1px solid var(--emerald); color: #D1FAE5; }
-        .toast.error { background: #7F1D1D; border: 1px solid var(--danger); color: #FEE2E2; }
+@extends('layouts.shell')
 
-        /* Profile Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(11, 19, 36, 0.85);
-            backdrop-filter: blur(6px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1050;
-            padding: 20px;
-        }
-        .modal-card {
-            background: var(--card);
-            border: 1px solid var(--navy-border);
-            border-radius: 16px;
-            width: 100%;
-            max-width: 640px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
-            display: flex;
-            flex-direction: column;
-        }
-        .modal-header {
-            padding: 18px 24px;
-            border-bottom: 1px solid var(--navy-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .modal-header h2 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 700;
-        }
-        .modal-close-btn {
-            background: transparent;
-            border: none;
-            color: var(--muted);
-            font-size: 22px;
-            cursor: pointer;
-            line-height: 1;
-            padding: 4px;
-        }
-        .modal-close-btn:hover { color: var(--text); }
-        .modal-body {
-            padding: 22px 24px;
-            display: grid;
-            gap: 20px;
-        }
-        .modal-profile-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .modal-avatar {
-            width: 52px;
-            height: 52px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #18A879 0%, #104C39 100%);
-            display: grid;
-            place-items: center;
-            font-size: 18px;
-            font-weight: 800;
-            color: #fff;
-            flex-shrink: 0;
-        }
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-        }
-        .stat-box {
-            background: var(--navy);
-            border: 1px solid var(--navy-border);
-            border-radius: 10px;
-            padding: 12px 14px;
-            text-align: center;
-        }
-        .stat-box span { font-size: 11.5px; color: var(--muted); display: block; margin-bottom: 4px; }
-        .stat-box strong { font-size: 18px; font-weight: 800; color: var(--text); }
-        .section-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin: 0 0 8px;
-        }
-        .list-card {
-            background: var(--navy);
-            border: 1px solid var(--navy-border);
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-size: 12.5px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 6px;
-        }
-        .list-card:last-child { margin-bottom: 0; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="topbar">
-        <div class="brand">
-            <div class="badge">PC</div>
-            <div>
-                <h1>User Directory &amp; Access Controls</h1>
-                <p>Super-Admin User Management Console &bull; Instant Suspension Controls</p>
-            </div>
-        </div>
-        <div class="nav-tabs">
-            <a href="{{ route('settings.users') }}" class="nav-tab active">Users</a>
-            <a href="{{ route('settings.updates') }}" class="nav-tab">System Updates</a>
-            <a href="{{ route('profile.show') }}" class="nav-tab">My Profile</a>
-            <a href="{{ route('app.home') }}" class="nav-tab">&larr; Workspace</a>
-            <form method="POST" action="{{ route('logout') }}" style="display:inline; margin:0;">
-                @csrf
-                <button type="submit" class="nav-tab" style="background:none; border:none; cursor:pointer;">Sign Out</button>
-            </form>
-        </div>
+@section('title', 'Users & Access')
+@section('active', 'users')
+
+@push('head')
+<style>
+:root {
+    --navy: var(--pc-surface);
+    --navy-light: var(--pc-surface-alt);
+    --navy-border: var(--pc-border);
+    --emerald: var(--pc-emerald);
+    --emerald-hover: var(--pc-emerald-hover);
+    --card: var(--pc-surface);
+    --text: var(--pc-text);
+    --muted: var(--pc-muted);
+    --danger: var(--pc-danger);
+    --warn: var(--pc-amber);
+}
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+@media (max-width: 768px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+.metric-card { background: var(--card); border: 1px solid var(--navy-border); border-radius: 12px; padding: 16px 18px; }
+.metric-card span { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+.metric-card strong { font-size: 24px; font-weight: 800; }
+.search-row { display: flex; gap: 12px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+.search-input { flex: 1; min-width: 240px; background: var(--navy); border: 1px solid var(--navy-border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 13.5px; outline: none; box-sizing: border-box; }
+.search-input:focus { border-color: var(--emerald); }
+.filter-select { background: var(--navy); border: 1px solid var(--navy-border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 13px; outline: none; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th { text-align: left; padding: 10px 14px; color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--navy-border); }
+td { padding: 14px; border-bottom: 1px solid rgba(128, 128, 128, 0.1); vertical-align: middle; }
+tr:hover td { background: rgba(128, 128, 128, 0.04); }
+.user-info { display: flex; align-items: center; gap: 10px; }
+.user-avatar { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #18A879 0%, #104C39 100%); display: grid; place-items: center; font-weight: 700; font-size: 13px; color: #fff; flex-shrink: 0; }
+.pill { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; display: inline-block; }
+.pill.active { background: rgba(24, 168, 121, 0.16); color: var(--emerald); border: 1px solid rgba(24, 168, 121, 0.35); }
+.pill.suspended { background: rgba(239, 68, 68, 0.16); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.35); }
+.pill.admin { background: rgba(168, 85, 247, 0.16); color: #C084FC; border: 1px solid rgba(168, 85, 247, 0.35); }
+.pill.user { background: rgba(148, 163, 184, 0.12); color: var(--muted); }
+.btn-suspend { background: rgba(239, 68, 68, 0.18); color: #FCA5A5; border: 1px solid rgba(239, 68, 68, 0.4); }
+.btn-suspend:hover { background: rgba(239, 68, 68, 0.35); }
+.btn-activate { background: rgba(24, 168, 121, 0.18); color: #6EE7B7; border: 1px solid rgba(24, 168, 121, 0.4); }
+.btn-activate:hover { background: rgba(24, 168, 121, 0.35); }
+.btn-promote { background: var(--navy-light); color: var(--text); border: 1px solid var(--navy-border); }
+.btn-promote:hover { border-color: #A855F7; color: #C084FC; }
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 18px; border-radius: 10px; font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.4); display: none; z-index: 9999; }
+.toast.success { background: #064E3B; border: 1px solid var(--emerald); color: #D1FAE5; }
+.toast.error { background: #7F1D1D; border: 1px solid var(--danger); color: #FEE2E2; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(11,19,36,0.85); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 1050; padding: 20px; }
+.modal-card { background: var(--card); border: 1px solid var(--navy-border); border-radius: 16px; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 45px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
+.modal-header { padding: 18px 24px; border-bottom: 1px solid var(--navy-border); display: flex; align-items: center; justify-content: space-between; }
+.modal-header h2 { margin: 0; font-size: 16px; font-weight: 700; }
+.modal-close-btn { background: transparent; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; padding: 4px; }
+.modal-close-btn:hover { color: var(--text); }
+.modal-body { padding: 22px 24px; display: grid; gap: 20px; }
+.modal-profile-header { display: flex; align-items: center; gap: 16px; }
+.modal-avatar { width: 52px; height: 52px; border-radius: 12px; background: linear-gradient(135deg, #18A879 0%, #104C39 100%); display: grid; place-items: center; font-size: 18px; font-weight: 800; color: #fff; flex-shrink: 0; }
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat-box { background: var(--navy); border: 1px solid var(--navy-border); border-radius: 10px; padding: 12px 14px; text-align: center; }
+.stat-box span { font-size: 11.5px; color: var(--muted); display: block; margin-bottom: 4px; }
+.stat-box strong { font-size: 18px; font-weight: 800; color: var(--text); }
+.modal-section-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 8px; }
+.list-card { background: var(--navy); border: 1px solid var(--navy-border); border-radius: 10px; padding: 10px 14px; font-size: 12.5px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.list-card:last-child { margin-bottom: 0; }
+</style>
+@endpush
+
+@section('content')
+@if (session('status'))
+    <div class="card" role="status" style="margin-bottom:16px; border-color:var(--emerald); color:var(--emerald); font-weight:600;">{{ session('status') }}</div>
+@endif
+
+<div class="metrics-grid">
+    <div class="metric-card">
+        <span>Total Accounts</span>
+        <strong id="metricTotal" style="color:var(--text);">{{ $metrics['total'] }}</strong>
     </div>
-
-    @if (session('status'))
-        <div class="card" role="status" style="margin-bottom:16px; border-color:var(--emerald); color:var(--emerald); font-weight:600;">{{ session('status') }}</div>
-    @endif
-
-    <!-- METRICS OVERVIEW -->
-    <div class="metrics-grid">
-        <div class="metric-card">
-            <span>Total Accounts</span>
-            <strong id="metricTotal">{{ $metrics['total'] }}</strong>
-        </div>
-        <div class="metric-card">
-            <span>Active Accounts</span>
-            <strong id="metricActive" style="color:var(--emerald);">{{ $metrics['active'] }}</strong>
-        </div>
-        <div class="metric-card">
-            <span>Suspended Accounts</span>
-            <strong id="metricSuspended" style="color:var(--danger);">{{ $metrics['suspended'] }}</strong>
-        </div>
-        <div class="metric-card">
-            <span>Super Administrators</span>
-            <strong id="metricAdmins" style="color:#C084FC;">{{ $metrics['super_admins'] }}</strong>
-        </div>
+    <div class="metric-card">
+        <span>Active Accounts</span>
+        <strong id="metricActive" style="color:var(--emerald);">{{ $metrics['active'] }}</strong>
     </div>
-
-    <!-- USERS DIRECTORY TABLE -->
-    <div class="card">
-        <div class="search-row">
-            <input id="searchInput" type="text" class="search-input" placeholder="Search users by name, email..." oninput="debounceSearch()">
-            <select id="statusFilter" class="filter-select" onchange="loadUsers()">
-                <option value="">All Statuses</option>
-                <option value="active">Active Only</option>
-                <option value="suspended">Suspended Only</option>
-            </select>
-            <button class="btn btn-promote" onclick="loadUsers()">↻ Refresh</button>
-        </div>
-
-        <div style="overflow-x:auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Workspaces</th>
-                        <th>Registered</th>
-                        <th style="text-align:right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="userTableBody">
-                    <tr>
-                        <td colspan="6" style="text-align:center; padding:32px; color:var(--muted);">Loading users...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="metric-card">
+        <span>Suspended Accounts</span>
+        <strong id="metricSuspended" style="color:var(--danger);">{{ $metrics['suspended'] }}</strong>
     </div>
-
-    @if ($isDeveloper)
-    <!-- DEVELOPER: WORKSPACE DOCUMENT LISTS (no transcript content) -->
-    <div class="card" style="margin-top:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-            <div>
-                <h2 style="margin:0; font-size:16px;">Workspaces &amp; documents</h2>
-                <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">Titles, sources, sizes and dates only. Transcript text is never shown here; use <b>Work as</b> to open someone's documents.</p>
-            </div>
-            <button class="btn btn-promote" data-dev="load-workspaces">&#8635; Refresh</button>
-        </div>
-        <div id="devWorkspaces" style="margin-top:12px; font-size:13px; color:var(--muted);">Loading&hellip;</div>
+    <div class="metric-card">
+        <span>Super Administrators</span>
+        <strong id="metricAdmins" style="color:#C084FC;">{{ $metrics['super_admins'] }}</strong>
     </div>
-
-    <!-- DEVELOPER: PLAUD SAMPLE DATA -->
-    <div class="card" style="margin-top:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-            <div>
-                <h2 style="margin:0; font-size:16px;">Plaud sample recordings</h2>
-                <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">Loads a few <b>sample</b> recordings in Plaud's real format into your own workspace, so you can see exactly what "Connect my Plaud account" produces — no device or Plaud login needed. Sample data, clearly not real.</p>
-            </div>
-            <button class="btn btn-promote" data-dev="load-plaud-samples">&#127908; Load samples</button>
-        </div>
-        <div id="devPlaudSamples" style="margin-top:12px; font-size:13px; color:var(--muted);"></div>
-    </div>
-
-    <!-- DEVELOPER: DEBUG LOG -->
-    <div class="card" style="margin-top:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-            <div>
-                <h2 style="margin:0; font-size:16px;">Debug log</h2>
-                <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">Server and browser errors with the reference shown to the user. Kept 30 days. No transcript text, request bodies or secrets are stored.</p>
-            </div>
-            <div style="display:flex; gap:8px;">
-                <select id="errSource" class="filter-select"><option value="">All</option><option value="server">Server</option><option value="browser">Browser</option></select>
-                <button class="btn btn-promote" data-dev="load-errors">&#8635; Refresh</button>
-                <button class="btn btn-suspend" data-dev="clear-errors">Clear</button>
-            </div>
-        </div>
-        <div id="devErrors" style="margin-top:12px; font-size:13px; color:var(--muted);">Loading&hellip;</div>
-    </div>
-
-    <!-- DEVELOPER: IMPERSONATION CONFIRMATION -->
-    <div id="impersonateModal" class="modal-overlay" data-dev="close-imp-overlay">
-        <div class="modal-card" style="max-width:480px;">
-            <div class="modal-header">
-                <h2>Work as <span id="impName"></span></h2>
-                <button class="modal-close-btn" data-dev="close-imp">&times;</button>
-            </div>
-            <form id="impersonateForm" style="padding:18px; display:flex; flex-direction:column; gap:12px;">
-                <p style="margin:0; font-size:13px; color:var(--muted);">You will use the app as this person, including their documents, for up to 30 minutes. A banner stays on screen, admin pages are locked, and every action is recorded in the audit log with your name.</p>
-                <label style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; font-weight:600;">Reason (saved in the audit log)
-                    <input id="impReason" class="search-input" type="text" required minlength="5" maxlength="200" placeholder="e.g. Preparing the board export at Morgan's request">
-                </label>
-                <label style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; font-weight:600;">Your password
-                    <input id="impPassword" class="search-input" type="password" required autocomplete="current-password">
-                </label>
-                <div style="display:flex; gap:8px; justify-content:flex-end;">
-                    <button type="button" class="btn btn-promote" data-dev="close-imp">Cancel</button>
-                    <button type="submit" class="btn btn-activate">Start session</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    @endif
-
-    <footer style="margin-top:16px; padding:16px 20px; border-top:1px solid var(--navy-border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--muted);">
-        <div><strong>PLAUD Companion</strong> &bull; On-Device Encryption &amp; Access Control</div>
-        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-            <span>Developed by <a href="https://www.iqbalmahmud.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Md. Iqbal Mahmud</a></span>
-            <span style="opacity:0.4;">&bull;</span>
-            <span>Technical Advisor: <a href="https://www.dawncsimmons.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">Dawn C Simmons</a></span>
-            <span style="opacity:0.4;">&bull;</span>
-            <span>Brought to you by <a href="https://www.aiinfos.com" target="_blank" rel="noopener noreferrer" style="color:var(--emerald); text-decoration:none; font-weight:600;">AI Infos</a></span>
-        </div>
-    </footer>
 </div>
 
-<!-- USER PROFILE INSPECTION MODAL -->
+<div class="card">
+    <div class="search-row">
+        <input id="searchInput" type="text" class="search-input" placeholder="Search users by name, email..." oninput="debounceSearch()">
+        <select id="statusFilter" class="filter-select" onchange="loadUsers()">
+            <option value="">All Statuses</option>
+            <option value="active">Active Only</option>
+            <option value="suspended">Suspended Only</option>
+        </select>
+        <button class="btn btn-promote" onclick="loadUsers()">↻ Refresh</button>
+    </div>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Workspaces</th>
+                    <th>Registered</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <tr><td colspan="6" style="text-align:center; padding:32px; color:var(--muted);">Loading users...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if ($isDeveloper)
+<div class="card" style="margin-top:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div>
+            <h2 style="margin:0; font-size:16px;">Workspaces &amp; documents</h2>
+            <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">Titles, sources, sizes and dates only. Transcript text is never shown here; use <b>Work as</b> to open someone's documents.</p>
+        </div>
+        <button class="btn btn-promote" data-dev="load-workspaces">&#8635; Refresh</button>
+    </div>
+    <div id="devWorkspaces" style="margin-top:12px; font-size:13px; color:var(--muted);">Loading&hellip;</div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div>
+            <h2 style="margin:0; font-size:16px;">Plaud sample recordings</h2>
+            <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">Loads a few <b>sample</b> recordings in Plaud's real format into your own workspace, so you can see exactly what "Connect my Plaud account" produces — no device or Plaud login needed. Sample data, clearly not real.</p>
+        </div>
+        <button class="btn btn-promote" data-dev="load-plaud-samples">&#127908; Load samples</button>
+    </div>
+    <div id="devPlaudSamples" style="margin-top:12px; font-size:13px; color:var(--muted);"></div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div>
+            <h2 style="margin:0; font-size:16px;">Debug log</h2>
+            <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">Server and browser errors with the reference shown to the user. Kept 30 days. No transcript text, request bodies or secrets are stored.</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <select id="errSource" class="filter-select"><option value="">All</option><option value="server">Server</option><option value="browser">Browser</option></select>
+            <button class="btn btn-promote" data-dev="load-errors">&#8635; Refresh</button>
+            <button class="btn btn-suspend" data-dev="clear-errors">Clear</button>
+        </div>
+    </div>
+    <div id="devErrors" style="margin-top:12px; font-size:13px; color:var(--muted);">Loading&hellip;</div>
+</div>
+
+<div id="impersonateModal" class="modal-overlay" data-dev="close-imp-overlay">
+    <div class="modal-card" style="max-width:480px;">
+        <div class="modal-header">
+            <h2>Work as <span id="impName"></span></h2>
+            <button class="modal-close-btn" data-dev="close-imp">&times;</button>
+        </div>
+        <form id="impersonateForm" style="padding:18px; display:flex; flex-direction:column; gap:12px;">
+            <p style="margin:0; font-size:13px; color:var(--muted);">You will use the app as this person, including their documents, for up to 30 minutes. A banner stays on screen, admin pages are locked, and every action is recorded in the audit log with your name.</p>
+            <label style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; font-weight:600;">Reason (saved in the audit log)
+                <input id="impReason" class="search-input" type="text" required minlength="5" maxlength="200" placeholder="e.g. Preparing the board export at Morgan's request">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; font-weight:600;">Your password
+                <input id="impPassword" class="search-input" type="password" required autocomplete="current-password">
+            </label>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+                <button type="button" class="btn btn-promote" data-dev="close-imp">Cancel</button>
+                <button type="submit" class="btn btn-activate">Start session</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+
 <div id="profileModal" class="modal-overlay" onclick="handleModalOverlayClick(event)">
     <div class="modal-card" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -484,7 +189,7 @@
             <div class="modal-profile-header">
                 <div id="modalAvatar" class="modal-avatar">--</div>
                 <div style="flex:1;">
-                    <div id="modalDisplayName" style="font-size:16px; font-weight:800; color: var(--text);">User Name</div>
+                    <div id="modalDisplayName" style="font-size:16px; font-weight:800; color:var(--text);">User Name</div>
                     <div id="modalEmail" style="font-size:13px; color:var(--muted); margin:2px 0 6px;">user@example.com</div>
                     <div style="display:flex; gap:8px; align-items:center;">
                         <span id="modalRoleBadge" class="pill user">User</span>
@@ -493,34 +198,19 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Profile Summary Metrics -->
             <div class="stat-grid">
-                <div class="stat-box">
-                    <span>Workspaces</span>
-                    <strong id="modalStatWorkspaces">0</strong>
-                </div>
-                <div class="stat-box">
-                    <span>Transcripts</span>
-                    <strong id="modalStatTranscripts">0</strong>
-                </div>
-                <div class="stat-box">
-                    <span>Paired BLE Devices</span>
-                    <strong id="modalStatDevices">0</strong>
-                </div>
+                <div class="stat-box"><span>Workspaces</span><strong id="modalStatWorkspaces">0</strong></div>
+                <div class="stat-box"><span>Transcripts</span><strong id="modalStatTranscripts">0</strong></div>
+                <div class="stat-box"><span>Paired BLE Devices</span><strong id="modalStatDevices">0</strong></div>
             </div>
-
-            <!-- Workspace Affiliations -->
             <div>
-                <h3 class="section-title">Owned Workspaces</h3>
+                <h3 class="modal-section-title">Owned Workspaces</h3>
                 <div id="modalWorkspacesList">
                     <div style="font-size:12.5px; color:var(--muted); font-style:italic;">No workspaces owned.</div>
                 </div>
             </div>
-
-            <!-- BLE Hardware Device Activity -->
             <div>
-                <h3 class="section-title">BLE Device Activity &amp; Telemetry</h3>
+                <h3 class="modal-section-title">BLE Device Activity &amp; Telemetry</h3>
                 <div id="modalDevicesList">
                     <div style="font-size:12.5px; color:var(--muted); font-style:italic;">No paired BLE hardware devices recorded.</div>
                 </div>
@@ -530,7 +220,9 @@
 </div>
 
 <div id="toast" class="toast"></div>
+@endsection
 
+@push('scripts')
 <script>
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 const USERS_API_BASE = '{{ url('/settings/users/api') }}';
@@ -556,7 +248,6 @@ async function loadUsers() {
     const q = document.getElementById('searchInput').value.trim();
     const status = document.getElementById('statusFilter').value;
     const url = `${USERS_API_BASE}/list?q=${encodeURIComponent(q)}&status=${encodeURIComponent(status)}`;
-
     try {
         const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
         if (!res.ok) throw new Error('Failed to load user list');
@@ -575,8 +266,6 @@ function renderUsers(users) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--muted);">No registered users match your criteria.</td></tr>';
         return;
     }
-
-    // Buttons carry only data attributes; user-supplied names are never placed inside inline JavaScript.
     const btn = (action, id, cls, label) => `<button class="btn ${cls}" data-action="${action}" data-id="${escapeHtml(id)}">${label}</button>`;
     tbody.innerHTML = users.map(u => {
         const initials = escapeHtml((u.display_name || u.email || 'U').substring(0, 2).toUpperCase());
@@ -584,7 +273,6 @@ function renderUsers(users) {
             : (u.is_super_admin ? '<span class="pill admin">Super Admin</span>' : '<span class="pill user">User</span>');
         const statusPill = u.status === 'active' ? '<span class="pill active">Active</span>' : '<span class="pill suspended">Suspended</span>';
         const buttons = [btn('profile', u.id, 'btn-promote', 'Profile')];
-
         if (u.is_current_user) {
             buttons.push('<span style="font-size:12px; color:var(--muted); font-style:italic;">Your Account</span>');
         } else if (u.can_manage) {
@@ -600,25 +288,21 @@ function renderUsers(users) {
         } else {
             buttons.push('<span style="font-size:12px; color:var(--muted); font-style:italic;">Developer account</span>');
         }
-
         return `
             <tr>
-                <td>
-                    <div class="user-info">
-                        <div class="user-avatar">${initials}</div>
-                        <div>
-                            <div style="font-weight:700;">${escapeHtml(u.display_name)}</div>
-                            <div style="font-size:12px; color:var(--muted);">${escapeHtml(u.email)}</div>
-                        </div>
+                <td><div class="user-info">
+                    <div class="user-avatar">${initials}</div>
+                    <div>
+                        <div style="font-weight:700;">${escapeHtml(u.display_name)}</div>
+                        <div style="font-size:12px; color:var(--muted);">${escapeHtml(u.email)}</div>
                     </div>
-                </td>
+                </div></td>
                 <td>${rolePill}</td>
                 <td>${statusPill}</td>
                 <td>${Number(u.workspaces_count) || 0} workspace(s)</td>
                 <td style="color:var(--muted); font-size:12.5px;">${escapeHtml(u.created_at)}</td>
                 <td style="text-align:right;"><div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">${buttons.join(' ')}</div></td>
-            </tr>
-        `;
+            </tr>`;
     }).join('');
 }
 
@@ -630,7 +314,7 @@ async function apiCall(url, method = 'POST', body = null) {
         credentials: 'same-origin'
     });
     let data = {};
-    try { data = await res.json(); } catch (e) { /* non-JSON response */ }
+    try { data = await res.json(); } catch (e) { /* non-JSON */ }
     if (!res.ok) {
         const firstError = data.errors ? Object.values(data.errors)[0][0] : null;
         throw new Error(data.message || data.detail || firstError || `Request failed (${res.status})`);
@@ -765,99 +449,56 @@ if (IS_DEVELOPER) {
 }
 
 function handleModalOverlayClick(event) {
-    if (event.target === document.getElementById('profileModal')) {
-        closeProfileModal();
-    }
+    if (event.target === document.getElementById('profileModal')) closeProfileModal();
 }
-
 function closeProfileModal() {
     const modal = document.getElementById('profileModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
+    if (modal) modal.style.display = 'none';
 }
 
 async function openUserProfile(userId) {
     try {
-        const res = await fetch(`${USERS_API_BASE}/${userId}/profile`, {
-            headers: { 'Accept': 'application/json' }
-        });
+        const res = await fetch(`${USERS_API_BASE}/${userId}/profile`, { headers: { 'Accept': 'application/json' } });
         if (!res.ok) {
             const errData = await res.json().catch(() => ({}));
             throw new Error(errData.message || 'Failed to load user profile');
         }
         const profile = await res.json();
-
-        // Safe DOM population
         const initials = (profile.display_name || profile.email || 'U').substring(0, 2).toUpperCase();
         document.getElementById('modalAvatar').textContent = initials;
         document.getElementById('modalDisplayName').textContent = profile.display_name || 'N/A';
         document.getElementById('modalEmail').textContent = profile.email || 'N/A';
         document.getElementById('modalRegisteredDate').textContent = profile.created_at ? `Joined ${profile.created_at}` : '';
-
-        // Badges
         const roleBadge = document.getElementById('modalRoleBadge');
-        if (profile.is_super_admin) {
-            roleBadge.className = 'pill admin';
-            roleBadge.textContent = 'Super Admin';
-        } else {
-            roleBadge.className = 'pill user';
-            roleBadge.textContent = 'User';
-        }
-
+        roleBadge.className = profile.is_super_admin ? 'pill admin' : 'pill user';
+        roleBadge.textContent = profile.is_super_admin ? 'Super Admin' : 'User';
         const statusBadge = document.getElementById('modalStatusBadge');
-        if (profile.status === 'active') {
-            statusBadge.className = 'pill active';
-            statusBadge.textContent = 'Active';
-        } else {
-            statusBadge.className = 'pill suspended';
-            statusBadge.textContent = 'Suspended';
-        }
-
-        // Metrics
+        statusBadge.className = profile.status === 'active' ? 'pill active' : 'pill suspended';
+        statusBadge.textContent = profile.status === 'active' ? 'Active' : 'Suspended';
         document.getElementById('modalStatWorkspaces').textContent = profile.workspaces_count ?? (profile.workspaces ? profile.workspaces.length : 0);
         document.getElementById('modalStatTranscripts').textContent = profile.transcripts_count ?? 0;
         const devices = profile.device_activity || [];
         document.getElementById('modalStatDevices').textContent = devices.length;
-
-        // Workspaces list
         const wsContainer = document.getElementById('modalWorkspacesList');
         const workspaces = profile.workspaces || [];
-        if (workspaces.length === 0) {
-            wsContainer.innerHTML = '<div style="font-size:12.5px; color:var(--muted); font-style:italic;">No workspaces owned.</div>';
-        } else {
-            wsContainer.innerHTML = workspaces.map(w => {
-                const wsName = escapeHtml(w.name || 'Untitled Workspace');
-                const wsId = escapeHtml(w.id || '');
-                return `<div class="list-card"><div><strong>${wsName}</strong><div style="font-size:11px; color:var(--muted); font-family:monospace;">${wsId}</div></div><span class="pill user">Owner</span></div>`;
-            }).join('');
-        }
-
-        // Devices list
+        wsContainer.innerHTML = workspaces.length ? workspaces.map(w => {
+            return `<div class="list-card"><div><strong>${escapeHtml(w.name || 'Untitled Workspace')}</strong><div style="font-size:11px; color:var(--muted); font-family:monospace;">${escapeHtml(w.id || '')}</div></div><span class="pill user">Owner</span></div>`;
+        }).join('') : '<div style="font-size:12.5px; color:var(--muted); font-style:italic;">No workspaces owned.</div>';
         const devContainer = document.getElementById('modalDevicesList');
-        if (devices.length === 0) {
-            devContainer.innerHTML = '<div style="font-size:12.5px; color:var(--muted); font-style:italic;">No paired BLE hardware devices recorded.</div>';
-        } else {
-            devContainer.innerHTML = devices.map(d => {
-                const resId = escapeHtml(d.resource_id || 'Hardware Device');
-                const devName = escapeHtml((d.metadata && d.metadata.device_name) ? d.metadata.device_name : resId);
-                const battery = (d.metadata && d.metadata.battery_level !== undefined) ? `Battery: ${d.metadata.battery_level}%` : '';
-                const dateStr = d.created_at ? new Date(d.created_at).toLocaleString() : '';
-                return `<div class="list-card"><div><strong>${devName}</strong><div style="font-size:11px; color:var(--muted); font-family:monospace;">ID: ${resId} ${battery ? '&bull; ' + battery : ''}</div></div><span style="font-size:11px; color:var(--muted);">${escapeHtml(dateStr)}</span></div>`;
-            }).join('');
-        }
-
-        // Display modal
+        devContainer.innerHTML = devices.length ? devices.map(d => {
+            const resId = escapeHtml(d.resource_id || 'Hardware Device');
+            const devName = escapeHtml((d.metadata && d.metadata.device_name) ? d.metadata.device_name : resId);
+            const battery = (d.metadata && d.metadata.battery_level !== undefined) ? `Battery: ${d.metadata.battery_level}%` : '';
+            const dateStr = d.created_at ? new Date(d.created_at).toLocaleString() : '';
+            return `<div class="list-card"><div><strong>${devName}</strong><div style="font-size:11px; color:var(--muted); font-family:monospace;">ID: ${resId} ${battery ? '&bull; ' + battery : ''}</div></div><span style="font-size:11px; color:var(--muted);">${escapeHtml(dateStr)}</span></div>`;
+        }).join('') : '<div style="font-size:12.5px; color:var(--muted); font-style:italic;">No paired BLE hardware devices recorded.</div>';
         document.getElementById('profileModal').style.display = 'flex';
     } catch (err) {
         showToast(err.message, true);
     }
 }
 
-// Close modal on Escape
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeProfileModal();
-});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeProfileModal(); });
 
 function escapeHtml(str) {
     return (str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
@@ -865,7 +506,4 @@ function escapeHtml(str) {
 
 document.addEventListener('DOMContentLoaded', loadUsers);
 </script>
-@include('partials.error-reporter')
-    @include('partials.password-eye')
-</body>
-</html>
+@endpush

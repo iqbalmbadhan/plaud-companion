@@ -97,13 +97,19 @@ class UserProfileAndPasswordResetTest extends TestCase
         $this->assertNotEmpty($files, 'Blade views must be found.');
 
         foreach ($files as $file) {
+            $relPath = str_replace('\\', '/', $file);
             // Partials are fragments included inside full pages that carry the footer.
-            if (str_contains(str_replace('\\', '/', $file), '/views/partials/')) {
+            if (str_contains($relPath, '/views/partials/')) {
                 continue;
             }
             $rel = str_replace($this->baseDir . DIRECTORY_SEPARATOR, '', $file);
             $content = file_get_contents($file);
             $this->assertNotFalse($content);
+
+            // Views that extend layouts.shell inherit its footer — skip the direct check.
+            if (str_contains($content, "@extends('layouts.shell')")) {
+                continue;
+            }
 
             $this->assertStringContainsString('Developed by', $content, "View {$rel} is missing attribution footer 'Developed by'");
             $this->assertStringContainsString('Md. Iqbal Mahmud', $content, "View {$rel} is missing attribution 'Md. Iqbal Mahmud'");
