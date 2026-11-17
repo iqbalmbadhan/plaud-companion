@@ -587,5 +587,6 @@ pollStatus();
 setInterval(pollStatus, 2000);
 </script>
 @include('partials.error-reporter')
+    @include('partials.password-eye')
 </body>
 </html>

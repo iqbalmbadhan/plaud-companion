@@ -258,5 +258,6 @@
         </div>
     </footer>
 </div>
+    @include('partials.password-eye')
 </body>
 </html>

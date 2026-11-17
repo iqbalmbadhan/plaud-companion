@@ -499,5 +499,6 @@
 </footer>
 
 @include('partials.error-reporter')
+    @include('partials.password-eye')
 </body>
 </html>

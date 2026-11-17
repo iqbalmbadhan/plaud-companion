@@ -866,5 +866,6 @@ function escapeHtml(str) {
 document.addEventListener('DOMContentLoaded', loadUsers);
 </script>
 @include('partials.error-reporter')
+    @include('partials.password-eye')
 </body>
 </html>
