@@ -244,6 +244,8 @@ footer.attribution-footer {
 @endpush
 
 @section('content')
+<h1 class="page-heading" style="margin:0 0 20px; font-size:20px; font-weight:800;">My Profile &amp; Security</h1>
+
 @if (session('status'))
         <div class="alert-success" role="alert">
             {{ session('status') }}

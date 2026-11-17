@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\ProjectController;
 use App\Http\Controllers\Api\V1\TranscriptController;
 use App\Http\Controllers\Api\V1\WorkspaceController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AiSettingsController;
 use App\Http\Controllers\InstallController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UpdateController;
@@ -23,6 +24,9 @@ Route::middleware(['web.auth'])->group(function (): void {
     Route::post('/integrations/plaud/disconnect', [\App\Http\Controllers\PlaudAccountController::class, 'disconnect'])->name('plaud.account.disconnect');
     Route::get('/', [DashboardController::class, 'index'])->name('app.home');
     Route::get('/app', [DashboardController::class, 'index'])->name('app.dashboard');
+    // OpenRouter "Easy Connect" OAuth callback
+    Route::get('/settings/ai/callback', [AiSettingsController::class, 'oauthCallback'])->name('settings.ai.callback');
+
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::post('/profile', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');

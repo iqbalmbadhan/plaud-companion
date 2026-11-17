@@ -70,6 +70,8 @@ tr:hover td { background: rgba(128, 128, 128, 0.04); }
     <div class="card" role="status" style="margin-bottom:16px; border-color:var(--emerald); color:var(--emerald); font-weight:600;">{{ session('status') }}</div>
 @endif
 
+<h1 class="page-heading" style="margin:0 0 20px; font-size:20px; font-weight:800;">User Directory &amp; Access Controls</h1>
+
 <div class="metrics-grid">
     <div class="metric-card">
         <span>Total Accounts</span>
