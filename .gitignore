@@ -46,7 +46,8 @@ mobile_artifacts/
 # Temporary update staging & manifest artifacts
 /update/
 
-# Certificates & certificate bundles (credentials)
+# Certificates, keys & credential bundles (never commit)
 *.crt
 *.pem
+*.updater-key
 
