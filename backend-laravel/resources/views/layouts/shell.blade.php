@@ -113,6 +113,9 @@
                 @if($__admin)
                     <a href="{{ route('settings.users') }}" class="{{ $active === 'users' ? 'active' : '' }}"><span>Users &amp; Access</span><span class="pill">Admin</span></a>
                     <a href="{{ route('settings.updates') }}" class="{{ $active === 'updates' ? 'active' : '' }}"><span>Updates &amp; Backups</span><span class="pill">Admin</span></a>
+                    @if($__u->isDeveloper())
+                        <a href="{{ route('settings.developer') }}" class="{{ $active === 'developer' ? 'active' : '' }}"><span>Developer Console</span><span class="pill" style="background:rgba(168,85,247,.18);color:#C084FC;border-color:rgba(168,85,247,.4);">Dev</span></a>
+                    @endif
                 @endif
             </nav>
         </div>
@@ -139,6 +142,9 @@
                         @if($__admin)
                             <a href="{{ route('settings.users') }}">👥 Users &amp; access</a>
                             <a href="{{ route('settings.updates') }}">⚙️ Updates &amp; backups</a>
+                            @if($__u->isDeveloper())
+                                <a href="{{ route('settings.developer') }}">🛠 Developer console</a>
+                            @endif
                         @endif
                         <div class="menu-sep"></div>
                         <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit">↩ Sign out</button></form>

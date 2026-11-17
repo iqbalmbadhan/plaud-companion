@@ -115,7 +115,10 @@ Route::middleware(['web.auth', 'super_admin'])->prefix('settings/users')->group(
     });
 });
 
-// Developer-only tools (never available while impersonating)
+// Developer console page + API
+Route::middleware(['web.auth', 'developer'])->group(function (): void {
+    Route::get('/settings/developer', [\App\Http\Controllers\DeveloperController::class, 'index'])->name('settings.developer');
+});
 Route::middleware(['web.auth', 'developer'])->prefix('settings/developer/api')->group(function (): void {
     Route::post('/users/{userId}/impersonate', [\App\Http\Controllers\DeveloperController::class, 'impersonate'])->middleware('throttle:10,1');
     Route::post('/users/{userId}/toggle-developer', [\App\Http\Controllers\DeveloperController::class, 'toggleDeveloper']);

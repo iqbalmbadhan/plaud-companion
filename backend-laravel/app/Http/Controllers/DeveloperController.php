@@ -27,6 +27,16 @@ class DeveloperController extends Controller
     {
     }
 
+    public function index(Request $request): \Illuminate\View\View
+    {
+        $totalUsers      = User::query()->count();
+        $totalWorkspaces = Workspace::query()->count();
+        $developerCount  = User::query()->where('is_developer', true)->count();
+        $pendingErrors   = \App\Models\ErrorLog::query()->count();
+
+        return view('settings.developer', compact('totalUsers', 'totalWorkspaces', 'developerCount', 'pendingErrors'));
+    }
+
     public function impersonate(Request $request, string $userId): JsonResponse
     {
         $validated = $request->validate([
